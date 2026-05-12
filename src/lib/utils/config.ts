@@ -2,11 +2,18 @@ import "server-only";
 import { z } from "zod";
 
 /**
- * Server-side configuration. The whole app reads env via this object —
- * nothing else should touch `process.env` directly. The zod schema parses
- * once at module import, so if a required variable is missing or
- * malformed the process fails to boot with a single readable error
- * listing everything that's wrong.
+ * Server-side configuration. Application code reads env via this object —
+ * nothing else under `src/` should touch `process.env` directly. The
+ * zod schema parses once at module import, so if a required variable is
+ * missing or malformed the process fails to boot with a single readable
+ * error listing everything that's wrong.
+ *
+ * Two intentional exceptions live OUTSIDE `src/`:
+ *   - `drizzle.config.ts` reads DATABASE_URL directly
+ *   - `playwright.config.ts` reads CI / PLAYWRIGHT_BASE_URL directly
+ * Both are build-tool CLI configs that run outside the Next.js runtime;
+ * routing them through this file would force the full app env to be set
+ * just to generate a migration or run a browser test.
  *
  * NEXT_PUBLIC_* variables go in `public-config.ts` (no `server-only`
  * marker) so they can be safely imported from client components.
