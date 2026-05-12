@@ -14,6 +14,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // `server-only` throws when imported outside the react-server
+      // bundler condition. Vitest doesn't set that condition, so we
+      // alias to an empty shim — equivalent to the empty module Next.js
+      // resolves on the server bundle.
+      "server-only": path.resolve(__dirname, "./src/test/server-only-shim.ts"),
     },
   },
   test: {
@@ -31,7 +36,11 @@ export default defineConfig({
       DATABASE_URL: "postgres://test:test@localhost:5432/test",
       REDIS_URL: "redis://localhost:6379",
       SESSION_SECRET: "test-session-secret-padded-to-32-chars-yes",
-      ALLOW_USERS: "test:$2b$10$abcdefghijklmnopqrstuv",
+      // base64 of `$2b$10$abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPq`
+      // — a syntactically valid bcrypt hash. Real password tests
+      // mint their own hashes via `hashPassword()`.
+      ALLOW_USERS:
+        "test:JDJiJDEwJGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6MDEyMzQ1Njc4OUFCQ0RFRkdISUpLTE1OT1Bx",
       OPENAI_API_KEY: "sk-test",
       ETSY_CLIENT_ID: "test-etsy-client",
       ETSY_CLIENT_SECRET: "test-etsy-secret",

@@ -10,13 +10,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { requireSession } from "@/lib/auth/require-session";
 
 /**
- * Phase 0 placeholder — confirms the brand tokens, typography, and
- * shadcn primitives all render against the design-system.html palette.
+ * Phase 0/1 placeholder — proves the design system + auth round-trip.
  * Will be replaced in Phase 8 by the real dashboard.
  */
-export default function Home() {
+export default async function Home() {
+  const session = await requireSession();
+
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-12 px-8 py-16">
       <header className="flex items-end justify-between gap-6 border-b border-border pb-6">
@@ -26,19 +28,28 @@ export default function Home() {
             <span className="text-brand-terracotta">Admin</span>
           </h1>
           <p className="max-w-xl text-brand-olive-deep/80">
-            Vintage clothing, second-hand stories. The admin panel is being
-            wired up — login, products, AI, Etsy, dashboard.
+            Signed in as{" "}
+            <span className="font-medium text-foreground">{session.username}</span>
+            . Vintage clothing, second-hand stories — the admin panel is
+            being wired up.
           </p>
         </div>
-        <Badge variant="secondary" className="font-mono uppercase tracking-widest">
-          v0.1 · dev
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="font-mono uppercase tracking-widest">
+            v0.1 · dev
+          </Badge>
+          <form action="/api/auth/logout" method="post">
+            <Button type="submit" variant="ghost" size="sm">
+              Sign out
+            </Button>
+          </form>
+        </div>
       </header>
 
       <section>
         <Card>
           <CardHeader>
-            <CardTitle>Login</CardTitle>
+            <CardTitle>Login (preview)</CardTitle>
             <CardDescription>
               Brand inputs, terracotta focus, olive secondary.
             </CardDescription>
