@@ -9,7 +9,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Design system
 
-Read `DESIGN_SYSTEM.md` before any UI work. Tokens are wired in `src/app/globals.css`. DM Sans + DM Mono + Caveat are the only allowed font families. **All UI primitives come from shadcn/ui** (`pnpm dlx shadcn@latest add <name>`) — only build custom components when shadcn has no equivalent, and document the reason in `DESIGN_SYSTEM.md` §6.
+Read `DESIGN_SYSTEM.md` before any UI work. Tokens live in `src/lib/styles/theme.css`; custom utility classes in `src/lib/styles/utilities.css`; both are pulled together by `src/lib/styles/globals.css`, which is the only stylesheet `app/layout.tsx` imports. DM Sans + DM Mono + Caveat are the only allowed font families. **All UI primitives come from shadcn/ui** (`pnpm dlx shadcn@latest add <name>`) — only build custom components when shadcn has no equivalent, and document the reason in `DESIGN_SYSTEM.md` §6.
 
 # Stack (locked)
 

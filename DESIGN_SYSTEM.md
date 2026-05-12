@@ -7,7 +7,7 @@ addition here first.
 The visual source is `design-system.html` at the repo root (Claude Design
 output). This document is the codified version, translated into:
 
-- **Tailwind v4 `@theme` tokens** in `src/app/globals.css`
+- **Tailwind v4 `@theme` tokens** in `src/lib/styles/{theme,utilities,globals}.css`
 - **shadcn semantic roles** mapped onto the brand palette
 - **`next/font/google`** loading the type stack in `src/app/layout.tsx`
 

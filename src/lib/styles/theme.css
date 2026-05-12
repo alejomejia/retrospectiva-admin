@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Keep the `dark` variant defined so the `dark:` modifiers baked into
+   the shadcn primitives compile. We never apply the `.dark` class, so
+   those modifiers are inert — but stripping them out of every shadcn
+   file isn't worth the churn. */
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+   /* ---------- Retrospectiva brand palette ----------
+     Exposed as `bg-brand-cream`, `text-brand-olive-deep`, etc. 
+     Use these when the design demands a specific brand color regardless 
+     of semantic role. 
+   */
+   --color-brand-cream: #f7f3e7;
+   --color-brand-paper: #ece5d0;
+   --color-brand-bone: #fbf9f1;
+   --color-brand-ink: #2a2a25;
+   --color-brand-olive: #5d6344;
+   --color-brand-olive-dim: #7a7e5f;
+   --color-brand-olive-deep: #3f4530;
+   --color-brand-terracotta: #a6461b;
+   --color-brand-terracotta-deep: #7e3414;
+   --color-brand-mustard: #d4a44f;
+   --color-brand-mustard-soft: #e8c989;
+
+   /* ---------- shadcn semantic roles ----------
+     The same hex values, mapped to the semantic tokens shadcn
+     primitives use internally. Reach for these (`bg-background`,
+     `text-primary`, …) for everything functional. */
+   --color-background: #f7f3e7;
+   --color-foreground: #2a2a25;
+   --color-card: #fbf9f1;
+   --color-card-foreground: #2a2a25;
+   --color-popover: #fbf9f1;
+   --color-popover-foreground: #2a2a25;
+   --color-primary: #a6461b;
+   --color-primary-foreground: #f7f3e7;
+   --color-secondary: #5d6344;
+   --color-secondary-foreground: #f7f3e7;
+   --color-muted: #ece5d0;
+   --color-muted-foreground: #3f4530;
+   --color-accent: #d4a44f;
+   --color-accent-foreground: #3f4530;
+   --color-destructive: #7e3414;
+   --color-destructive-foreground: #f7f3e7;
+   --color-border: rgba(42, 42, 37, 0.18);
+   --color-input: rgba(42, 42, 37, 0.18);
+   --color-ring: #a6461b;
+
+   /* Radii — 4px cards/inputs, 6px frames, 8px screens, 9999px pills.
+     shadcn derives sm/md/lg/xl from these scale steps. */
+   --radius-sm: 0.25rem;
+   --radius-md: 0.375rem;
+   --radius-lg: 0.5rem;
+   --radius-xl: 0.75rem;
+
+   /* Type — DM Sans for everything sans-serif, DM Mono for tiny
+     uppercase receipt-style labels, Caveat as the script accent.
+     The `--font-dm-sans`/`--font-dm-mono`/`--font-caveat` vars are
+     attached to <html> by next/font in app/layout.tsx. */
+   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+   --font-mono: var(--font-dm-mono), ui-monospace, monospace;
+   --font-script: var(--font-caveat), cursive;
+}

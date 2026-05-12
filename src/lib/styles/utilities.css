@@ -1,0 +1,44 @@
+@layer utilities {
+
+  /* ---------- Atmosphere ----------
+     Opt-in: add `class="brand-paper"` to <html> or any container.
+     Applies the subtle radial color washes and the SVG paper-grain
+     noise from design system. Dense data screens can omit it
+     for crispness. */
+  .brand-paper {
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(166, 70, 27, 0.04), transparent 60%),
+      radial-gradient(circle at 80% 80%, rgba(93, 99, 68, 0.05), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  .brand-paper::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    z-index: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.16  0 0 0 0 0.16  0 0 0 0 0.14  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: multiply;
+  }
+
+  .brand-paper main,
+  .brand-paper header,
+  .brand-paper footer,
+  .brand-paper section {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* The .mono pattern from design-system.html: tiny uppercase tracked
+     labels in olive-deep. Used on form labels, table column headers,
+     tag pills, etc. */
+  .text-caplet {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12rem;
+    text-transform: uppercase;
+    color: var(--color-brand-olive-deep);
+  }
+}

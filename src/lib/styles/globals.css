@@ -1,0 +1,15 @@
+/* Entry stylesheet — imported once by app/layout.tsx.
+   theme.css: Tailwind theme tokens (colors, radii, fonts).
+   utilities.css: custom utility classes layered via @layer utilities. */
+@import "./theme.css";
+@import "./utilities.css";
+
+@layer base {
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
