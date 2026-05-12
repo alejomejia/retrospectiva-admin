@@ -6,7 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "worker": "tsx watch src/lib/queue/worker.ts",
+    "worker:prod": "tsx src/lib/queue/worker.ts",
+    "hash-password": "tsx scripts/hash-password.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1045.0",
@@ -21,13 +33,17 @@
     "jose": "6.2.3",
     "lucide-react": "1.14.0",
     "next": "16.2.6",
+    "next-themes": "0.4.6",
     "openai": "6.37.0",
     "postgres": "3.4.9",
+    "radix-ui": "1.4.3",
     "react": "19.2.4",
+    "react-day-picker": "10.0.0",
     "react-dom": "19.2.4",
     "react-hook-form": "7.75.0",
     "sonner": "2.0.7",
     "tailwindcss-animate": "1.0.7",
+    "tw-animate-css": "1.4.0",
     "zod": "4.4.3"
   },
   "devDependencies": {

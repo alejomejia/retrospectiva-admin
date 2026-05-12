@@ -5,7 +5,6 @@ allowBuilds:
   sharp: false
   unrs-resolver: false
 saveExact: true
-minimumReleaseAge: 3600
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
