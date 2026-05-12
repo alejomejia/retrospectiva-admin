@@ -1,0 +1,71 @@
+# Local + production-shape stack. Mirror this in your VPS deploy.
+# - app:    Next.js server (port 3000)
+# - worker: BullMQ worker (no exposed port)
+# - postgres + redis: persistent state
+#
+# For local dev, you can run only the infra services and use `pnpm dev` on
+# the host: `docker compose up postgres redis`.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: retrospectiva
+      POSTGRES_PASSWORD: retrospectiva
+      POSTGRES_DB: retrospectiva
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retrospectiva"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3000:3000"
+
+  worker:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
+      REDIS_URL: redis://redis:6379
+    command: ["pnpm", "worker:prod"]
+
+volumes:
+  postgres_data:
+  redis_data:
