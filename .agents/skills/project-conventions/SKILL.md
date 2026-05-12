@@ -1,6 +1,6 @@
 ---
 name: project-conventions
-description: House code-organization conventions for this project — component file/naming pattern, constants extraction and context guard hooks
+description: House code-organization conventions for this project — component file/naming pattern, constants extraction, context guard hooks, env-config access, and dev-only logging
 user-invocable: false
 ---
 
@@ -44,3 +44,30 @@ See [context-guard-hook.md](./context-guard-hook.md) for:
 - The required throw + descriptive error message
 - Why "context with default value" is an anti-pattern here
 - Verification greps
+
+## Consuming Environment Variables
+
+Never call `process.env.*` from app code. Read configuration through
+`@/lib/utils/config` (server) or `@/lib/utils/public-config` (client).
+The whole env is zod-validated at boot, so a missing/malformed value
+crashes startup with a single readable error.
+
+See [consume-env-via-config.md](./consume-env-via-config.md) for:
+- The fail-fast rationale
+- How to add a new variable
+- The four sanctioned files that ARE allowed to read `process.env` and
+  why
+- A one-line grep that verifies the rule
+
+## Dev-Only Logging
+
+For diagnostic logs that should help during development but disappear
+in production, use `@/lib/utils/dev` (`devLog` / `devWarn` / `devError`
+/ `devGroup(tag)`) — never raw `console.log`. The helpers no-op in
+production builds and are tree-shaken to nothing.
+
+See [use-dev-logger.md](./use-dev-logger.md) for:
+- The zero-overhead-in-prod mechanism
+- The `devGroup("auth")` scoping pattern
+- What NOT to log even in dev (passwords, hashes, tokens, PII)
+- When to use `toast`/`thrown Error` instead
