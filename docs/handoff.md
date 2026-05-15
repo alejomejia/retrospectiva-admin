@@ -10,14 +10,63 @@ historical record. **This file is the bookmark.**
 
 ## Current state
 
-**Phases 4a (OAuth + connection) AND 4b (shop config pickers) are
-both shipped and live-verified.** 137/137 tests green, typecheck
-clean. Connected to the real Retrospectiva shop on 2026-05-15 after
-working through three confusing Etsy errors — see the memory note
-`project_etsy_x_api_key_is_shared_secret.md` for the canonical
-answer (it's `<keystring>:<shared_secret>`, colon-joined; Etsy's
-*authentication* doc page doesn't mention this — only the
-*requests* page does).
+**Phases 4a, 4b, and 5 are all shipped.** 143/143 tests green,
+typecheck clean, production build green, worker process boots +
+handles SIGTERM cleanly under direct `tsx` invocation.
+
+### Phase 5 additions (2026-05-15)
+
+- `src/lib/queue/redis.ts` — BullMQ-compatible ioredis singleton
+  (`maxRetriesPerRequest: null`, `enableReadyCheck: false`).
+- `src/lib/queue/queue-options.ts` — `DEFAULT_JOB_OPTIONS` constant
+  (3 attempts, exponential backoff, 24h success retention, 7d
+  failure retention).
+- `src/lib/queue/events-log.ts` — three helpers:
+  - `logJobEvent({ jobId, type, productId?, payload? })` → inserts
+    into the `events` table with `actor="worker"`; swallows DB
+    failures so logging hiccups never crash a job.
+  - `isJobProcessed(key)` → checks `jobs_idempotency`.
+  - `markJobProcessed(key, purpose)` → inserts with `ON CONFLICT
+    DO NOTHING`.
+  - `countProcessedJobs(purpose)` — sanity-check helper.
+- `src/lib/queue/env-bootstrap.ts` — side-effect-only module that
+  calls `loadEnvConfig(process.cwd())`. Imported FIRST by
+  `worker.ts` so env is populated before any env-reading import.
+- `src/lib/queue/worker.ts` — process entrypoint. Imports
+  env-bootstrap, then redis. Logs startup, sets a heartbeat
+  interval to keep the loop alive until real workers register,
+  handles SIGTERM/SIGINT for graceful shutdown.
+- 6 new tests covering `logJobEvent` and idempotency helpers.
+
+### Plumbing change worth knowing about
+
+`src/lib/db/client.ts` and `src/lib/queue/redis.ts` now read
+`process.env.DATABASE_URL` / `process.env.REDIS_URL` directly,
+**not** via `config`. Reason: `config` transitively imports
+`server-only`, which throws under raw `tsx` (no react-server
+bundler condition). The worker needs both clients to work in
+non-Next contexts. Client-bundle protection is preserved because
+`postgres` and `ioredis` are Node-only deps that would fail to
+bundle into a client build. See `docs/project-conventions.md`
+§1 for the updated sanctioned-exceptions list.
+
+### What's blocked on Phases that consume the queue
+
+Phase 5 ships INFRASTRUCTURE only — no public queues declared yet.
+The worker process logs "no workers registered yet" on startup.
+Each downstream phase adds its own queue + processor by
+side-effect-importing into `worker.ts`:
+
+```ts
+// in worker.ts main(), each phase adds its line:
+await import("@/lib/integrations/etsy/publish-worker");   // Phase 4c
+await import("@/lib/integrations/openai/enrich-worker");  // Phase 6
+await import("@/lib/integrations/website/revalidate-worker"); // Phase 7
+```
+
+Until then the worker is a "ready and idle" daemon — useful for
+verifying the Docker compose setup works on the VPS, not for
+processing real jobs.
 
 ### Phase 4b additions (2026-05-15)
 

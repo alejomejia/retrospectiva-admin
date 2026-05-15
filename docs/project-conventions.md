@@ -24,7 +24,7 @@ through `@/lib/utils/config` (or `@/lib/utils/public-config` for
   component fails the build. Secrets cannot accidentally end up in
   the client bundle.
 
-**Sanctioned exceptions** (4 files, each carries a `// NOTE:` comment
+**Sanctioned exceptions** (each carries a `// NOTE:` comment
 explaining why):
 
 | File | What it reads | Why |
@@ -33,6 +33,9 @@ explaining why):
 | `playwright.config.ts` | `CI`, `PLAYWRIGHT_BASE_URL` | playwright CLI ditto. |
 | `src/lib/utils/config.ts` | the whole env | This IS the parser. |
 | `src/lib/utils/dev.ts` | `NODE_ENV` | Logger needs to work in both client and server; Next inlines this as a build-time constant. |
+| `src/lib/db/client.ts` | `DATABASE_URL`, `DATABASE_POOL_MAX`, `NODE_ENV` | The BullMQ worker (`queue/worker.ts`) runs under raw `tsx` where `config`'s `server-only` chain throws. Reading env directly here lets the same `db` singleton work in both Next.js and worker contexts. |
+| `src/lib/queue/redis.ts` | `REDIS_URL`, `NODE_ENV` | Same reason as `db/client.ts` — used from the worker. |
+| `src/lib/queue/env-bootstrap.ts` | (calls `loadEnvConfig`) | Loads `.env.local` into `process.env` for the worker; mirrors the trick used in `drizzle.config.ts`. |
 
 Anything outside this list reading `process.env` is a bug.
 
@@ -41,7 +44,10 @@ Anything outside this list reading `process.env` is a bug.
 ```sh
 grep -rn "process\.env" src/ scripts/ --include='*.ts' --include='*.tsx' \
   | grep -v "src/lib/utils/config.ts" \
-  | grep -v "src/lib/utils/dev.ts"
+  | grep -v "src/lib/utils/dev.ts" \
+  | grep -v "src/lib/db/client.ts" \
+  | grep -v "src/lib/queue/redis.ts" \
+  | grep -v "src/lib/queue/env-bootstrap.ts"
 # should return zero lines
 ```
 
