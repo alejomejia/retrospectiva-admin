@@ -1,13 +1,36 @@
 ---
 name: project-conventions
-description: House code-organization conventions for this project — component file/naming pattern, constants extraction, context guard hooks, env-config access, and dev-only logging
+description: House code-organization AND collaboration conventions for this project — component file/naming pattern, constants extraction, context guard hooks, env-config access, dev-only logging, and the three norms for how Claude sessions should approach work
 user-invocable: false
 ---
 
 # Project Conventions
 
-How code is organized, named, and structured in this codebase. Apply these rules
+How code is organized, named, and structured in this codebase — plus
+how Claude sessions should approach work in it. Apply these rules
 when writing or reviewing any code in `src/`.
+
+## Collaboration norms (read these first)
+
+Three rules about how to approach work in this repo. They're listed
+first because every other convention in this file presumes them.
+
+See [collaboration-norms.md](./collaboration-norms.md) for:
+
+- **Rule 1: Don't add features the user didn't ask for.** Defensive
+  code, "future-proof" abstractions, and unrequested helpers don't
+  ship — propose first.
+- **Rule 2: Ask first when there are options or doubts.** Surface
+  branch points via `AskUserQuestion`; don't decide silently and
+  justify later.
+- **Rule 3: Suggest better options proactively.** When the user's
+  proposal isn't optimal *for this project's specific constraints*,
+  counter-propose. The user has explicitly invited pushback.
+
+These three exist because each one prevented or fixed a real
+wasted-effort incident in this codebase (WebP→JPEG, the
+`brand-`-prefix rename, the unrequested `.dark` theme). The
+collaboration-norms doc has the incidents documented.
 
 ## Component Pattern
 

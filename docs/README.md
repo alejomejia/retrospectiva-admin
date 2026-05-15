@@ -7,6 +7,7 @@ read whichever matches the question you've got.
 
 | Question | Document |
 | --- | --- |
+| **Where did the last session leave off? What's the immediate next move?** | **[handoff.md](./handoff.md)** ← start here when resuming |
 | What is this app and how does it fit together? | [architecture.md](./architecture.md) |
 | How is auth set up? What's that `ALLOW_USERS` env gotcha? | [auth.md](./auth.md) |
 | How do I get Postgres running locally? | [database-setup.md](./database-setup.md) |

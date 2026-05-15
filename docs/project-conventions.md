@@ -216,24 +216,28 @@ under `src/lib/` rather than getting wedged into an existing one.
 
 ## 11. Collaboration norms (for Claude sessions specifically)
 
-These are encoded in `~/.claude/projects/.../memory/` and apply to
-any Claude session working in this repo. They're not "code rules"
-strictly, but they're load-bearing for the project:
+Three rules about how Claude sessions should approach work in this
+repo. They're not "code rules" strictly, but they're load-bearing
+for the project.
 
-- **Don't add features the user didn't ask for.** Defensive code,
-  dark themes, "future-proof" abstractions — propose first, don't
-  ship-then-explain.
-- **Ask before deciding** between two reasonable approaches. Use
-  AskUserQuestion to surface the tradeoff; the user wants to make
-  the call, not justify the call after the fact.
-- **Counter-propose when there's a better path.** The user has
-  explicitly invited pushback when their initial idea isn't optimal
-  for this stack. Evaluate, propose, then execute.
+The canonical version lives in
+[`.agents/skills/project-conventions/collaboration-norms.md`](../.agents/skills/project-conventions/collaboration-norms.md)
+— auto-loaded when Claude reads project skills. The summary:
+
+- **Rule 1: Don't add features the user didn't ask for.** Defensive
+  code, dark themes, "future-proof" abstractions — propose first,
+  don't ship-then-explain.
+- **Rule 2: Ask first when there are options or doubts.** Use
+  `AskUserQuestion` to surface the tradeoff; the user wants to make
+  the call, not justify it after the fact.
+- **Rule 3: Counter-propose when there's a better path.** The user
+  has explicitly invited pushback when their initial idea isn't
+  optimal for this stack. Evaluate, propose, then execute.
 
 These have been refined by real decisions in this project (WebP →
 JPEG, archived-on-sale, base64-wrap bcrypt, separate galleries +
 merged uploader, etc.) — every one of those was a tradeoff worth
-surfacing.
+surfacing. The canonical doc has each incident written up.
 
 ## Quick verifier checklist before a PR
 
