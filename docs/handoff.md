@@ -10,62 +10,98 @@ historical record. **This file is the bookmark.**
 
 ## Current state
 
-**Phase 4 (Etsy integration) is `in_progress` — no code written yet.**
+**Phases 4a (OAuth + connection) AND 4b (shop config pickers) are
+both shipped and live-verified.** 137/137 tests green, typecheck
+clean. Connected to the real Retrospectiva shop on 2026-05-15 after
+working through three confusing Etsy errors — see the memory note
+`project_etsy_x_api_key_is_shared_secret.md` for the canonical
+answer (it's `<keystring>:<shared_secret>`, colon-joined; Etsy's
+*authentication* doc page doesn't mention this — only the
+*requests* page does).
 
-The previous session marked it in_progress and asked three scope
-questions, then the session ended before answers arrived. The user
-explicitly said they'd resume later.
+### Phase 4b additions (2026-05-15)
 
-**Last completed work:** Phase 3 is fully shipped (101/101 tests
-green). The R2 layout is date-partitioned, the media uploader is
-merged, video limits are 30 s / 100 MB, `Cache-Control` headers are
-set on uploads.
+- Migration `0002_material_dracula.sql` adds two nullable columns
+  to `etsy_oauth`: `default_shipping_profile_id`,
+  `default_return_policy_id`. **Run `pnpm db:migrate` to apply.**
+- `src/lib/integrations/etsy/shop-config.ts` — `listShippingProfiles`,
+  `listReturnPolicies`, `listShopSections` helpers (each takes
+  optional `TokenStore` for testability).
+- `src/lib/integrations/etsy/defaults-actions.ts` — `saveEtsyDefaults`
+  server action with zod coercion (numeric strings → numbers,
+  empty → null).
+- `src/components/forms/etsy-defaults-form.tsx` — client form with
+  two shadcn `<Select>` pickers, `useTransition` pending state,
+  sonner toast on success/error.
+- `/settings/etsy` page extended with a "Valores por defecto" card.
+  Card gracefully degrades to a "Valores no disponibles" message
+  when Etsy API calls fail (which they will until approval).
+- Spanish strings under `m.settings.etsy.defaults.*`.
+- `listShopSections` is NOT exposed on the settings page — sections
+  are per-listing and will be picked by AI in Phase 6.
 
-## Three pending scope questions for Phase 4
+**What's been built (2026-05-15):**
 
-Before writing any Etsy code, re-ask the user these via
-`AskUserQuestion`. Don't assume answers from any prior context —
-these were never received.
+- `docs/etsy-developer-app.md` — developer-app registration walkthrough
+- `src/lib/integrations/etsy/oauth.ts` — PKCE, authorize URL builder,
+  token exchange, refresh rotation, `EtsyOAuthError`
+- `src/lib/integrations/etsy/client.ts` — authenticated `etsyFetch`
+  with auto-refresh via `getValidAccessToken`; pluggable `TokenStore`
+- `src/lib/integrations/etsy/oauth-state.ts` — signed cookie carrying
+  `{ state, codeVerifier }` across the Etsy bounce (HS256 with
+  `SESSION_SECRET`, `aud=etsy-oauth`, 10-min TTL)
+- `src/lib/integrations/etsy/shops.ts` — `parseUserIdFromAccessToken`
+  + `fetchShopByOwnerUserId`
+- `src/app/api/etsy/oauth/start/route.ts` — initiates the flow
+- `src/app/api/etsy/oauth/callback/route.ts` — verifies state,
+  exchanges code, fetches shop, upserts `etsy_oauth` (keyed by
+  `shop_id`), redirects with success / error code
+- `src/app/(admin)/settings/etsy/page.tsx` — three states:
+  disconnected, connected (with shop name fetched from
+  `/shops/{shop_id}`), error
+- Spanish strings under `m.settings.etsy.*` (including a code →
+  message map for callback errors)
+- Tests: 27 new (oauth 10, client 8, oauth-state 4, shops 5)
 
-### Q1 · Etsy developer app status
+**What's blocked on the user — and on Etsy:**
 
-> Do you have an Etsy developer app registered with `ETSY_CLIENT_ID`
-> and `ETSY_CLIENT_SECRET`?
+1. ✅ Developer app registered (2026-05-15).
+2. ✅ `ETSY_CLIENT_ID`, `ETSY_CLIENT_SECRET`, `ETSY_REDIRECT_URI`
+   pasted into `.env.local`.
+3. ⏸ **Waiting on Etsy approval.** The app's dashboard status is
+   **"Pending Personal Approval"**. Attempting OAuth right now
+   returns "The application that is requesting authorization to use
+   your Etsy account is not recognized" — this is Etsy, not a code
+   bug. We just have to wait (hours to a couple of days, per Etsy's
+   process). User gets an email when approved.
+4. ⏳ Once approved: visit `/settings/etsy`, click "Conectar con
+   Etsy", verify the page renders "Conectado · Tienda: …" with the
+   real shop name.
 
-Options:
-- **Not yet** → first deliverable of 4a is `docs/etsy-developer-app.md`
-  walking through the registration (developer account, app scopes,
-  redirect URI configuration).
-- **Already registered** → skip the walkthrough; wire OAuth against
-  the existing credentials.
-- **Have seller account but not developer app** → effectively the
-  same as "not yet"; still need the developer app registration.
+If the smoke test fails after approval, the most likely culprits
+are: (a) shape mismatch on `/users/{userId}/shops` or
+`/shops/{shopId}` JSON (the typed shapes in `shops.ts` and the
+settings page might need a small adjustment), (b)
+`redirect_uri_mismatch` — verify the URI registered in Etsy's
+portal matches `ETSY_REDIRECT_URI` byte-for-byte.
 
-### Q2 · Phase 4 scope (sub-phase to tackle next)
+**Previous shipped phase:** Phase 3 (101/101 tests green). R2 date-
+partitioned, merged media uploader, video limits 30 s / 100 MB,
+1-year immutable `Cache-Control` on uploads.
 
-Phase 4 naturally splits into three coherent sub-chunks:
+## Locked scope decisions (2026-05-15)
 
-| Sub-phase | What ships | Size |
-| --- | --- | --- |
-| **4a · Connection** | OAuth + PKCE flow, `/settings/etsy` page to connect, callback handler, token storage in `etsy_oauth`, auto-refresh client wrapper, "Connected to {shop}" status. | ~1 day |
-| **4b · Shop config** | Fetch shop's shipping profiles + return policies + shop sections. Settings UI to pick defaults. Curated taxonomy list. | ~1 day |
-| **4c · Publish flow** | `listing-mapper.ts`, `publish.ts` orchestrator, image upload, video upload, ES translation, state→active. "Publicar en Etsy" button. | ~3–5 days |
-
-Recommend **4a alone first** as the next deliverable — proves the
-OAuth integration before building on it.
-
-### Q3 · Publish-gap with Phase 6 (AI)
-
-Etsy requires title / description / tags / `when_made` / materials.
-Our product model only has `name` and `priceCents`. The three options
-for 4c:
-
-- **(Recommended)** Defer 4c until after Phase 6 (AI) — build 4a + 4b
-  now; jump to Phase 6 next so we have real descriptions; then come
-  back to 4c.
-- Add manual entry fields now (description `<textarea>`, era picker,
-  tags input) — superseded by AI in Phase 6.
-- Hardcode placeholders for 4c — not actually shippable to the wife.
+- **Q1 · Etsy app status:** Not yet → first deliverable of 4a is
+  `docs/etsy-developer-app.md` walking through registration
+  (developer account, scopes `listings_w listings_r transactions_r
+  shops_r`, redirect URI).
+- **Q2 · Sub-phase:** **4a only** this round (OAuth + connection).
+  4b (shop config) and 4c (publish) are deferred.
+- **Q3 · Publish-gap:** When we get to 4c, **use placeholder values**
+  for required Etsy fields (title/description/tags/era/materials).
+  Phase 6 (AI) will replace them with a "upload photo → AI fills the
+  form → per-field regenerate" flow. User will give the field list +
+  order + regenerate UX details before Phase 6 starts.
 
 ## Prerequisite state already in the repo (don't re-add)
 
@@ -96,8 +132,10 @@ for 4c:
 
 Paste into a new Claude Code session in this repo:
 
-> Continue Phase 4. Read `docs/handoff.md` and re-ask the three scope
-> questions there before writing any code.
+> Continue Phase 4a. Code is shipped; only the real-shop smoke test
+> remains (gated on the user registering the Etsy developer app).
+> Once the user confirms the round-trip works, move on to Phase 4b
+> or jump to Phase 6 per their preference.
 
 That's all the next session needs. AGENTS.md auto-loads. This file
 is durable. The roadmap doc has the broader context if needed.

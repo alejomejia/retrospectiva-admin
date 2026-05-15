@@ -157,6 +157,64 @@ export const m = {
     confirmDelete: "¿Eliminar este video? No se puede deshacer.",
   },
 
+  settings: {
+    etsy: {
+      kicker: "Integraciones",
+      title: "Etsy",
+      description:
+        "Conecta tu cuenta de Etsy para poder publicar productos desde el panel.",
+      disconnectedTitle: "Sin conectar",
+      disconnectedBody:
+        "Aún no has conectado el panel con Etsy. Pulsa el botón para iniciar la autorización; te llevará a Etsy y volverás aquí cuando termines.",
+      connectButton: "Conectar con Etsy",
+      connectedTitle: "Conectado",
+      connectedAs: (shopName: string) => `Tienda: ${shopName}`,
+      shopIdLabel: (shopId: number) => `ID de tienda: ${shopId}`,
+      expiresLabel: "El acceso se renueva automáticamente",
+      reconnectButton: "Volver a conectar",
+      fetchShopErrorTitle: "No se pudo cargar la tienda",
+      fetchShopErrorBody:
+        "La conexión existe pero Etsy no respondió. Vuelve a intentarlo en un momento.",
+      errors: {
+        etsy_denied: "Etsy denegó la autorización. Vuelve a intentarlo.",
+        missing_params:
+          "Etsy no devolvió los datos esperados. Vuelve a intentarlo desde aquí.",
+        state_expired:
+          "La sesión de conexión expiró. Vuelve a intentarlo desde aquí.",
+        state_invalid:
+          "La sesión de conexión no es válida. Vuelve a intentarlo desde aquí.",
+        state_mismatch:
+          "El estado no coincide. Vuelve a intentarlo desde aquí.",
+        exchange_failed:
+          "No se pudo intercambiar el código con Etsy. Vuelve a intentarlo.",
+      },
+      defaults: {
+        title: "Valores por defecto",
+        description:
+          "Se aplican a cada producto que publiques. Puedes cambiarlos en cualquier momento.",
+        shippingProfileLabel: "Perfil de envío",
+        shippingProfilePlaceholder: "Elige un perfil",
+        shippingProfileEmpty:
+          "Aún no tienes perfiles de envío en Etsy. Créalos en Shop Manager → Settings → Shipping settings.",
+        returnPolicyLabel: "Política de devoluciones",
+        returnPolicyPlaceholder: "Elige una política",
+        returnPolicyEmpty:
+          "Aún no tienes políticas de devolución en Etsy. Créalas en Shop Manager → Settings → Policy settings.",
+        returnPolicyAccepts: (days: number) =>
+          `Acepta devoluciones en ${days} días`,
+        returnPolicyNoReturns: "Sin devoluciones",
+        save: "Guardar valores",
+        saving: "Guardando…",
+        saved: "Valores guardados",
+        unavailableTitle: "Valores por defecto no disponibles",
+        unavailableBody:
+          "Etsy no respondió a la petición. Si la app está pendiente de aprobación, vuelve aquí cuando esté activa.",
+        notConnectedError:
+          "No hay conexión con Etsy. Conéctate primero desde la tarjeta superior.",
+      },
+    },
+  },
+
   validation: {
     nameRequired: "El nombre es obligatorio",
     nameTooLong: "Mantenlo por debajo de 200 caracteres",

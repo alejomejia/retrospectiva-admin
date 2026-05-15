@@ -13,6 +13,7 @@ read whichever matches the question you've got.
 | How do I get Postgres running locally? | [database-setup.md](./database-setup.md) |
 | How do I deploy to the VPS? | [deployment.md](./deployment.md) |
 | What can we send to Etsy when we publish? | [etsy-listing-payload.md](./etsy-listing-payload.md) |
+| How do I register the Etsy developer app + get the env vars? | [etsy-developer-app.md](./etsy-developer-app.md) |
 | Why is the admin in Spanish but Etsy listings in English? | [localization.md](./localization.md) |
 | How do image and video uploads work? What are the limits? | [media-handling.md](./media-handling.md) |
 | What are the code conventions for this project? | [project-conventions.md](./project-conventions.md) |

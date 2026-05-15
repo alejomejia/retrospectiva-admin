@@ -190,6 +190,14 @@ export const etsyOauth = pgTable("etsy_oauth", {
   refreshToken: text("refresh_token").notNull(),
   scopes: text("scopes").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  // Shop-wide publish defaults — set in /settings/etsy. Per-product
+  // fields (taxonomy, section, era) live on the product, not here.
+  defaultShippingProfileId: bigint("default_shipping_profile_id", {
+    mode: "number",
+  }),
+  defaultReturnPolicyId: bigint("default_return_policy_id", {
+    mode: "number",
+  }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
