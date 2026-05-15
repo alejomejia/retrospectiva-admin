@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils/helpers";
 
 export const metadata: Metadata = {
   title: "Retrospectiva — Admin",
-  description: "Internal admin for Retrospectiva, the vintage clothing shop.",
+  description: "Panel interno de Retrospectiva - tienda de ropa vintage.",
 };
 
 export default function RootLayout({

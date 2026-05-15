@@ -1,14 +1,15 @@
 "use server";
 
-import { verifyPassword } from "@/lib/auth/password";
-import { checkRate, resetRate } from "@/lib/auth/rate-limit";
-import { setSessionCookie, signSession } from "@/lib/auth/session";
-import { findUser } from "@/lib/auth/users";
-import { devGroup } from "@/lib/utils/dev";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { verifyPassword } from "@/lib/auth/password";
+import { checkRate, resetRate } from "@/lib/auth/rate-limit";
+import { setSessionCookie, signSession } from "@/lib/auth/session";
+import { findUser } from "@/lib/auth/users";
+import { m } from "@/lib/i18n/messages.es";
+import { devGroup } from "@/lib/utils/dev";
 const dev = devGroup("auth");
 
 const Schema = z.object({
@@ -42,7 +43,7 @@ export async function signIn(
   });
   if (!parsed.success) {
     dev.warn("zod validation failed:", parsed.error.issues);
-    return { error: "Invalid form input" };
+    return { error: m.errors.invalidForm };
   }
   const { username, password, next } = parsed.data;
 
@@ -51,9 +52,7 @@ export async function signIn(
   const rate = checkRate(rateKey);
   if (!rate.allowed) {
     dev.warn(`rate-limited: ${rateKey} for ${rate.retryAfterSec}s`);
-    return {
-      error: `Too many attempts. Try again in ${rate.retryAfterSec}s`,
-    };
+    return { error: m.errors.tooManyAttempts(rate.retryAfterSec) };
   }
 
   let user;
@@ -61,25 +60,25 @@ export async function signIn(
     user = findUser(username);
   } catch (err) {
     // Almost always means ALLOW_USERS is malformed (e.g. you pasted a
-    // raw bcrypt hash whose `$VAR` runs got eaten by dotenv). Surface
-    // the actual message so admins see what to fix in the toast rather
-    // than a Next.js runtime error page.
+    // raw bcrypt hash whose `$VAR` runs got eaten by dotenv). The
+    // dev-facing detail (parser message) stays English; the user-facing
+    // prefix is Spanish so the wife at least understands the surface.
     dev.error("findUser threw — likely ALLOW_USERS misconfig:", err);
     const detail = err instanceof Error ? err.message : "unknown error";
-    return { error: `Authentication is misconfigured: ${detail}` };
+    return { error: m.errors.authMisconfigured(detail) };
   }
   if (!user) {
     // NOTE: dummy bcrypt compare keeps timing constant regardless of
     // whether the username exists. Hash is a throwaway, never matches.
     await verifyPassword(password, "$2b$12$abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPq");
     dev.warn(`user not found: ${username}`);
-    return { error: "Invalid credentials" };
+    return { error: m.errors.invalidCredentials };
   }
 
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
     dev.warn(`password mismatch for: ${username}`);
-    return { error: "Invalid credentials" };
+    return { error: m.errors.invalidCredentials };
   }
 
   resetRate(rateKey);

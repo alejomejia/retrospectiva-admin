@@ -1,5 +1,7 @@
 import { LogOut } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { m } from "@/lib/i18n/messages.es";
 
 /**
  * Top bar for the (admin) section. Shows the current username and a
@@ -12,12 +14,13 @@ export function Topbar({ username }: { username: string }) {
       <span className="text-caplet">
         {/* NOTE: username is non-secret (it's in the JWT sub claim).
             Showing it confirms the session is live. */}
-        Signed in as <span className="text-foreground">{username}</span>
+        {m.appShell.signedInAs}{" "}
+        <span className="text-foreground">{username}</span>
       </span>
       <form action="/api/auth/logout" method="post">
         <Button type="submit" variant="ghost" size="sm" className="gap-2">
           <LogOut className="size-4" />
-          Sign out
+          {m.common.signOut}
         </Button>
       </form>
     </header>

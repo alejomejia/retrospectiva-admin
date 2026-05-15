@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { m } from "@/lib/i18n/messages.es";
 import { MONEY_STRING_RE } from "@/lib/utils/money";
 
 /**
@@ -19,18 +20,18 @@ import { MONEY_STRING_RE } from "@/lib/utils/money";
 const moneyString = z
   .string()
   .trim()
-  .min(1, { message: "Price is required" })
-  .regex(MONEY_STRING_RE, {
-    message: "Use a number like 49 or 49.99",
-  })
-  .refine((s) => parseFloat(s) > 0, { message: "Must be greater than 0" });
+  .min(1, { message: m.validation.priceRequired })
+  .regex(MONEY_STRING_RE, { message: m.validation.priceFormat })
+  .refine((s) => parseFloat(s) > 0, {
+    message: m.validation.priceGreaterThanZero,
+  });
 
 export const ProductFormSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(1, { message: "Name is required" })
-    .max(200, { message: "Keep it under 200 characters" }),
+    .min(1, { message: m.validation.nameRequired })
+    .max(200, { message: m.validation.nameTooLong }),
   priceEur: moneyString,
 });
 

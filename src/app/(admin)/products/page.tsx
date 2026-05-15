@@ -1,6 +1,7 @@
 import { desc } from "drizzle-orm";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +22,7 @@ import {
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
 import { products, type Product } from "@/lib/db/schema";
+import { m } from "@/lib/i18n/messages.es";
 import { formatCents } from "@/lib/utils/money";
 
 const STATUS_VARIANT: Record<
@@ -50,19 +52,19 @@ export default async function ProductsPage() {
         <div className="space-y-3">
           <p className="text-caplet">
             <span className="text-brand-terracotta">02</span>{" "}
-            <span>Inventory</span>
+            <span>{m.products.kicker}</span>
           </p>
           <h1 className="font-sans text-4xl font-medium tracking-tight">
-            Products
+            {m.products.title}
           </h1>
           <p className="max-w-xl text-brand-olive-deep/80">
-            Drafts live here until you publish them to Etsy.
+            {m.products.description}
           </p>
         </div>
         <Button asChild>
           <Link href="/products/new">
             <Plus className="size-4" />
-            New product
+            {m.products.newProduct}
           </Link>
         </Button>
       </header>
@@ -74,10 +76,14 @@ export default async function ProductsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Price</TableHead>
-                <TableHead className="text-right">Created</TableHead>
+                <TableHead>{m.products.table.name}</TableHead>
+                <TableHead>{m.products.table.status}</TableHead>
+                <TableHead className="text-right">
+                  {m.products.table.price}
+                </TableHead>
+                <TableHead className="text-right">
+                  {m.products.table.createdAt}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -93,14 +99,14 @@ export default async function ProductsPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={STATUS_VARIANT[row.status]}>
-                      {row.status}
+                      {m.products.statuses[row.status]}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums">
                     {formatCents(row.priceCents, row.currency)}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    {row.createdAt.toLocaleDateString()}
+                    {row.createdAt.toLocaleDateString("es-ES")}
                   </TableCell>
                 </TableRow>
               ))}
@@ -116,16 +122,14 @@ function EmptyState() {
   return (
     <Card className="border-dashed">
       <CardHeader className="items-center text-center">
-        <CardTitle>No products yet</CardTitle>
-        <CardDescription>
-          Draft the first piece to start building inventory.
-        </CardDescription>
+        <CardTitle>{m.products.empty.title}</CardTitle>
+        <CardDescription>{m.products.empty.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center pb-8">
         <Button asChild>
           <Link href="/products/new">
             <Plus className="size-4" />
-            New product
+            {m.products.newProduct}
           </Link>
         </Button>
       </CardContent>

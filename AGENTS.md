@@ -50,7 +50,3 @@ proxy.ts         route protection (Next 16 file)
 - Exported functions in `src/lib/integrations/**` and `src/lib/utils/**` get JSDoc, matching the style of `src/lib/utils/helpers.ts`.
 - Security-relevant lines (auth, HMAC, cookies) get `// NOTE:` callouts.
 - Avoid inline comments inside components unless behavior would surprise the reader.
-
-# Install gotcha
-
-The user's global `~/.npmrc` sets `minimum-release-age=3600` for supply-chain safety. Some packages (e.g. `vite` transitives) hit a "missing time field" error. Workaround for this project: prepend installs with `PNPM_CONFIG_MINIMUM_RELEASE_AGE=0`. The project `.npmrc` also sets `resolution-mode=highest` to keep things resolving cleanly.

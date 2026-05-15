@@ -20,8 +20,13 @@ describe("session", () => {
   it("rejects a tampered token", async () => {
     const token = await signSession("alejandro");
     const parts = token.split(".");
-    // Flip the last character of the signature.
-    parts[2] = parts[2]!.replace(/.$/, (c) => (c === "A" ? "B" : "A"));
+    // Flip a character roughly in the middle of the signature.
+    // (Flipping the LAST char can be a no-op for the decoded signature
+    // bytes — base64url's last char carries 2 padding bits.)
+    const sig = parts[2]!;
+    const mid = Math.floor(sig.length / 2);
+    const flipped = sig[mid] === "A" ? "B" : "A";
+    parts[2] = sig.slice(0, mid) + flipped + sig.slice(mid + 1);
     const tampered = parts.join(".");
     expect(await verifySession(tampered)).toBeNull();
   });

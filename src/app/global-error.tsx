@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { m } from "@/lib/i18n/messages.es";
+
 /**
  * Root-level error boundary. Catches errors thrown inside `app/layout.tsx`
  * itself (font loading, etc.) — situations where the normal layout has
@@ -25,7 +27,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         style={{
           fontFamily: "system-ui, sans-serif",
@@ -41,14 +43,14 @@ export default function GlobalError({
       >
         <div style={{ maxWidth: "32rem", textAlign: "center" }}>
           <h1 style={{ fontSize: "2rem", fontWeight: 500, marginBottom: "0.75rem" }}>
-            Retrospectiva is down
+            {m.globalError.title}
           </h1>
           <p style={{ color: "#3f4530", marginBottom: "1.5rem" }}>
-            The admin couldn&apos;t start. Check the server logs.
+            {m.globalError.body}
           </p>
           {error.digest ? (
             <p style={{ fontFamily: "ui-monospace, monospace", fontSize: "0.75rem", color: "#7a7e5f" }}>
-              digest: {error.digest}
+              {m.globalError.digestPrefix} {error.digest}
             </p>
           ) : null}
           <button
@@ -64,7 +66,7 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Try again
+            {m.globalError.tryAgain}
           </button>
         </div>
       </body>

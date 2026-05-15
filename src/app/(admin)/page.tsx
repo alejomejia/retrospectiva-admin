@@ -1,5 +1,6 @@
 import { Package } from "lucide-react";
 import Link from "next/link";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth/require-session";
+import { m } from "@/lib/i18n/messages.es";
 
 /**
  * Dashboard landing page. Phase 2 keeps it intentionally minimal —
@@ -24,19 +26,14 @@ export default async function Dashboard() {
       <header className="space-y-3">
         <p className="text-caplet">
           <span className="text-brand-terracotta">01</span>{" "}
-          <span>Welcome back</span>
+          <span>{m.dashboard.kicker}</span>
         </p>
         <h1 className="font-sans text-5xl font-medium tracking-tight">
           Retrospectiva{" "}
           <span className="text-brand-terracotta">Admin</span>
         </h1>
         <p className="max-w-xl text-brand-olive-deep/80">
-          Signed in as{" "}
-          <span className="font-medium text-foreground">
-            {session.username}
-          </span>
-          . The dashboard lands in Phase 8 — for now, head to Products to
-          start drafting inventory.
+          {m.dashboard.intro(session.username)}
         </p>
       </header>
 
@@ -45,37 +42,32 @@ export default async function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="size-5" />
-              Products
+              {m.dashboard.productsCard.title}
             </CardTitle>
             <CardDescription>
-              Draft a new product, attach images, generate AI metadata,
-              and publish to Etsy.
+              {m.dashboard.productsCard.description}
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            All publishing flows live here. Once a product is published,
-            a webhook revalidates the public website automatically.
+            {m.dashboard.productsCard.body}
           </CardContent>
           <CardFooter>
             <Button asChild>
-              <Link href="/products">Open products</Link>
+              <Link href="/products">{m.dashboard.productsCard.cta}</Link>
             </Button>
           </CardFooter>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>What&apos;s next</CardTitle>
-            <CardDescription>Coming up in later phases.</CardDescription>
+            <CardTitle>{m.dashboard.nextCard.title}</CardTitle>
+            <CardDescription>{m.dashboard.nextCard.description}</CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             <ul className="list-inside list-disc space-y-1.5">
-              <li>R2 image uploads (Phase 3)</li>
-              <li>Etsy OAuth + publish (Phase 4)</li>
-              <li>BullMQ background jobs (Phase 5)</li>
-              <li>OpenAI description &amp; model placement (Phase 6)</li>
-              <li>Webhooks (Phase 7)</li>
-              <li>Dashboard KPIs &amp; charts (Phase 8)</li>
+              {m.dashboard.nextCard.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
           </CardContent>
         </Card>

@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { m } from "@/lib/i18n/messages.es";
 import { devError } from "@/lib/utils/dev";
 
 /**
@@ -46,25 +47,23 @@ export default function AdminError({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <AlertTriangle className="size-5 text-destructive" />
-          Something went wrong
+          {m.errorBoundary.title}
         </CardTitle>
         <CardDescription className="space-y-2">
           <span className="block">
-            {IS_DEV
-              ? error.message
-              : "The action couldn't complete. The error has been logged on the server."}
+            {IS_DEV ? error.message : m.errorBoundary.bodyProd}
           </span>
           {error.digest ? (
             <span className="block font-mono text-xs text-muted-foreground">
-              digest: {error.digest}
+              {m.errorBoundary.digestPrefix} {error.digest}
             </span>
           ) : null}
         </CardDescription>
       </CardHeader>
       <CardFooter className="gap-2">
-        <Button onClick={() => reset()}>Try again</Button>
+        <Button onClick={() => reset()}>{m.errorBoundary.tryAgain}</Button>
         <Button variant="ghost" onClick={() => router.push("/")}>
-          Back to dashboard
+          {m.errorBoundary.backToDashboard}
         </Button>
       </CardFooter>
     </Card>

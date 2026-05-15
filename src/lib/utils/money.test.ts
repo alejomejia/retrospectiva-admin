@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
   MONEY_STRING_RE,
   centsToPriceEur,

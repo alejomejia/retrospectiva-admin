@@ -3,6 +3,8 @@
 import { LayoutDashboard, Package, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { m } from "@/lib/i18n/messages.es";
 import { cn } from "@/lib/utils/helpers";
 
 /**
@@ -18,9 +20,9 @@ type NavItem = {
 };
 
 const items: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/products", label: "Products", icon: Package },
-  { href: "/settings/etsy", label: "Settings", icon: Settings },
+  { href: "/", label: m.nav.dashboard, icon: LayoutDashboard },
+  { href: "/products", label: m.nav.products, icon: Package },
+  { href: "/settings/etsy", label: m.nav.settings, icon: Settings },
 ];
 
 export function SidebarNav() {

@@ -7,7 +7,6 @@ import {
   integer,
   timestamp,
   jsonb,
-  boolean,
   bigint,
   index,
   uniqueIndex,
@@ -88,14 +87,51 @@ export const productImages = pgTable(
     order: integer("order").notNull().default(0),
     width: integer("width"),
     height: integer("height"),
-    // If true, the image is preserved when the product is sold (R2 cleanup
-    // skips this key). Useful for keeping a "lookbook" photo around.
-    keepOnSale: boolean("keep_on_sale").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
   },
   (t) => [index("product_images_product_idx").on(t.productId, t.order)],
+);
+
+/**
+ * Video assets. Kept separate from `product_images` because the shape
+ * differs enough (duration, poster reference, codec/mime) that mixing
+ * them in one table would force NULL-heavy columns. Etsy's API also
+ * splits the two (`getListingImages` vs `getListingVideos`), so we'd
+ * end up branching at the publish boundary anyway.
+ */
+export const productVideos = pgTable(
+  "product_videos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    /** The video object key. */
+    r2Key: text("r2_key").notNull(),
+    /**
+     * Browser-extracted poster image (WebP). Stored under the same
+     * product prefix so a hard-delete by prefix sweeps both together.
+     * Null if the browser couldn't decode the video frame.
+     */
+    posterR2Key: text("poster_r2_key"),
+    /** e.g. `video/mp4`, `video/quicktime`. Useful for the <video> element. */
+    mimeType: text("mime_type").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    /** Null if we couldn't read it during the client-side capture. */
+    durationMs: integer("duration_ms"),
+    width: integer("width"),
+    height: integer("height"),
+    order: integer("order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (t) => [index("product_videos_product_idx").on(t.productId, t.order)],
 );
 
 export const aiRuns = pgTable(
@@ -178,5 +214,6 @@ export const jobsIdempotency = pgTable("jobs_idempotency", {
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type ProductImage = typeof productImages.$inferSelect;
+export type ProductVideo = typeof productVideos.$inferSelect;
 export type AiRun = typeof aiRuns.$inferSelect;
 export type EventRow = typeof events.$inferSelect;

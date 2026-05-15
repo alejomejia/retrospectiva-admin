@@ -6,6 +6,10 @@
  * decimals); the parser and formatter both honor it. Any form, action,
  * or page that touches money should import from here — never inline
  * `cents / 100` or hand-roll `parseFloat` arithmetic.
+ *
+ * Decimal separator: dot (`.`). The admin types `49.99`, never `49,99`
+ * — matches Etsy's API + keeps form/storage/integration in one
+ * consistent format even though the rest of the admin UI is Spanish.
  */
 
 /**

@@ -1,9 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,40 +14,52 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createProduct } from "@/lib/products/actions";
+import type { Product } from "@/lib/db/schema";
+import { m } from "@/lib/i18n/messages.es";
+import { updateProduct } from "@/lib/products/actions";
 import {
   ProductFormSchema,
   type ProductFormValues,
 } from "@/lib/products/schema";
+import { centsToPriceEur } from "@/lib/utils/money";
 
 /**
- * MVP product form — name + price only. Field set will grow (era,
- * condition, size, fabric, …) but the validation + persistence shape
- * is already wired so adding a field is a one-line zod change plus a
- * matching <FormField> below.
+ * The form that powers both creating and editing products. Used by the
+ * details card's edit toggle. When the parent passes `startInEditMode`
+ * (from the `/products/new` auto-draft flow), this is what the user
+ * sees first thing — prefilled with the placeholder name + 0 EUR ready
+ * to be replaced.
  */
-export function ProductForm() {
-  const router = useRouter();
+export function ProductEditForm({
+  product,
+  onDone,
+}: {
+  product: Product;
+  onDone: () => void;
+}) {
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(ProductFormSchema),
-    defaultValues: { name: "", priceEur: "" },
+    defaultValues: {
+      name: product.name,
+      priceEur: centsToPriceEur(product.priceCents),
+    },
   });
 
   async function onSubmit(values: ProductFormValues) {
-    const result = await createProduct(values);
+    const result = await updateProduct(product.id, values);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
-    toast.success("Product saved as draft");
-    router.push(`/products/${result.id}`);
+    toast.success(m.toasts.productUpdated);
+    onDone();
   }
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-md space-y-6"
+        className="space-y-6"
         noValidate
       >
         <FormField
@@ -55,12 +67,12 @@ export function ProductForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-caplet">Name</FormLabel>
+              <FormLabel className="text-caplet">{m.products.form.name}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   autoFocus
-                  placeholder="1970s Italian wool coat"
+                  placeholder={m.products.form.namePlaceholder}
                 />
               </FormControl>
               <FormMessage />
@@ -73,14 +85,14 @@ export function ProductForm() {
           name="priceEur"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-caplet">Price (EUR)</FormLabel>
+              <FormLabel className="text-caplet">{m.products.form.priceEur}</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   type="text"
                   inputMode="decimal"
-                  placeholder="49.99"
                   autoComplete="off"
+                  placeholder={m.products.form.pricePlaceholder}
                 />
               </FormControl>
               <FormMessage />
@@ -88,17 +100,19 @@ export function ProductForm() {
           )}
         />
 
-        {/* TODO(richer-fields): era, condition, size, materials, story,
-            measurements, source. Add as zod fields in schema.ts and as
-            <FormField> blocks here when ready. */}
-
-        <Button
-          type="submit"
-          disabled={form.formState.isSubmitting}
-          className="w-full sm:w-auto"
-        >
-          {form.formState.isSubmitting ? "Saving…" : "Save draft"}
-        </Button>
+        <div className="flex gap-3">
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? m.common.saving : m.common.saveChanges}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onDone}
+            disabled={form.formState.isSubmitting}
+          >
+            {m.common.cancel}
+          </Button>
+        </div>
       </form>
     </Form>
   );

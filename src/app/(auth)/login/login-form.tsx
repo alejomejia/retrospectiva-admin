@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { m } from "@/lib/i18n/messages.es";
 import { signIn, type SignInState } from "./actions";
 
 const initialState: SignInState = {};
@@ -36,15 +37,15 @@ export function LoginForm() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>Retrospectiva admin</CardDescription>
+        <CardTitle>{m.login.title}</CardTitle>
+        <CardDescription>{m.login.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={action} className="space-y-5" noValidate>
           <input type="hidden" name="next" value={next} />
           <div className="space-y-2">
             <Label htmlFor="username" className="text-caplet">
-              Username
+              {m.login.username}
             </Label>
             <Input
               id="username"
@@ -56,7 +57,7 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="text-caplet">
-              Password
+              {m.login.password}
             </Label>
             <Input
               id="password"
@@ -67,7 +68,7 @@ export function LoginForm() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Signing in…" : "Sign in"}
+            {pending ? m.common.signingIn : m.login.signInButton}
           </Button>
         </form>
       </CardContent>
