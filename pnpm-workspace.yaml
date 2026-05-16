@@ -1,10 +1,11 @@
 allowBuilds:
-  esbuild: set this to true or false
-  msgpackr-extract: set this to true or false
-  msw: set this to true or false
+  esbuild: true
+  msgpackr-extract: true
+  msw: true
   sharp: false
   unrs-resolver: false
 saveExact: true
+minimumReleaseAge: 3600
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
