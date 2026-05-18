@@ -6,12 +6,15 @@ vi.mock("@/lib/auth/require-session", () => ({
   requireSession: vi.fn().mockResolvedValue({ username: "test" }),
 }));
 
+type Captured = {
+  defaultShippingProfileId: number | null;
+  defaultReturnPolicyId: number | null;
+  markupPercent: number;
+};
+
 const dbState: {
   rows: Array<{ id: string }>;
-  updateCalls: Array<{
-    defaultShippingProfileId: number | null;
-    defaultReturnPolicyId: number | null;
-  }>;
+  updateCalls: Captured[];
 } = { rows: [{ id: "row-1" }], updateCalls: [] };
 
 vi.mock("@/lib/db/client", () => {
@@ -21,14 +24,12 @@ vi.mock("@/lib/db/client", () => {
     }),
   });
   const update = () => ({
-    set: (values: {
-      defaultShippingProfileId: number | null;
-      defaultReturnPolicyId: number | null;
-    }) => ({
+    set: (values: Captured) => ({
       where: async () => {
         dbState.updateCalls.push({
           defaultShippingProfileId: values.defaultShippingProfileId,
           defaultReturnPolicyId: values.defaultReturnPolicyId,
+          markupPercent: values.markupPercent,
         });
       },
     }),
@@ -46,23 +47,55 @@ describe("saveEtsyDefaults", () => {
     const res = await saveEtsyDefaults({
       shippingProfileId: "5001",
       returnPolicyId: "7001",
+      markupPercent: "30",
     });
     expect(res).toEqual({ ok: true });
     expect(dbState.updateCalls).toEqual([
-      { defaultShippingProfileId: 5001, defaultReturnPolicyId: 7001 },
+      {
+        defaultShippingProfileId: 5001,
+        defaultReturnPolicyId: 7001,
+        markupPercent: 30,
+      },
     ]);
   });
 
-  it("treats empty strings as null", async () => {
+  it("treats empty Etsy IDs as null and empty markup as the default", async () => {
     dbState.updateCalls.length = 0;
     const res = await saveEtsyDefaults({
       shippingProfileId: "",
       returnPolicyId: "",
+      markupPercent: "",
     });
     expect(res).toEqual({ ok: true });
     expect(dbState.updateCalls).toEqual([
-      { defaultShippingProfileId: null, defaultReturnPolicyId: null },
+      {
+        defaultShippingProfileId: null,
+        defaultReturnPolicyId: null,
+        markupPercent: 30,
+      },
     ]);
+  });
+
+  it("accepts a custom markup percent and persists it as a number", async () => {
+    dbState.updateCalls.length = 0;
+    const res = await saveEtsyDefaults({
+      shippingProfileId: "",
+      returnPolicyId: "",
+      markupPercent: "45",
+    });
+    expect(res).toEqual({ ok: true });
+    expect(dbState.updateCalls[0]?.markupPercent).toBe(45);
+  });
+
+  it("rejects markup outside [0, 500]", async () => {
+    dbState.updateCalls.length = 0;
+    const res = await saveEtsyDefaults({
+      shippingProfileId: "",
+      returnPolicyId: "",
+      markupPercent: "501",
+    });
+    expect(res.ok).toBe(false);
+    expect(dbState.updateCalls).toHaveLength(0);
   });
 
   it("rejects non-numeric input", async () => {
@@ -70,6 +103,7 @@ describe("saveEtsyDefaults", () => {
     const res = await saveEtsyDefaults({
       shippingProfileId: "not-a-number",
       returnPolicyId: "7001",
+      markupPercent: "30",
     });
     expect(res.ok).toBe(false);
     expect(dbState.updateCalls).toHaveLength(0);
@@ -81,6 +115,7 @@ describe("saveEtsyDefaults", () => {
     const res = await saveEtsyDefaults({
       shippingProfileId: "5001",
       returnPolicyId: "7001",
+      markupPercent: "30",
     });
     expect(res.ok).toBe(false);
     expect(dbState.updateCalls).toHaveLength(0);

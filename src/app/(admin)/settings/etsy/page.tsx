@@ -123,6 +123,7 @@ export default async function EtsySettingsPage({
             data={defaults!}
             currentShippingProfileId={connection.defaultShippingProfileId}
             currentReturnPolicyId={connection.defaultReturnPolicyId}
+            currentMarkupPercent={connection.markupPercent}
           />
         </>
       ) : (
@@ -194,10 +195,12 @@ function DefaultsCard({
   data,
   currentShippingProfileId,
   currentReturnPolicyId,
+  currentMarkupPercent,
 }: {
   data: DefaultsData;
   currentShippingProfileId: number | null;
   currentReturnPolicyId: number | null;
+  currentMarkupPercent: number;
 }) {
   return (
     <Card>
@@ -207,9 +210,9 @@ function DefaultsCard({
           {m.settings.etsy.defaults.description}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        {data.failed ? (
-          <div className="space-y-1">
+      <CardContent className="space-y-4">
+        {data.failed && (
+          <div className="rounded-md border border-border bg-muted/40 p-3">
             <p className="text-sm font-medium">
               {m.settings.etsy.defaults.unavailableTitle}
             </p>
@@ -217,14 +220,15 @@ function DefaultsCard({
               {m.settings.etsy.defaults.unavailableBody}
             </p>
           </div>
-        ) : (
-          <EtsyDefaultsForm
-            shippingProfiles={data.shippingProfiles}
-            returnPolicies={data.returnPolicies}
-            currentShippingProfileId={currentShippingProfileId}
-            currentReturnPolicyId={currentReturnPolicyId}
-          />
         )}
+        <EtsyDefaultsForm
+          shippingProfiles={data.shippingProfiles}
+          returnPolicies={data.returnPolicies}
+          currentShippingProfileId={currentShippingProfileId}
+          currentReturnPolicyId={currentReturnPolicyId}
+          currentMarkupPercent={currentMarkupPercent}
+          etsyDataUnavailable={data.failed}
+        />
       </CardContent>
     </Card>
   );

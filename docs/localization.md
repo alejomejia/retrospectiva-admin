@@ -48,7 +48,7 @@ Three categories are explicitly NOT translated:
 When a Spanish error toast *contains* a dev-facing detail (e.g.
 "Authentication is misconfigured: ALLOW_USERS hash did not decode…"),
 the prefix is Spanish (from `m.errors.*`) and the wrapped detail
-stays English. The user (Alejandro, bilingual) reads both; the wife
+stays English. The user (Alejandro, bilingual) reads both; the main user
 (Spanish-only) at least understands the "something is wrong with
 auth" prefix and can flag it.
 

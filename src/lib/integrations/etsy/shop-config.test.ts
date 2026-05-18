@@ -27,6 +27,7 @@ function staticStore(): TokenStore {
     expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     defaultShippingProfileId: null,
     defaultReturnPolicyId: null,
+    markupPercent: 30,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

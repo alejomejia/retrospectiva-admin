@@ -112,6 +112,19 @@ and for any user-facing copy in the admin:
 - Icons: `lucide-react` (shadcn's default).
 - Toasts: shadcn `sonner` (Toaster mounted in `app/layout.tsx`).
 
+### Sanctioned custom components
+
+These are the components in `src/components/` that aren't shadcn
+primitives. Each entry explains why a hand-rolled component is
+warranted (shadcn has no equivalent).
+
+- **`src/components/forms/stepper.tsx`** — multi-step form indicator
+  (numbered circles, completed checkmarks, divider rules). shadcn has
+  no stepper primitive. Used by the new-product flow in
+  `src/components/forms/new-product/`. Kept intentionally minimal:
+  the indicator strip + a slot for the active step's content. Step
+  state is owned by the caller (URL `?step=…`).
+
 ## 7. Open items
 
 - A short "do" / "don't" example for every voice rule, with screenshots —

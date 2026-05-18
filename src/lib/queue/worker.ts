@@ -36,12 +36,14 @@ const log = (...args: unknown[]) => console.log("[worker]", ...args);
 async function main() {
   log("starting…");
 
-  // Side-effect imports for each phase's workers go here, e.g.:
-  //   await import("@/lib/integrations/etsy/publish-worker");   // Phase 4c
-  //   await import("@/lib/integrations/openai/enrich-worker");  // Phase 6
+  // Side-effect imports for each phase's workers go here.
+  await import("@/lib/integrations/openai/enrich-worker"); // Task 6 (AI enrich)
+  await import("@/lib/integrations/etsy/publish-worker"); // Task 9 stub (Phase 4c replaces)
+  // Coming next:
+  //   await import("@/lib/integrations/openai/image-placement-worker"); // Task 11
   //   await import("@/lib/integrations/website/revalidate-worker"); // Phase 7
 
-  log("ready (no workers registered yet — see comment above)");
+  log("ready");
 
   // Without any Worker instances, nothing else keeps the event loop
   // alive. Once Phase 4c+ adds real workers, their Redis

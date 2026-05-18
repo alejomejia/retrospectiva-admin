@@ -16,6 +16,9 @@ read whichever matches the question you've got.
 | How do I register the Etsy developer app + get the env vars? | [etsy-developer-app.md](./etsy-developer-app.md) |
 | Why is the admin in Spanish but Etsy listings in English? | [localization.md](./localization.md) |
 | How do image and video uploads work? What are the limits? | [media-handling.md](./media-handling.md) |
+| How does the products list / new-product stepper / edit form work? | [product-form.md](./product-form.md) |
+| How does AI enrichment work (prompts, queues, gpt-image-2)? | [ai-enrichment.md](./ai-enrichment.md) |
+| How are the AI model-generation prompts structured (phases 1-4)? | [model-generation/](./model-generation/README.md) |
 | What are the code conventions for this project? | [project-conventions.md](./project-conventions.md) |
 | What's been built, what's next, what was decided? | [roadmap.md](./roadmap.md) |
 | How are tests structured? Why does `session.test.ts` need `node`? | [testing.md](./testing.md) |

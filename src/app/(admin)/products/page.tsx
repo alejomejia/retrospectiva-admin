@@ -1,8 +1,7 @@
-import { desc } from "drizzle-orm";
+import { count, desc, sql } from "drizzle-orm";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,40 +10,117 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { FilterBar } from "@/components/products/list/filter-bar";
+import { ProductListShell } from "@/components/products/list/list-shell";
+import { Pagination } from "@/components/products/list/pagination";
+import { StatusTabs } from "@/components/products/list/status-tabs";
+import type { ProductListItem } from "@/components/products/list/types";
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
-import { products, type Product } from "@/lib/db/schema";
+import { etsyOauth, productImages, products } from "@/lib/db/schema";
+import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
+import { publicUrlFor } from "@/lib/integrations/r2/keys";
 import { m } from "@/lib/i18n/messages.es";
-import { formatCents } from "@/lib/utils/money";
+import {
+  buildProductsWhere,
+  parseProductListParams,
+} from "@/lib/products/filters";
+import { DEFAULT_MARKUP_PERCENT, effectiveListCents } from "@/lib/products/pricing";
 
-const STATUS_VARIANT: Record<
-  Product["status"],
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  draft: "outline",
-  published: "default",
-  sold: "secondary",
-  archived: "outline",
-};
-
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireSession();
+  const sp = await searchParams;
+  const params = parseProductListParams(sp);
+  const where = buildProductsWhere(params);
 
-  // Phase 2 MVP: pull the latest 100. Real pagination + filtering arrives
-  // alongside the activity feed in Phase 8.
-  const rows = await db
-    .select()
-    .from(products)
-    .orderBy(desc(products.createdAt))
-    .limit(100);
+  // Shop-wide markup. There's only one row in `etsy_oauth` (or none,
+  // pre-connection), so `limit(1)` is enough.
+  const [oauthRow] = await db
+    .select({ markupPercent: etsyOauth.markupPercent })
+    .from(etsyOauth)
+    .limit(1);
+  const shopMarkupPercent = oauthRow?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
+
+  const offset = (params.page - 1) * params.pageSize;
+
+  const [productRows, totalResult] = await Promise.all([
+    db
+      .select({
+        id: products.id,
+        titleEs: products.titleEs,
+        status: products.status,
+        basePriceCents: products.basePriceCents,
+        currency: products.currency,
+        markupPercentOverride: products.markupPercentOverride,
+        listPriceCentsOverride: products.listPriceCentsOverride,
+        createdAt: products.createdAt,
+      })
+      .from(products)
+      .where(where)
+      .orderBy(desc(products.createdAt))
+      .limit(params.pageSize)
+      .offset(offset),
+    db
+      .select({ value: count() })
+      .from(products)
+      .where(where),
+  ]);
+
+  const totalCount = totalResult[0]?.value ?? 0;
+
+  // First image (lowest `order`) per product, in one query. We use
+  // DISTINCT ON to pick the smallest-order row per product_id.
+  const productIds = productRows.map((r) => r.id);
+  const thumbnails =
+    productIds.length === 0
+      ? []
+      : await db.execute<{ product_id: string; r2_key: string }>(
+          sql`SELECT DISTINCT ON (${productImages.productId})
+              ${productImages.productId} AS product_id,
+              ${productImages.r2Key} AS r2_key
+            FROM ${productImages}
+            WHERE ${productImages.productId} IN ${productIds}
+              AND ${productImages.role} = 'original'
+            ORDER BY ${productImages.productId}, ${productImages.order} ASC`,
+        );
+  const thumbByProductId = new Map<string, string>();
+  for (const t of thumbnails) {
+    thumbByProductId.set(t.product_id, publicUrlFor(t.r2_key, R2_PUBLIC_BASE_URL));
+  }
+
+  const rows: ProductListItem[] = productRows.map((r) => ({
+    id: r.id,
+    titleEs: r.titleEs,
+    status: r.status,
+    basePriceCents: r.basePriceCents,
+    currency: r.currency,
+    createdAt: r.createdAt,
+    thumbnailUrl: thumbByProductId.get(r.id) ?? null,
+    effectiveListPriceCents: effectiveListCents({
+      basePriceCents: r.basePriceCents,
+      markupPercentOverride: r.markupPercentOverride,
+      listPriceCentsOverride: r.listPriceCentsOverride,
+      shopMarkupPercent,
+    }),
+  }));
+
+  const searchParamsObj = new URLSearchParams(
+    Object.entries(sp).flatMap(([k, v]) =>
+      typeof v === "string" ? [[k, v] as [string, string]] : [],
+    ),
+  );
+
+  const showingFrom = totalCount === 0 ? 0 : offset + 1;
+  const showingTo = Math.min(offset + rows.length, totalCount);
+  const totalLabel = m.products.pagination.showing(
+    showingFrom,
+    showingTo,
+    totalCount,
+  );
 
   return (
     <div className="space-y-8">
@@ -69,50 +145,22 @@ export default async function ProductsPage() {
         </Button>
       </header>
 
-      {rows.length === 0 ? (
+      <div className="space-y-4">
+        <StatusTabs current={params.tab} searchParams={searchParamsObj} />
+        <FilterBar />
+      </div>
+
+      {totalCount === 0 ? (
         <EmptyState />
       ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{m.products.table.name}</TableHead>
-                <TableHead>{m.products.table.status}</TableHead>
-                <TableHead className="text-right">
-                  {m.products.table.price}
-                </TableHead>
-                <TableHead className="text-right">
-                  {m.products.table.createdAt}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell>
-                    <Link
-                      href={`/products/${row.id}`}
-                      className="font-medium hover:text-brand-terracotta"
-                    >
-                      {row.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={STATUS_VARIANT[row.status]}>
-                      {m.products.statuses[row.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono tabular-nums">
-                    {formatCents(row.priceCents, row.currency)}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {row.createdAt.toLocaleDateString("es-ES")}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+        <>
+          <ProductListShell rows={rows} totalLabel={totalLabel} />
+          <Pagination
+            page={params.page}
+            pageSize={params.pageSize}
+            totalCount={totalCount}
+          />
+        </>
       )}
     </div>
   );
@@ -136,3 +184,4 @@ function EmptyState() {
     </Card>
   );
 }
+

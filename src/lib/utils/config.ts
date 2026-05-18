@@ -40,6 +40,7 @@ const Schema = z.object({
   // ----- openai -----
   OPENAI_API_KEY: z.string().min(1),
   OPENAI_TEXT_MODEL: z.string().default("gpt-5"),
+  OPENAI_TRANSLATE_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_IMAGE_MODEL: z.string().default("gpt-image-2"),
   BRAND_VOICE_PROMPT: z.string().optional(),
 
@@ -92,6 +93,7 @@ export const config = {
   // OPENAI
   openaiApiKey: env.OPENAI_API_KEY,
   openaiTextModel: env.OPENAI_TEXT_MODEL,
+  openaiTranslateModel: env.OPENAI_TRANSLATE_MODEL,
   openaiImageModel: env.OPENAI_IMAGE_MODEL,
   brandVoicePrompt: env.BRAND_VOICE_PROMPT,
   // ETSY

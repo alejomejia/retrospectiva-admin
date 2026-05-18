@@ -75,7 +75,7 @@ interpolation gotcha that drove the base64-wrap choice.
 
 ## Localization
 
-The admin is **Spanish-only** for the wife (primary user). All user-
+The admin is **Spanish-only** for the primary user. All user-
 facing strings live in `src/lib/i18n/messages.es.ts`. See
 [localization.md](./localization.md) for the full direction including
 Etsy listing locales and AI translation flow.

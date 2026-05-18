@@ -5,6 +5,7 @@ import {
   text,
   uuid,
   integer,
+  smallint,
   timestamp,
   jsonb,
   bigint,
@@ -13,20 +14,51 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Retrospectiva admin schema — initial migration target.
+ * Retrospectiva admin schema.
  *
- * Tables are kept extensible: the product form ships with name + price only
- * (per the MVP scope), but every adjacent table the rest of the system needs
- * (images, AI runs, events for the activity feed, Etsy tokens, idempotency
- * keys for webhooks/jobs) is wired up from day one so later phases just add
- * server logic on top, no schema thrash.
+ * A fresh draft is a valid row with most fields null. The new-product
+ * stepper progressively fills them; publishing enforces the required
+ * Etsy fields at action time, not at the DB level.
+ *
+ * Bilingual columns (`*_es` / `*_en`) follow the locked decision:
+ * Spanish is canonical and editable; English is auto-derived via the
+ * translation queue.
  */
 
 export const productStatus = pgEnum("product_status", [
   "draft",
+  "scheduled",
   "published",
   "sold",
   "archived",
+]);
+
+export const productCondition = pgEnum("product_condition", [
+  "perfect",
+  "very_good",
+  "good",
+]);
+
+export const clothingType = pgEnum("clothing_type", [
+  // Upper body.
+  "shirt",
+  "vest",
+  "top",
+  "sweater",
+  "jacket",
+  "trench_coat",
+  // Special upper body.
+  "corset",
+  // Lower body.
+  "jean",
+  "pant",
+  "skirt",
+  "short",
+  // Complete garments.
+  "set",
+  "overall",
+  "dress",
+  "bodysuit",
 ]);
 
 export const imageRole = pgEnum("image_role", [
@@ -39,6 +71,13 @@ export const aiRunKind = pgEnum("ai_run_kind", [
   "description",
   "era",
   "model_placement",
+  "title",
+  "tags",
+  "materials",
+  "taxonomy",
+  "when_made",
+  "translation",
+  "enrich",
 ]);
 
 export const aiRunStatus = pgEnum("ai_run_status", [
@@ -52,11 +91,65 @@ export const products = pgTable(
   "products",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull(),
-    // Money is stored in the smallest unit (cents) to avoid float drift.
-    priceCents: integer("price_cents").notNull(),
+
+    // Identity. Spanish title is canonical; English derived by the
+    // translation queue. Both nullable until step 2 of the stepper
+    // (or manual entry) fills them in.
+    titleEs: text("title_es"),
+    titleEn: text("title_en"),
+    descriptionEs: text("description_es"),
+    descriptionEn: text("description_en"),
+
+    // Pricing. Money is in cents to avoid float drift. Base = the
+    // earn target; effective list price = base * (1 + markup/100)
+    // unless `list_price_cents_override` is set.
+    basePriceCents: integer("base_price_cents"),
     currency: text("currency").notNull().default("EUR"),
+    markupPercentOverride: smallint("markup_percent_override"),
+    listPriceCentsOverride: integer("list_price_cents_override"),
+
+    // User-provided attributes (set in step 1 of the stepper).
+    clothingType: clothingType("clothing_type"),
+    condition: productCondition("condition"),
+    sizes: text("sizes").array().notNull().default(sql`'{}'::text[]`),
+
+    // Measurements in cm, stored flat (as measured across the
+    // garment). Doubled (×2) at the Etsy / website-payload boundary
+    // for chest / waist / hip / leg — see clothing-types.ts.
+    shoulderCm: integer("shoulder_cm"),
+    chestCm: integer("chest_cm"),
+    waistCm: integer("waist_cm"),
+    hipCm: integer("hip_cm"),
+    riseCm: integer("rise_cm"),
+    legCm: integer("leg_cm"),
+    lengthCm: integer("length_cm"),
+    braSize: text("bra_size"),
+
+    // Etsy-bound metadata. AI-generated, user-editable in step 2.
+    etsyTagsEs: text("etsy_tags_es")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    etsyTagsEn: text("etsy_tags_en")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    etsyMaterialsEs: text("etsy_materials_es")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    etsyMaterialsEn: text("etsy_materials_en")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    etsyWhenMade: text("etsy_when_made"),
+    etsyTaxonomyId: bigint("etsy_taxonomy_id", { mode: "number" }),
+
+    // Lifecycle.
     status: productStatus("status").notNull().default("draft"),
+    scheduledPublishAt: timestamp("scheduled_publish_at", {
+      withTimezone: true,
+    }),
     // Populated once a published product is created on Etsy.
     etsyListingId: bigint("etsy_listing_id", { mode: "number" }),
     etsyState: text("etsy_state"),
@@ -71,6 +164,7 @@ export const products = pgTable(
   (t) => [
     index("products_status_idx").on(t.status),
     index("products_created_at_idx").on(t.createdAt),
+    index("products_scheduled_publish_at_idx").on(t.scheduledPublishAt),
     uniqueIndex("products_etsy_listing_id_idx").on(t.etsyListingId),
   ],
 );
@@ -198,6 +292,10 @@ export const etsyOauth = pgTable("etsy_oauth", {
   defaultReturnPolicyId: bigint("default_return_policy_id", {
     mode: "number",
   }),
+  // Etsy-fee + commission markup applied to `products.base_price_cents`
+  // when computing the listing price. Editable per-product via
+  // `products.markup_percent_override`.
+  markupPercent: smallint("markup_percent").notNull().default(30),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),
@@ -225,3 +323,6 @@ export type ProductImage = typeof productImages.$inferSelect;
 export type ProductVideo = typeof productVideos.$inferSelect;
 export type AiRun = typeof aiRuns.$inferSelect;
 export type EventRow = typeof events.$inferSelect;
+export type ProductStatus = (typeof productStatus.enumValues)[number];
+export type ProductCondition = (typeof productCondition.enumValues)[number];
+export type ClothingType = (typeof clothingType.enumValues)[number];

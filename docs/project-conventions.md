@@ -36,6 +36,8 @@ explaining why):
 | `src/lib/db/client.ts` | `DATABASE_URL`, `DATABASE_POOL_MAX`, `NODE_ENV` | The BullMQ worker (`queue/worker.ts`) runs under raw `tsx` where `config`'s `server-only` chain throws. Reading env directly here lets the same `db` singleton work in both Next.js and worker contexts. |
 | `src/lib/queue/redis.ts` | `REDIS_URL`, `NODE_ENV` | Same reason as `db/client.ts` — used from the worker. |
 | `src/lib/queue/env-bootstrap.ts` | (calls `loadEnvConfig`) | Loads `.env.local` into `process.env` for the worker; mirrors the trick used in `drizzle.config.ts`. |
+| `src/lib/integrations/openai/client.ts` | `OPENAI_API_KEY`, `OPENAI_*_MODEL`, `NODE_ENV` | Same reason — used from the worker via the enrich processor. |
+| `src/lib/integrations/openai/prompts.ts` | `BRAND_VOICE_PROMPT`, `*_PROMPT`, `LOCATION_POOL` | Used from the worker; prompts are env-overridable so they need direct `process.env` access. |
 
 Anything outside this list reading `process.env` is a bug.
 
@@ -47,7 +49,9 @@ grep -rn "process\.env" src/ scripts/ --include='*.ts' --include='*.tsx' \
   | grep -v "src/lib/utils/dev.ts" \
   | grep -v "src/lib/db/client.ts" \
   | grep -v "src/lib/queue/redis.ts" \
-  | grep -v "src/lib/queue/env-bootstrap.ts"
+  | grep -v "src/lib/queue/env-bootstrap.ts" \
+  | grep -v "src/lib/integrations/openai/client.ts" \
+  | grep -v "src/lib/integrations/openai/prompts.ts"
 # should return zero lines
 ```
 

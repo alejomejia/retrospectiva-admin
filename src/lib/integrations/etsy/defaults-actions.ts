@@ -32,14 +32,35 @@ const EtsyIdOrNull = z
     ]),
   );
 
+/**
+ * Markup percent for the Etsy list-price calculation. Comes from the
+ * form as a string; coerced + clamped to a small int.
+ */
+const MarkupPercent = z
+  .string()
+  .trim()
+  .transform((s) => (s === "" ? null : s))
+  .pipe(
+    z.union([
+      z.null(),
+      z
+        .string()
+        .regex(/^\d+$/, "must be numeric")
+        .transform((s) => Number(s))
+        .refine((n) => n >= 0 && n <= 500, "must be between 0 and 500"),
+    ]),
+  );
+
 const SaveSchema = z.object({
   shippingProfileId: EtsyIdOrNull,
   returnPolicyId: EtsyIdOrNull,
+  markupPercent: MarkupPercent,
 });
 
 export type SaveEtsyDefaultsInput = {
   shippingProfileId: string;
   returnPolicyId: string;
+  markupPercent: string;
 };
 
 export type SaveEtsyDefaultsResult =
@@ -66,7 +87,7 @@ export async function saveEtsyDefaults(
     dev.warn("invalid input:", parsed.error.issues);
     return { ok: false, error: m.errors.invalidForm };
   }
-  const { shippingProfileId, returnPolicyId } = parsed.data;
+  const { shippingProfileId, returnPolicyId, markupPercent } = parsed.data;
 
   const [row] = await db.select().from(etsyOauth).limit(1);
   if (!row) {
@@ -78,11 +99,21 @@ export async function saveEtsyDefaults(
     .set({
       defaultShippingProfileId: shippingProfileId,
       defaultReturnPolicyId: returnPolicyId,
+      // Empty string → null → fall back to schema default (30). The
+      // NOT NULL column means we coerce to 30 on the way out.
+      markupPercent: markupPercent ?? 30,
       updatedAt: new Date(),
     })
     .where(eq(etsyOauth.id, row.id));
 
-  dev.log("saved defaults", { shippingProfileId, returnPolicyId });
+  dev.log("saved defaults", {
+    shippingProfileId,
+    returnPolicyId,
+    markupPercent,
+  });
+  // Revalidate both the settings page and the products list (the list
+  // recomputes Etsy prices from the shop markup).
   revalidatePath("/settings/etsy");
+  revalidatePath("/products");
   return { ok: true };
 }

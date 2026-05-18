@@ -8,7 +8,72 @@ historical record. **This file is the bookmark.**
 
 ---
 
-## Current state
+## Current state (2026-05-17)
+
+**Product-form rebuild + AI enrichment kicking off.** Plan locked
+with the user; implementation just started. See
+[product-form.md](./product-form.md) and
+[ai-enrichment.md](./ai-enrichment.md) for the full design.
+
+This is the work that was originally split into "Phase 4 richer
+fields" and "Phase 6 AI"; it's now one combined round, sequenced
+ahead of Phase 4c (Etsy publish processor).
+
+### Implementation sequence (locked)
+
+1. Schema migration (single `0003_*.sql`): new enums
+   (`product_condition`, `clothing_type`), `scheduled` added to
+   `product_status`, ~25 new columns on `products`,
+   `markup_percent` on `etsy_oauth`, expanded `ai_run_kind` enum,
+   `unaccent` extension.
+2. Garment registry + product domain helpers
+   (`src/lib/products/clothing-types.ts`, `pricing.ts`,
+   `measurements.ts`, `filters.ts`).
+3. /products list rebuild (tabs, filters, search, pagination,
+   column selector with dnd-kit).
+4. New-product stepper shell with per-field autosave (no AI yet).
+5. Edit page flat-form rebuild.
+6. AI enrichment plumbing (queues, OpenAI Responses API,
+   structured output, polling endpoint).
+7. gpt-image-2 model placement.
+8. Bilingual ES↔EN translation via gpt-4o-mini.
+9. Scheduled-publish wiring (BullMQ delayed job; Phase 4c
+   processor is still a stub).
+10. Tests + smoke (vitest + MSW + one Playwright happy-path).
+
+### Locked decisions (this round)
+
+- `products.name` is being dropped — `title_es` is the canonical
+  Spanish name everywhere.
+- Tabs are the only status switcher; the status filter from
+  requirement 1a is dropped.
+- 30 % markup is a shop-wide setting (`etsy_oauth.markup_percent`,
+  default 30), overridable per product.
+- Measurements stored flat; doubled (×2 for chest/waist/hip/leg)
+  only at the Etsy/website boundary. Live hint in the form.
+- Bilingual: ES canonical and editable; EN auto-derived by
+  `gpt-4o-mini` translation on debounced ES edits.
+- AI failures never block publishing; step 2 always renders.
+- Hard-delete prior AI image on regenerate (only one
+  `role='ai_model'` row + R2 object per product).
+- Page-based pagination, default 20, sizes `[10, 20, 50]`.
+- Column visibility/order in `localStorage`, with dnd-kit
+  drag-to-reorder; everything else in URL params.
+- Stepper is a small custom component (no shadcn equivalent);
+  rationale documented in `DESIGN_SYSTEM.md §6` when it lands.
+
+### User-supplied assets still pending
+
+- `BRAND_VOICE_PROMPT` text (brand tone preferences).
+- 6-12 model images uploaded to R2 `assets/models/`.
+- Location pool review (Claude drafts; user edits the list).
+- Curated Etsy taxonomy short list review (Claude drafts; user
+  edits).
+
+Until each is provided, the pipeline ships with placeholders so
+the smoke test runs.
+
+### Prior shipped state (carry-forward)
 
 **Phases 4a, 4b, and 5 are all shipped.** 143/143 tests green,
 typecheck clean, production build green, worker process boots +
@@ -181,10 +246,12 @@ partitioned, merged media uploader, video limits 30 s / 100 MB,
 
 Paste into a new Claude Code session in this repo:
 
-> Continue Phase 4a. Code is shipped; only the real-shop smoke test
-> remains (gated on the user registering the Etsy developer app).
-> Once the user confirms the round-trip works, move on to Phase 4b
-> or jump to Phase 6 per their preference.
+> Continue the product-form rebuild + AI enrichment round
+> (2026-05-17). Read `docs/product-form.md` and
+> `docs/ai-enrichment.md` for the locked design, then resume the
+> implementation sequence from wherever the previous session left
+> off. Etsy 4a smoke test is still gated on Etsy app approval —
+> orthogonal to this work.
 
 That's all the next session needs. AGENTS.md auto-loads. This file
 is durable. The roadmap doc has the broader context if needed.

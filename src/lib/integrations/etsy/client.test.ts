@@ -24,6 +24,7 @@ function makeRow(overrides: Partial<EtsyOAuthRow> = {}): EtsyOAuthRow {
     expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     defaultShippingProfileId: null,
     defaultReturnPolicyId: null,
+    markupPercent: 30,
     createdAt: now,
     updatedAt: now,
     ...overrides,

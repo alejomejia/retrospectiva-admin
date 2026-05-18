@@ -62,7 +62,7 @@ export async function signIn(
     // Almost always means ALLOW_USERS is malformed (e.g. you pasted a
     // raw bcrypt hash whose `$VAR` runs got eaten by dotenv). The
     // dev-facing detail (parser message) stays English; the user-facing
-    // prefix is Spanish so the wife at least understands the surface.
+    // prefix is Spanish so the main user at least understands the surface.
     dev.error("findUser threw — likely ALLOW_USERS misconfig:", err);
     const detail = err instanceof Error ? err.message : "unknown error";
     return { error: m.errors.authMisconfigured(detail) };

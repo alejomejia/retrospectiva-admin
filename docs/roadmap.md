@@ -11,9 +11,12 @@ shaped each phase.
 | 1 — Auth | ✅ Done | bcrypt + jose JWT cookie, sliding 7d, in-memory rate limit, `proxy.ts` gate, login + logout. |
 | 2 — Product form (MVP) + edit | ✅ Done | Name + price form (RHF + zod), shared schema, server actions, edit-toggle on detail page. |
 | 3 — Media (images + videos) on R2 | ✅ Done | Browser-side JPEG compression + HEIC decode, video upload with poster extraction, merged dropzone, date-partitioned R2 layout, `media-limits.ts` as the single source of truth for caps. |
-| 4 — Etsy integration (OAuth + publish) | ⏳ Pending | OAuth 2.0 PKCE, listing-mapper, publish flow, translation flow for ES. |
-| 5 — BullMQ background jobs | ⏳ Pending | `ai-enrich`, `etsy-publish`, `etsy-sync-sold`, `website-revalidate`, `r2-cleanup` (manual only). |
-| 6 — OpenAI AI enrichment | ⏳ Pending | Brand-voice description, era estimation from photos, gpt-image-2 model placement. Single call emits EN + ES. |
+| 4a — Etsy OAuth | ✅ Code shipped, blocked on Etsy app approval for smoke test | PKCE flow, settings page, shop lookup. |
+| 4b — Etsy shop config | ✅ Done | Shipping profile + return policy defaults in `etsy_oauth`. |
+| 4c — Etsy publish | ⏳ Pending | Listing-mapper + draft→images→video→inline translations→activate. The `etsy-publish` queue + a **stub processor** (flips `status='published'` locally, no Etsy traffic) ship as part of Task 9 so the scheduling round-trip is verifiable end-to-end; Phase 4c replaces the stub. |
+| 5 — BullMQ infrastructure | ✅ Done (idle) | Worker boots, queues empty. Each downstream phase adds its processor by side-effect import. |
+| 6 — Product form rebuild + AI enrichment | 🚧 In progress | List view (filters/tabs/search/pagination/column selector), 4-step new-product stepper (inputs → AI → preview → publish), flat edit form, OpenAI Responses API for title/description/tags/materials/era/taxonomy. Admin UI edits Spanish only; the `runTranslation(productId, field)` primitive ships but is invoked **inline by the Phase 4c Etsy-publish processor**, not on the autosave path. Per-product gpt-image-2 work is **split out** into its own task that consumes the Model Studio library (see Phase 6.5). See [product-form.md](./product-form.md) + [ai-enrichment.md](./ai-enrichment.md). |
+| 6.5 — Model Studio | ⏳ Pending | New top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + variables; saved models live in R2 `assets/models/{id}/` and a new `ai_models` table. Per-product image generation (the original gpt-image-2 placement task) is rebuilt to consume this library. See [model-generation/](./model-generation/README.md). |
 | 7 — Webhooks (in/out, HMAC) | ⏳ Pending | Outbound to `retrospectiva-website` (bilingual payload), inbound Etsy receipts (poll-based, optional push). |
 | 8 — Dashboard | ⏳ Pending | Date-range picker, revenue/sales KPIs, listings-by-status, activity feed, Tremor sales chart. |
 | 9 — QoL extras | ⏳ Pending | Audit log, CSV import, product duplicator, pending-sync badge, Telegram notifier, image manager, cost tracker, keyboard shortcuts, orphan-draft cleanup. |
@@ -64,8 +67,8 @@ Each entry: what we picked, what we considered, why we picked it.
 
 ### Localization
 
-- **Admin: Spanish-only.** No locale toggle. The wife is Spanish-
-  only; the husband is bilingual but reads Spanish fine. One locale
+- **Admin: Spanish-only.** No locale toggle. The main user is Spanish-
+  only; the developer is bilingual but reads Spanish fine. One locale
   is simpler.
 - **Etsy listings: EN primary, ES secondary.** Target market is EU
   buyers, not Spain-domestic; English maximises Etsy SEO. ES goes
@@ -170,6 +173,131 @@ Each entry: what we picked, what we considered, why we picked it.
   later. Phase 6 ships with a placeholder so the integration is
   shaped correctly.
 
+### Product form rebuild + AI (2026-05-17 round)
+
+This round combines what the original roadmap split into Phase 6
+(AI) and parts of Phase 4 (richer product fields needed for Etsy
+publish). See [product-form.md](./product-form.md) +
+[ai-enrichment.md](./ai-enrichment.md) for the full picture.
+
+- **Tabs replace the status filter** on /products. Tabs:
+  `activos | publicados | borradores | programados | archivados`.
+  Default `activos` = drafts + published. The status filter from
+  requirement 1a is dropped — one switcher, not two.
+- **New `scheduled` status with auto-publish.** Adds the enum value,
+  a `scheduled_publish_at timestamptz`, and a BullMQ delayed job in
+  the `etsy-publish` queue that flips to `published` and pushes to
+  Etsy at the chosen time (processor itself is Phase 4c).
+- **URL search params for filter state.** `/products` is a server
+  component reading `await searchParams`; filter/search/page state
+  is shareable + refresh-safe. Column visibility/order is the only
+  thing in `localStorage` (URL bloat for shareable links).
+- **Page-based pagination, default 20**, sizes `[10, 20, 50]`.
+- **Custom 4-step stepper for new product creation**: ① user inputs
+  · ② AI review (per-field editable + regenerate) · ③ Etsy summary
+  preview (read-only) · ④ publish action. Flat edit form (no
+  stepper) for existing products.
+- **Per-field autosave, debounced 500 ms** writes to the DB row.
+  No localStorage shadow state.
+- **Store-flat measurements; double at the boundary** for
+  chest/waist/hip/leg. Form shows both flat and circumference
+  values; DB stores flat; Etsy/website payloads use doubled.
+- **Bilingual: ES canonical, EN auto-derived.** Each text field has
+  `*_es` + `*_en` columns. Tags + materials are parallel arrays
+  aligned by index. Translation runs on a small `ai-translate`
+  queue via `gpt-4o-mini` (cheap + fast).
+- **Garment registry pattern.** Single `clothing-types.ts` is the
+  source of truth for the 14 garment types, their categories, which
+  measurements they require, and which of those double. Adding a
+  new garment = one entry + a Postgres enum migration.
+- **`products.name` dropped in favor of `title_es`**. One Spanish
+  title shown everywhere in the admin and translated for Etsy. The
+  title is never edited in step 1 — AI generates it in step 2 from
+  the photo + the user-picked garment type, condition, etc.
+- **Title capped at 140 characters** (Etsy's listing-title hard cap).
+- **30 % Etsy markup as a shop-wide setting**, default 30, override
+  per product via `markup_percent_override`. Computed Etsy list
+  price is shown live next to the base-price input.
+- **AI failures never block publishing.** Step 2 always renders;
+  the main user can fill every field by hand if the OpenAI call fails.
+- **Hard-delete prior AI-image on regenerate.** Only one
+  `role='ai_model'` row + one R2 object per product survives.
+- **Tabs/search/filter state lives in URL search params**; column
+  visibility in `localStorage` only.
+- **Curated Etsy taxonomy short list** in `taxonomy.ts` — drafted
+  by Claude, reviewed by the user. AI picks from that closed set
+  rather than the full Etsy taxonomy tree.
+
+### Scheduled-publish queueing (2026-05-18)
+
+- **BullMQ delayed-set is the schedule store.** `scheduleProduct`
+  enqueues a delayed `etsy-publish` job with `delay = target - now`
+  and `jobId = productId`. Redis persistence covers server restarts,
+  and queue-scoped jobIds keep dedup simple. Re-scheduling uses the
+  same remove-then-add pattern as `enqueueEnrichJob`.
+- **Cancel-while-active race is handled in the worker, not the
+  action.** If the user clicks "Cancelar programación" exactly when
+  BullMQ flips the job from delayed to active, `queue.remove(jobId)`
+  throws "job is active" (we swallow it). The worker then runs,
+  re-reads the row, sees `status='draft'`, and self-cancels via a
+  race-safety check before any DB write. Sub-second window; the
+  user's intent wins.
+- **Stub processor lands now, real Etsy push waits for Phase 4c.**
+  The Task 9 worker just flips `status='published'` locally so the
+  scheduling timing is testable without OpenAI / Etsy traffic.
+  Phase 4c replaces the stub wholesale with the real flow
+  (createDraftListing → upload images + video → inline
+  `runTranslation` per translatable field → `state="active"`).
+
+### Translation at the publish boundary (2026-05-18)
+
+- **Admin UI is Spanish-only; translation runs at the Etsy publish
+  boundary, not on autosave.** The main user doesn't read English and
+  can't validate EN output, so paying for translations on every
+  keystroke (or on every enrich fan-out) burns tokens on content that
+  may never be published. The Phase 4c publish processor calls
+  `runTranslation(productId, field)` inline per translatable field
+  right before pushing to Etsy.
+- **`*_en` columns + `ai_runs.kind='translation'` survive** as the
+  cache + audit trail of what was last sent to Etsy. The website
+  webhook (Phase 7) reads them when the listing is republished.
+- **Republish on edit is explicit, not automatic.** When the user
+  edits an ES field on a published product, the listing is marked
+  "dirty" and a manual "Sincronizar con Etsy" action triggers the
+  re-translation + re-push. Auto-publish on every save would
+  broadcast intermediate drafts to live buyers.
+- **First implementation pass was reverted** (autosave fan-out + EN
+  collapsibles + per-field polling badges) after we realized the
+  shop owner never sees EN. The primitive (`runTranslation`,
+  `responses-helpers`, the EN columns, the translation `ai_runs`
+  kind) stayed; the surrounding pipeline got removed.
+
+### Model Studio split (2026-05-18)
+
+- **AI model creation is its own admin surface, not part of the
+  product stepper.** Originally Phase 6 bundled "generate a model
+  inline during product enrichment". Reframed: the shop's set of
+  synthetic models is a curated, slow-changing library built ahead
+  of time at `/models`. Per-product image generation later picks
+  from that library (manual select per product, default
+  `Aleatorio`). See [model-generation/model-studio.md](./model-generation/model-studio.md).
+- **Per-product on-model image gen blocked until Model Studio
+  ships.** The original gpt-image-2 placement task is rebuilt to
+  consume `ai_models` rows from the Studio rather than generating
+  base imagery inline. Tracked separately as task #11, blocked by
+  task #8.
+- **Translations now the next active task** (was queued behind
+  image work). Cheap, fast, and unblocks the bilingual EN columns
+  the website webhook will eventually carry.
+- **Model-generation prompt structure follows ChatGPT's
+  recommendation** (one model per call, 6-panel contact sheet,
+  modular prompts per phase). Original recommendation preserved
+  verbatim at [model-generation/source-notes.md](./model-generation/source-notes.md).
+- **`ai_models` table is new, not a reuse of `product_images`.**
+  Different lifecycle (curated library vs per-product media),
+  different consumers (model dropdown vs gallery), different
+  status vocabulary.
+
 ### Dashboard (Phase 8 — planned)
 
 - **Date-range picker** as the global filter.
@@ -193,16 +321,19 @@ Each entry: what we picked, what we considered, why we picked it.
 
 | Item | Phase it lands in |
 | --- | --- |
-| Richer product fields (era, condition, size, fabric, story, measurements) | Phase 4 (Etsy field-mapped) |
-| Pose library + model base image for AI try-on | Phase 6 |
-| Brand voice text for AI description | Phase 6 (the user-supplied prompt) |
-| Etsy app registration + initial OAuth connect | Phase 4 (one-time, done from the running app) |
+| Richer product fields (era, condition, size, fabric, story, measurements) | ✅ Covered by the product-form rebuild |
+| Pose library + model base image for AI try-on | ✅ Reframed — the Model Studio (Phase 6.5) generates these in-app; the manual-upload path is no longer the plan. |
+| Brand voice text for AI description | Asset blocker — `BRAND_VOICE_PROMPT` env |
+| Etsy app registration + initial OAuth connect | ✅ Done (smoke test still pending Etsy approval) |
+| Real publish processor for the `etsy-publish` queue | Phase 4c |
 | Orphan draft cleanup (sweep "Sin título" drafts > 7 days with no media) | Phase 9 |
 | Audit log UI on the dashboard | Phase 8 (reads from the existing `events` table) |
 | Bulk CSV import | Phase 9 |
+| Bulk operations on /products (multi-select archive/schedule/etc.) | Phase 9 |
+| Column-header sorting on /products | Phase 9 |
 | Telegram notifier on sale | Phase 9 |
 | Per-row keyboard shortcuts on products list | Phase 9 |
-| E2E Playwright spec for login + create + publish + sale flow | Phase 4 / 7 |
+| E2E Playwright spec for login + create + publish + sale flow | Phase 4c / 7 |
 | Server-action integration tests (with test DB) | Sometime; not blocking |
 
 ## Quick "what to build next" cheat sheet
