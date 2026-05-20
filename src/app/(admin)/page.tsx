@@ -1,6 +1,7 @@
 import { Package } from "lucide-react";
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,19 +24,18 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-3">
-        <p className="text-caplet">
-          <span className="text-brand-terracotta">01</span>{" "}
-          <span>{m.dashboard.kicker}</span>
-        </p>
-        <h1 className="font-sans text-5xl font-medium tracking-tight">
-          Retrospectiva{" "}
-          <span className="text-brand-terracotta">Admin</span>
-        </h1>
-        <p className="max-w-xl text-brand-olive-deep/80">
-          {m.dashboard.intro(session.username)}
-        </p>
-      </header>
+      <PageHeader>
+        <PageHeader.Column className="flex-col">
+          <PageHeader.Eyebrow number="01" label={m.dashboard.kicker} />
+          <PageHeader.Title>
+            Retrospectiva{" "}
+            <span className="text-brand-terracotta">Admin</span>
+          </PageHeader.Title>
+          <PageHeader.Description>
+            {m.dashboard.intro(session.username)}
+          </PageHeader.Description>
+        </PageHeader.Column>
+      </PageHeader>
 
       <section className="grid gap-6 sm:grid-cols-2">
         <Card>

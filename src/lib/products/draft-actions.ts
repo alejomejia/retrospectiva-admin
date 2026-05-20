@@ -12,6 +12,7 @@ import { latestRunForKind } from "@/lib/integrations/openai/ai-runs-log";
 import { aiEnrichQueue, etsyPublishQueue } from "@/lib/queue/queues";
 import { devGroup } from "@/lib/utils/dev";
 
+import { getBuyPriceDefaultForClothingType } from "./buy-price-defaults";
 import { getEtsyTaxonomyForClothingType } from "./clothing-types";
 import {
   ProductDraftPatchSchema,
@@ -72,6 +73,18 @@ export async function updateProductDraftField(
         const taxonomy = getEtsyTaxonomyForClothingType(ct);
         set.etsyTaxonomyId =
           taxonomy && taxonomy.id > 0 ? taxonomy.id : null;
+        // Overwrite the per-product buy price with the type's default
+        // on every clothing-type change. If the client already sent
+        // its own buyPriceCents in the same patch we honor that
+        // (explicit user intent wins). Otherwise we resolve the
+        // default — null when no default is set for this type, which
+        // intentionally clears the column. Changing the default in
+        // /settings/products still does NOT touch existing products;
+        // this branch only fires when the type itself changes.
+        if (set.buyPriceCents === undefined) {
+          const def = await getBuyPriceDefaultForClothingType(ct);
+          set.buyPriceCents = def;
+        }
       }
     }
     const [row] = await db

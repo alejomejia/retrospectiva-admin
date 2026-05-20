@@ -7,7 +7,11 @@ import { devGroup } from "@/lib/utils/dev";
 import { completeRun, failRun, startRun } from "./ai-runs-log";
 import { MODELS, openai } from "./client";
 import { TRANSLATE_ES_EN } from "./prompts";
-import { estimateCostUsd, extractOutputText } from "./responses-helpers";
+import {
+  estimateCostUsd,
+  extractOutputText,
+  logCacheUsage,
+} from "./responses-helpers";
 
 const dev = devGroup("openai.translate");
 
@@ -135,6 +139,8 @@ export async function runTranslation(
       },
       max_output_tokens: MAX_OUTPUT_TOKENS,
     });
+
+    logCacheUsage({ kind: "translation", model: MODELS.translate, response });
 
     const text = extractOutputText(response);
     const parsed = safeJsonParse(text);

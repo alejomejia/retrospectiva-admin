@@ -28,7 +28,7 @@ import { devError, devLog } from "@/lib/utils/dev";
  * param — the page renders the Spanish error message for the code.
  */
 
-const SETTINGS_PATH = "/settings/etsy";
+const SETTINGS_PATH = "/settings/integrations";
 
 type CallbackErrorCode =
   | "etsy_denied"

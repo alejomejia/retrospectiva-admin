@@ -45,3 +45,18 @@ export const etsyPublishQueue = new Queue("etsy-publish", {
 });
 
 export type EtsyPublishJob = { productId: string };
+
+/**
+ * Synthetic-model generation (Model Studio, Task 8). One job per
+ * `ai_models` row. Worker calls `gpt-image-2`, uploads contact
+ * sheet + cropped panels to R2, populates the row's R2 keys.
+ *
+ * jobId = `ai_models.id` so re-runs (Regenerar) coalesce on the
+ * same model row instead of stacking work.
+ */
+export const aiModelGenerateQueue = new Queue("ai-model-generate", {
+  connection: redis,
+  defaultJobOptions: DEFAULT_JOB_OPTIONS,
+});
+
+export type AiModelGenerateJob = { modelId: string };

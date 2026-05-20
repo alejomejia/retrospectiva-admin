@@ -67,7 +67,7 @@ export function LoginForm() {
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" className="w-full py-6 uppercase font-semibold tracking-widest" disabled={pending}>
             {pending ? m.common.signingIn : m.login.signInButton}
           </Button>
         </form>

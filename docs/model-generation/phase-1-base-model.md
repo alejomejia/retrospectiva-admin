@@ -39,7 +39,7 @@ A single contact-sheet image organized as 6 panels:
 | --- | --- | --- |
 | 1 | Front-facing full body | Garment fit reference (front) |
 | 2 | Front-facing portrait close-up | Face identity reference |
-| 3 | Left-side profile full body | Side silhouette reference |
+| 3 | Front upper-torso close-up | Shoulders-to-abdomen fit + styling reference |
 | 4 | Left-side profile portrait | Profile identity reference |
 | 5 | Back-facing full body | Back garment fit reference |
 | 6 | Front 3/4 angle full body | Three-quarter fit reference |
@@ -58,72 +58,92 @@ interpolation uses the same `{VAR_NAME}` convention as the existing
 enrichment prompts in `src/lib/integrations/openai/prompts.ts`.
 
 ```
-A highly detailed ultra-realistic ecommerce fashion reference
-contact sheet featuring the same woman consistently across all
-panels.
+A highly detailed realistic ecommerce fashion reference contact
+sheet featuring the same woman consistently across all panels.
 
-The subject is a {AGE_RANGE} {ETHNICITY} woman with {BODY_TYPE}
-body proportions, approximately {HEIGHT_RANGE} tall proportions,
-{SKIN_TONE} skin tone, {FACE_SHAPE} face shape, and
-{HAIR_DESCRIPTION}. She has natural realistic facial features,
-symmetrical eyes, realistic hands and feet, accurate anatomy, and
-a neutral fashion catalog expression with relaxed lips and soft
-eyes.
+The subject is a {AGE_RANGE} european woman with naturally
+proportioned {BODY_TYPE} body proportions, approximately
+{HEIGHT_RANGE} tall proportions, {SKIN_TONE} skin tone,
+{FACE_SHAPE} face shape, and {HAIR_COLOR} {HAIR_TYPE} hair styled
+as a {HAIR_SHAPE}.
 
-The same exact woman must appear consistently in every panel with
-identical facial structure, body proportions, hairstyle, skin tone,
-and identity.
+She looks like a real everyday person rather than a fashion model
+— naturally attractive, approachable, believable, and realistic.
+Subtle natural asymmetry, authentic skin texture, soft facial
+features, slight imperfections, realistic pores, natural
+proportions, and relaxed posture.
 
-She is wearing a seamless matte neutral beige skin-tight bodysuit
-with no visible logos, no patterns, no texture, and no accessories.
-No jewelry, no tattoos, no piercings, no heavy makeup, no nail
-polish.
+No exaggerated beauty standards, no glamour model appearance, no
+runway model proportions, no idealized facial perfection, no
+hyper-symmetry, and no stylized editorial beauty.
 
-Professional luxury ecommerce studio photography, shot in a
-seamless pure white infinity backdrop studio environment with soft
-diffused high-key lighting, evenly lit skin tones, soft natural
-shadows, and commercial fashion photography quality.
+The same woman must appear consistently in every panel with
+consistent facial structure, body proportions, hairstyle, skin
+tone, and identity.
 
-Photographed using a Canon EOS R5 with ultra sharp professional
-fashion photography detail, realistic skin texture, high dynamic
-range, commercial apparel fitting reference photography quality.
+She is wearing a seamless matte opaque full-coverage unitard,
+non-sheer fabric, neutral light beige, with no visible logos,
+patterns, accessories, jewelry, tattoos, piercings, heavy makeup,
+or nail polish.
 
-The woman stands in a neutral symmetrical standing pose with
-straight posture, feet naturally positioned, shoulders relaxed,
-and arms slightly separated from the torso for clear body
-visibility.
+Minimal natural makeup only. Soft natural lips, realistic
+under-eye texture, realistic skin variation, and natural human
+facial detail.
 
-The image is organized as a clean professional multi-panel fashion
-reference contact sheet with the following views:
+Professional ecommerce studio photography in a seamless pure
+white infinity backdrop studio environment with soft diffused
+lighting, balanced exposure, soft natural shadows, and clean
+commercial catalog photography quality.
 
-Panel 1: front-facing full body view, entire body visible from
-head to toe.
+Shot using realistic commercial apparel photography styling with
+accurate body proportions, realistic skin rendering, and natural
+photographic detail.
 
-Panel 2: front-facing portrait close-up view with highly detailed
-facial features.
+The woman stands in a neutral relaxed standing pose with natural
+posture, shoulders relaxed, feet naturally positioned, and arms
+slightly separated from the torso for clear body visibility.
 
-Panel 3: left side profile full body view, entire body visible
-from head to toe.
+The image is organized as a structured professional fashion
+reference contact sheet using a fixed 3-column by 2-row grid
+layout with equal panel dimensions, symmetrical spacing, and
+aligned composition.
 
-Panel 4: left side profile portrait close-up view with detailed
-facial structure.
+Each panel is separated by a clean solid pure-white gutter at
+least 40 pixels to a maximum of 60 pixels wide on all sides,
+including the outer trim and inner dividers.
 
-Panel 5: back-facing full body view, entire body visible from
-head to toe.
+The panel order must remain identical and consistent in every
+generation, arranged from left to right and top to bottom in the
+following exact order:
 
-Panel 6: front 3/4 angle full body view for garment fitting
-reference.
+Panel 1 (top-left): front-facing full body view, entire body visible from head to toe.
 
-Ultra realistic ecommerce photography, clean composition, centered
-framing, professional studio production quality, realistic
-proportions, fashion fit reference photography, apparel fitting
-reference model.
+Panel 2 (top-center): front-facing portrait close-up view with natural facial detail.
 
-Avoid dramatic shadows, editorial fashion lighting, exaggerated
-curves, stylized anatomy, glamour photography, sexualized posing,
-cinematic color grading, cropped limbs, distorted anatomy,
-fisheye distortion, blurry details, inconsistent identity,
-asymmetrical facial features, or unrealistic body proportions.
+Panel 3 (top-right): front-facing upper-torso close-up view, cropped and framed from shoulders to abdomen.
+
+Panel 4 (bottom-left): left side profile portrait close-up view with detailed facial structure.
+
+Panel 5 (bottom-center): back-facing full body view, entire body visible from head to toe.
+
+Panel 6 (bottom-right): front 3/4 angle full body view for garment fitting reference.
+
+All panels must maintain consistent framing, centered positioning,
+equal spacing, identical alignment, and clean white negative
+space between panels for reliable automated cropping and
+dataset-style reference extraction.
+
+Realistic ecommerce photography, clean composition, centered
+framing, believable proportions, natural anatomy, realistic skin
+texture, authentic human appearance, and commercial apparel
+fitting reference quality.
+
+Avoid glamour photography, editorial fashion styling, exaggerated
+curves, stylized anatomy, hyper-perfect faces, unrealistic
+symmetry, porcelain skin, excessive beauty retouching, dramatic
+posing, cinematic color grading, sexualized posing, distorted
+anatomy, artificial body proportions, doll-like appearance, or
+influencer-style beauty aesthetics.
 ```
 
 ---
@@ -134,62 +154,42 @@ Seven variables drive the identity. Each has a defined value space;
 keep additions conservative — every new option is another axis the
 model has to nail consistently across 6 panels.
 
+> Ethnicity is **not** a variable. The shop's focus group is
+> European, so `european` is hardcoded in the template.
+
 ### `{AGE_RANGE}`
 
-The apparent age bracket of the model.
+The apparent age bracket of the model. Default: `woman in her late 20s`.
 
 | Value | Notes |
 | --- | --- |
 | `woman in her early 20s` | Youngest end; tend to favor smaller frames. |
 | `woman in her late 20s` | Recommended default for vintage clothing. |
 | `woman in her early 30s` | Slightly more mature features. |
-| `woman in her mid 30s` | |
-| `woman in her early 40s` | |
-| `woman in her mid 40s` | More editorial / mature audience. |
-
-### `{ETHNICITY}`
-
-The ethnic descriptor. Phrases should read naturally in the full
-sentence — "of latina ethnicity" or just "latina", both work.
-
-| Value |
-| --- |
-| `latina` |
-| `east asian` |
-| `south asian` |
-| `nordic` |
-| `black african` |
-| `middle eastern` |
-| `mixed ethnicity` |
 
 ### `{BODY_TYPE}`
 
 Body proportions descriptor. `gpt-image-2` responds best to
 non-glamour language — "naturally proportioned X" beats single
-adjectives.
+adjectives. Default: `athletic`.
 
 | Value |
 | --- |
 | `slim` |
 | `athletic` |
 | `curvy` |
-| `midsize` |
-| `petite` |
-| `tall slim` |
 
 ### `{HEIGHT_RANGE}`
 
 Approximate height. Stated as a height descriptor, not a literal
 measurement (the model can't render height precisely, but the
-phrasing influences proportions).
+phrasing influences proportions). Default: `170cm`.
 
 | Value |
 | --- |
 | `160cm` |
-| `165cm` |
 | `170cm` |
-| `175cm` |
-| `178cm` |
+| `180cm` |
 
 ### `{FACE_SHAPE}`
 
@@ -203,112 +203,143 @@ Geometric face descriptor. Strong influence on portrait panels.
 | `square` |
 | `diamond` |
 
-### `{HAIR_DESCRIPTION}`
+### `{HAIR_COLOR}`, `{HAIR_SHAPE}`, `{HAIR_TYPE}`
 
-A short phrase covering color + texture + style. Free-form, but
-the format `"{color} {texture} hair {styled into a/tied into a
-…}"` performs best.
+Hair is split into three independent axes. They concatenate in the
+template as `{HAIR_COLOR} {HAIR_TYPE} hair styled as a {HAIR_SHAPE}`.
+Styles that pull the hair **back** or **up** preserve identity
+across panels better than loose hair.
 
-Examples:
+`{HAIR_COLOR}`
 
-- `dark brown slick back ponytail`
-- `black straight shoulder-length hair tied back`
-- `blonde clean bun hairstyle`
-- `curly dark hair tied into a low ponytail`
-- `auburn wavy hair pulled into a loose bun`
-- `platinum blonde straight hair pulled back tightly`
+| Value |
+| --- |
+| `blonde` |
+| `red` |
+| `black` |
+| `dark brown` |
+| `light brown` |
 
-Hair styled **back** or **up** preserves identity across panels
-better than loose hair — loose hair tends to drift in shape between
-front / side / back views.
+`{HAIR_SHAPE}`
+
+| Value |
+| --- |
+| `short bob` |
+| `low ponytail` |
+| `high ponytail` |
+| `updo` |
+| `bun` |
+
+`{HAIR_TYPE}`
+
+| Value |
+| --- |
+| `wavy` |
+| `straight` |
 
 ### `{SKIN_TONE}`
+
+Default: `fair skin`.
 
 | Value |
 | --- |
 | `fair skin` |
-| `warm olive skin` |
 | `warm tan skin` |
-| `deep dark skin` |
-| `light brown skin` |
-| `medium brown skin` |
 
 ---
 
 ## 5 · Filled example
 
-A complete, ready-to-send prompt for a reference latina model in
+A complete, ready-to-send prompt for a reference European model in
 her late 20s. Useful as a sanity check when comparing template
 output to the final string.
 
 ```
-A highly detailed ultra-realistic ecommerce fashion reference
-contact sheet featuring the same woman consistently across all
-panels.
+A highly detailed realistic ecommerce fashion reference contact
+sheet featuring the same woman consistently across all panels.
 
-The subject is a woman in her late 20s of latina ethnicity with
-naturally proportioned midsize body proportions, approximately
-170cm tall proportions, warm olive skin tone, oval face shape,
-and dark brown straight hair tied into a clean low ponytail. She
-has natural realistic facial features, symmetrical eyes, realistic
-hands and feet, accurate anatomy, and a neutral fashion catalog
-expression with relaxed lips and soft eyes.
+The subject is a woman in her late 20s european woman with
+naturally proportioned athletic body proportions, approximately
+170cm tall proportions, fair skin tone, oval face shape, and
+dark brown straight hair styled as a low ponytail.
 
-The same exact woman must appear consistently in every panel with
-identical facial structure, body proportions, hairstyle, skin tone,
-and identity.
+She looks like a real everyday person rather than a fashion model
+— naturally attractive, approachable, believable, and realistic.
+Subtle natural asymmetry, authentic skin texture, soft facial
+features, slight imperfections, realistic pores, natural
+proportions, and relaxed posture.
 
-She is wearing a seamless matte neutral beige skin-tight bodysuit
-with no visible logos, no patterns, no texture, and no accessories.
-No jewelry, no tattoos, no piercings, no heavy makeup, no nail
-polish.
+No exaggerated beauty standards, no glamour model appearance, no
+runway model proportions, no idealized facial perfection, no
+hyper-symmetry, and no stylized editorial beauty.
 
-Professional luxury ecommerce studio photography, shot in a
-seamless pure white infinity backdrop studio environment with soft
-diffused high-key lighting, evenly lit skin tones, soft natural
-shadows, and commercial fashion photography quality.
+The same woman must appear consistently in every panel with
+consistent facial structure, body proportions, hairstyle, skin
+tone, and identity.
 
-Photographed using a Canon EOS R5 with ultra sharp professional
-fashion photography detail, realistic skin texture, high dynamic
-range, 85mm lens portrait compression, commercial apparel fitting
-reference photography quality.
+She is wearing a seamless matte opaque full-coverage unitard,
+non-sheer fabric, neutral light beige, with no visible logos,
+patterns, accessories, jewelry, tattoos, piercings, heavy makeup,
+or nail polish.
 
-The woman stands in a neutral symmetrical standing pose with
-straight posture, feet naturally positioned, shoulders relaxed,
-and arms slightly separated from the torso for clear body
-visibility.
+Minimal natural makeup only. Soft natural lips, realistic
+under-eye texture, realistic skin variation, and natural human
+facial detail.
 
-The image is organized as a clean professional multi-panel fashion
-reference contact sheet with the following views:
+Professional ecommerce studio photography in a seamless pure
+white infinity backdrop studio environment with soft diffused
+lighting, balanced exposure, soft natural shadows, and clean
+commercial catalog photography quality.
 
-Panel 1: front-facing full body view, entire body visible from
-head to toe.
+Shot using realistic commercial apparel photography styling with
+accurate body proportions, realistic skin rendering, and natural
+photographic detail.
 
-Panel 2: front-facing portrait close-up view with highly detailed
-facial features.
+The woman stands in a neutral relaxed standing pose with natural
+posture, shoulders relaxed, feet naturally positioned, and arms
+slightly separated from the torso for clear body visibility.
 
-Panel 3: left side profile full body view, entire body visible
-from head to toe.
+The image is organized as a structured professional fashion
+reference contact sheet using a fixed 3-column by 2-row grid
+layout with equal panel dimensions, symmetrical spacing, and
+aligned composition.
 
-Panel 4: left side profile portrait close-up view with detailed
-facial structure.
+Each panel is separated by a clean solid pure-white gutter at
+least 40 pixels to a maximum of 60 pixels wide on all sides,
+including the outer trim and inner dividers.
 
-Panel 5: back-facing full body view, entire body visible from
-head to toe.
+The panel order must remain identical and consistent in every
+generation, arranged from left to right and top to bottom in the
+following exact order:
 
-Panel 6: front 3/4 angle full body view for garment fitting
-reference.
+Panel 1 (top-left): front-facing full body view, entire body visible from head to toe.
 
-Ultra realistic ecommerce photography, clean composition, centered
-framing, professional studio production quality, realistic
-proportions, fashion fit reference photography, apparel fitting
-reference model.
+Panel 2 (top-center): front-facing portrait close-up view with natural facial detail.
 
-Avoid dramatic shadows, editorial fashion lighting, exaggerated
-curves, stylized anatomy, glamour photography, sexualized posing,
-cinematic color grading, cropped limbs, distorted anatomy,
-fisheye distortion, blurry details, inconsistent identity,
-asymmetrical facial features, or unrealistic body proportions.
+Panel 3 (top-right): front-facing upper-torso close-up view, cropped and framed from shoulders to abdomen.
+
+Panel 4 (bottom-left): left side profile portrait close-up view with detailed facial structure.
+
+Panel 5 (bottom-center): back-facing full body view, entire body visible from head to toe.
+
+Panel 6 (bottom-right): front 3/4 angle full body view for garment fitting reference.
+
+All panels must maintain consistent framing, centered positioning,
+equal spacing, identical alignment, and clean white negative
+space between panels for reliable automated cropping and
+dataset-style reference extraction.
+
+Realistic ecommerce photography, clean composition, centered
+framing, believable proportions, natural anatomy, realistic skin
+texture, authentic human appearance, and commercial apparel
+fitting reference quality.
+
+Avoid glamour photography, editorial fashion styling, exaggerated
+curves, stylized anatomy, hyper-perfect faces, unrealistic
+symmetry, porcelain skin, excessive beauty retouching, dramatic
+posing, cinematic color grading, sexualized posing, distorted
+anatomy, artificial body proportions, doll-like appearance, or
+influencer-style beauty aesthetics.
 ```
 
 ---
@@ -318,17 +349,20 @@ asymmetrical facial features, or unrealistic body proportions.
 The final paragraph is a negative prompt. The current list targets
 the most common failure modes for ecommerce reference imagery:
 
-- Dramatic / editorial lighting → flattens fit visibility.
-- Exaggerated curves / stylized anatomy → distorts later garment
+- Glamour photography / editorial fashion styling / dramatic posing
+  → off-brand for vintage / casual shop, also poor fit reference.
+- Exaggerated curves / stylized anatomy / artificial body
+  proportions / distorted anatomy → distorts later garment
   compositing.
-- Glamour or sexualized posing → off-brand for vintage / casual
-  shop, also poor fit reference.
+- Hyper-perfect faces / unrealistic symmetry / porcelain skin /
+  excessive beauty retouching / doll-like appearance /
+  influencer-style beauty aesthetics → break the "real everyday
+  person" framing the positive prompt explicitly asks for; subtle
+  natural asymmetry and authentic skin texture are required for
+  believable fit reference.
 - Cinematic color grading → makes skin tone non-canonical and
   breaks consistency across phase outputs.
-- Cropped limbs / fisheye / distortion → unusable for full-body
-  fitting.
-- Inconsistent identity / asymmetric features → the primary
-  failure mode this phase exists to prevent.
+- Sexualized posing → off-brand and unusable for fit reference.
 
 Editing the negative prompt is a high-leverage way to fix specific
 failure modes observed in real outputs; expect to add items here
@@ -340,8 +374,8 @@ as we iterate.
 
 Once the live model is generated and reviewed, expected refinements:
 
-1. Tune `{HAIR_DESCRIPTION}` phrasing based on which patterns
-   actually preserve across all 6 panels.
+1. Tune `{HAIR_COLOR}` / `{HAIR_SHAPE}` / `{HAIR_TYPE}` phrasing
+   based on which combinations actually preserve across all 6 panels.
 2. Decide whether to bake `85mm lens portrait compression` into
    the template unconditionally (it's in the filled example but
    not the template — it improved portraits in chat-side tests).

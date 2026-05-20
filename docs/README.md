@@ -22,6 +22,8 @@ read whichever matches the question you've got.
 | What are the code conventions for this project? | [project-conventions.md](./project-conventions.md) |
 | What's been built, what's next, what was decided? | [roadmap.md](./roadmap.md) |
 | How are tests structured? Why does `session.test.ts` need `node`? | [testing.md](./testing.md) |
+| What should I manually verify before declaring Phase 6 shippable? | [smoke-test.md](./smoke-test.md) |
+| What's the plan for per-product on-model image generation (Task 11)? | [per-product-image-gen.md](./per-product-image-gen.md) |
 
 ## The 30-second pitch
 

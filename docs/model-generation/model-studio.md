@@ -11,9 +11,18 @@ It is **decoupled from product creation**. Per-product image work
 listing image) lives in the per-product flow and consumes the
 library this Studio produces.
 
-> Status: design doc. No code shipped. Blocked behind the Bilingual
-> ES↔EN translation work (task #7). See
-> [../roadmap.md](../roadmap.md).
+> **Status: shipped 2026-05-19** as Task 8. This doc was the design
+> spec before implementation; the runtime behavior matches it with
+> a few decisions hardened after first contact:
+>
+> - R2 keys carry a `{run_id}` segment: `assets/models/{id}/{run_id}/...`
+>   (cache-busting on regenerate; old prefixes are orphans for now).
+> - Vertical gutter detection was retired and replaced with
+>   equal-thirds + a "split is mostly white" sanity check. See
+>   `src/lib/integrations/openai/grid-crop.ts` docblock for why.
+> - Per-product `Modelo` selector and image gen consuming this
+>   library is **Task 11**, plan locked in
+>   [../per-product-image-gen.md](../per-product-image-gen.md).
 
 ---
 
@@ -143,8 +152,8 @@ about.
 **Active section in v1: Identidad (Base).** Each input is a `select`
 populated from the canonical lists in
 [phase-1-base-model.md §4](./phase-1-base-model.md#4--variables).
-Free-form text is allowed only for `HAIR_DESCRIPTION` (the list is
-representative but not exhaustive).
+Hair is split into three independent selects (color, shape, type)
+that concatenate at prompt time.
 
 **Generation flow:**
 
@@ -218,12 +227,13 @@ export const aiModels = pgTable("ai_models", {
   // Phase 1 prompt. Stored verbatim so we can re-render the
   // summary chips and "clone & tweak".
   ageRange: text("age_range").notNull(),
-  ethnicity: text("ethnicity").notNull(),
   bodyType: text("body_type").notNull(),
   heightRange: text("height_range").notNull(),
   skinTone: text("skin_tone").notNull(),
   faceShape: text("face_shape").notNull(),
-  hairDescription: text("hair_description").notNull(),
+  hairColor: text("hair_color").notNull(),
+  hairShape: text("hair_shape").notNull(),
+  hairType: text("hair_type").notNull(),
 
   // Where the artifacts live in R2.
   contactSheetKey: text("contact_sheet_key").notNull(),
@@ -341,8 +351,10 @@ the user resolves.
 - **Form sections mirror the four pipeline phases.** Base active in
   v1, Garment/Pose/Environment scaffolded as visible-but-disabled.
 - **All inputs are select fields,** drawn from the canonical lists
-  in [phase-1-base-model.md](./phase-1-base-model.md). Only
-  `HAIR_DESCRIPTION` allows free-form (curated list as suggestions).
+  in [phase-1-base-model.md](./phase-1-base-model.md). Hair is split
+  across three independent selects (color, shape, type).
+- **Ethnicity is hardcoded `european`** in the prompt template —
+  the shop's focus group is European; not a user-selectable axis.
 - **One model = one contact sheet + cropped panels.** Regenerate
   overwrites the same R2 keys deterministically.
 - **`status='draft' | 'active' | 'archived'`.** Mirrors the

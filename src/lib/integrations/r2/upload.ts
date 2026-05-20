@@ -1,5 +1,3 @@
-import "server-only";
-
 import { PutObjectCommand, type S3Client } from "@aws-sdk/client-s3";
 
 import { R2_BUCKET, r2 } from "./client";

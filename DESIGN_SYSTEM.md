@@ -125,6 +125,21 @@ warranted (shadcn has no equivalent).
   the indicator strip + a slot for the active step's content. Step
   state is owned by the caller (URL `?step=…`).
 
+- **`src/components/layout/page-header/`** — page-level header
+  used by every admin route. shadcn has no page-header primitive.
+  Compound API: `PageHeader.Back`, `PageHeader.Eyebrow`,
+  `PageHeader.Title`, `PageHeader.Description`, `PageHeader.Actions`.
+  Follows the file layout in `.claude/skills/component-pattern.md`:
+  flat compound, one file per sub-component, `Object.assign` export.
+  Layout is pure CSS Grid + `has-data-[slot=…]:` selectors (same
+  trick `Card` / `CardAction` use) — no runtime `Children` iteration.
+  The grid switches to `[1fr_auto]` only when `Actions` is present,
+  and the bottom border + `pb-6` only emits when a `Title` is present
+  (so a back-only header on a detail page stays lean). Visual
+  baseline: caplet eyebrow (optional terracotta numeral), `text-4xl`
+  DM Sans title, olive-deep description, actions floated right and
+  bottom-aligned with the description.
+
 ## 7. Open items
 
 - A short "do" / "don't" example for every voice rule, with screenshots —

@@ -57,7 +57,7 @@ async function unwrap<T>(res: Response, endpoint: string): Promise<T[]> {
  * List the shop's configured shipping profiles. The user creates
  * these manually in Etsy's web UI under *Shop Manager → Settings →
  * Shipping settings*. Used to populate the default-shipping picker
- * on `/settings/etsy`.
+ * on `/settings/integrations`.
  *
  * @example
  *   const profiles = await listShippingProfiles(123);
@@ -95,7 +95,7 @@ export async function listReturnPolicies(
 
 /**
  * List the shop's storefront sections (e.g. "Vestidos",
- * "Abrigos"). Not consumed by `/settings/etsy` — sections are
+ * "Abrigos"). Not consumed by `/settings/integrations` — sections are
  * per-listing, not shop-wide. This helper exists for the product
  * form / Phase 6 AI to pick the right section per product.
  */

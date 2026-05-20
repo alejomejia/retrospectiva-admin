@@ -72,6 +72,7 @@ export const ProductDraftPatchSchema = z.object({
     .nonnegative()
     .nullable()
     .optional(),
+  buyPriceCents: z.number().int().nonnegative().nullable().optional(),
 
   // Garment attributes
   clothingType: z.enum(clothingType.enumValues).nullable().optional(),
@@ -98,6 +99,10 @@ export const ProductDraftPatchSchema = z.object({
   etsyMaterialsEn: stringArray(13, 45),
   etsyWhenMade: z.enum(ETSY_ERA_VALUES).nullable().optional(),
   etsyTaxonomyId: z.number().int().positive().nullable().optional(),
+
+  // Per-product override for the shop-wide AI image generation
+  // toggle. null = inherit shop default.
+  aiImageEnabled: z.boolean().nullable().optional(),
 
   // Lifecycle
   scheduledPublishAt: z.string().datetime().nullable().optional(),

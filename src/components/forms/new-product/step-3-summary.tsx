@@ -173,6 +173,27 @@ export function Step3Summary({
                   : m.products.stepper.summary.emptyValue
               }
             />
+            <Cell
+              label={m.products.stepper.summary.priceBuy}
+              value={
+                product.buyPriceCents !== null
+                  ? formatCents(product.buyPriceCents, product.currency)
+                  : m.products.stepper.summary.emptyValue
+              }
+            />
+            <Cell
+              label={m.products.stepper.summary.priceEarnings}
+              value={
+                product.basePriceCents !== null &&
+                product.buyPriceCents !== null
+                  ? formatCents(
+                      product.basePriceCents - product.buyPriceCents,
+                      product.currency,
+                    )
+                  : m.products.stepper.summary.emptyValue
+              }
+              emphasized
+            />
           </dl>
           <p className="text-xs text-muted-foreground">
             {m.products.stepper.summary.priceMarkup(

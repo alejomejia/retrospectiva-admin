@@ -31,7 +31,10 @@ export const m = {
   nav: {
     dashboard: "Panel",
     products: "Productos",
+    models: "Modelos",
     settings: "Ajustes",
+    settingsIntegrations: "Integraciones",
+    settingsProducts: "Productos",
   },
 
   appShell: {
@@ -153,11 +156,17 @@ export const m = {
         `Mostrando ${from}–${to} de ${total}`,
     },
     statuses: {
-      draft: "borrador",
-      scheduled: "programado",
-      published: "publicado",
-      sold: "vendido",
-      archived: "archivado",
+      draft: "Borrador",
+      scheduled: "Programado",
+      published: "Publicado",
+      sold: "Vendido",
+      archived: "Archivado",
+    },
+    rowActions: {
+      menuLabel: "Acciones",
+      delete: "Eliminar",
+      confirmDelete: "¿Eliminar este producto? Se borrarán las fotos y videos asociados. No se puede deshacer.",
+      deletedToast: "Producto eliminado",
     },
     detail: {
       backLink: "Productos",
@@ -192,7 +201,7 @@ export const m = {
       condition: "Estado",
       conditionPlaceholder: "Elige el estado",
       sizes: "Tallas estimadas",
-      basePrice: "Precio base (lo que quieres ganar)",
+      basePrice: "Precio",
       etsyHintPrefix: "En Etsy:",
       etsyHintMarkup: (percent: number) => `(+${percent}% de margen)`,
       etsyHintEmpty: "Introduce un precio para ver el cálculo de Etsy.",
@@ -200,6 +209,17 @@ export const m = {
       markupHide: "Ocultar margen",
       markupLabel: "Margen para este producto",
       markupReset: (def: number) => `Volver al ${def}%`,
+      buyPrice: "Precio de compra (coste)",
+      buyPriceHint:
+        "Lo que pagaste por la prenda. Se usa para calcular la ganancia.",
+      buyPriceFromDefault:
+        "Valor tomado del ajuste por tipo de prenda. Puedes modificarlo.",
+      earnings: "Ganancia",
+      earningsHint: "Precio base − precio de compra.",
+      earningsNoBase:
+        "Introduce un precio base para calcular la ganancia.",
+      earningsNoBuyPrice:
+        "Introduce el precio de compra para calcular la ganancia.",
       measurementsHintPickType:
         "Elige primero el tipo de prenda para ver las medidas.",
       measurementsNotRequired:
@@ -281,6 +301,22 @@ export const m = {
         regenerateFailed: "No se pudo regenerar el contenido.",
         regenerateStartedToast: "Regenerando contenido…",
       },
+      aiImage: {
+        title: "Generación de imágenes IA",
+        description:
+          "Sobrescribe el ajuste global de la tienda solo para este producto.",
+        legend: "Imágenes IA",
+        enabled: "Activado para este producto",
+        disabled: "Desactivado para este producto",
+        currentShop: (on: boolean) =>
+          on
+            ? "Por defecto: ajuste de la tienda (activado)"
+            : "Por defecto: ajuste de la tienda (desactivado)",
+        overriding: (shopOn: boolean) =>
+          shopOn
+            ? "Anulando el ajuste de la tienda (activado por defecto)."
+            : "Anulando el ajuste de la tienda (desactivado por defecto).",
+      },
       etsy: {
         title: "Etsy",
         description:
@@ -352,6 +388,8 @@ export const m = {
         pricing: "Precio",
         priceListed: "Precio en Etsy",
         priceBase: "Precio base",
+        priceBuy: "Precio de compra",
+        priceEarnings: "Ganancia estimada",
         priceMarkup: (percent: number) => `Margen aplicado: ${percent}%`,
         tags: "Etiquetas",
         materials: "Materiales",
@@ -428,6 +466,46 @@ export const m = {
   },
 
   settings: {
+    integrations: {
+      kicker: "Ajustes",
+      title: "Integraciones",
+      description:
+        "Conexiones con servicios externos: marketplaces, pasarelas y otros endpoints.",
+    },
+    products: {
+      kicker: "Ajustes",
+      title: "Productos",
+      description:
+        "Valores por defecto que se aplican a cada producto al publicar.",
+      markupCardTitle: "Margen sobre el precio base",
+      markupCardDescription:
+        "Porcentaje que se suma al precio base de cada producto al calcular el precio de venta en Etsy. Puedes anularlo en cada producto.",
+      markupLabel: "Margen por defecto",
+      markupHelp: (def: number) =>
+        `Valor por defecto: ${def}%. Cubre comisiones + tasas de Etsy.`,
+      save: "Guardar",
+      saving: "Guardando…",
+      saved: "Valores guardados",
+      aiImage: {
+        cardTitle: "Generación de imágenes IA",
+        cardDescription:
+          "Cuando está activado, los productos nuevos pasan por la generación de imágenes IA (modelo sintético sobre la prenda) antes de publicarse. Puedes anularlo en cada producto.",
+        toggleLabel: "Generar imágenes con IA por defecto",
+        toggleHelpOn:
+          "Las nuevas prendas se enviarán al pipeline de imágenes IA salvo que se desactive en el producto.",
+        toggleHelpOff:
+          "Las nuevas prendas se publicarán con las fotos originales salvo que se active en el producto.",
+      },
+      buyPrice: {
+        cardTitle: "Precio de compra por tipo de prenda",
+        cardDescription:
+          "Valor por defecto en EUR que se aplica al precio de compra (coste para la tienda) de cada producto nuevo según su tipo. Solo afecta a productos nuevos: los productos existentes mantienen el valor con el que se crearon. Cada producto puede sobreescribir este valor en su formulario.",
+        rowEmptyHint: "Sin valor",
+        rowSaved: "Guardado",
+        rowError: "No se pudo guardar",
+        clear: "Quitar",
+      },
+    },
     etsy: {
       kicker: "Integraciones",
       title: "Etsy",
@@ -461,10 +539,7 @@ export const m = {
       defaults: {
         title: "Valores por defecto",
         description:
-          "Se aplican a cada producto que publiques. Puedes cambiarlos en cualquier momento.",
-        markupLabel: "Margen sobre el precio base",
-        markupHelp: (def: number) =>
-          `Porcentaje que se suma al precio base de cada producto al publicar en Etsy (cubre comisiones + tasas). Valor por defecto: ${def}%. Puedes anularlo en cada producto.`,
+          "Perfiles de envío y políticas de devolución que se aplican a cada listado publicado en Etsy.",
         shippingProfileLabel: "Perfil de envío",
         shippingProfilePlaceholder: "Elige un perfil",
         shippingProfileEmpty:
@@ -555,6 +630,9 @@ export const m = {
     couldNotRecordVideo: "No se pudo registrar el video en la base de datos.",
     compressionFailed: "fallo al comprimir",
     uploadFailed: "fallo en la subida",
+    cannotDeleteProductStatus:
+      "Solo se pueden eliminar borradores y archivados. Archiva el producto primero.",
+    couldNotDeleteProduct: "No se pudo eliminar el producto.",
   },
 
   errorBoundary: {
@@ -578,5 +656,152 @@ export const m = {
     body: "El panel no pudo arrancar. Revisa los logs del servidor.",
     digestPrefix: "código:",
     tryAgain: "Reintentar",
+  },
+
+  models: {
+    kicker: "Studio",
+    pageTitle: "Modelos IA",
+    pageDescription:
+      "Galería de modelos sintéticas para usar en las imágenes de los productos.",
+    newModelCta: "Crear modelo",
+    emptyState: {
+      title: "Aún no hay modelos",
+      body: "Genera el primer modelo IA para empezar a producir imágenes en cuerpo.",
+      cta: "Crear primer modelo",
+    },
+    tabs: {
+      active: "Activos",
+      draft: "Borradores",
+      archived: "Archivados",
+    },
+    columns: {
+      label: "Nombre",
+      age: "Edad",
+      body: "Cuerpo",
+      hair: "Pelo",
+      created: "Creado",
+      status: "Estado",
+    },
+    statuses: {
+      draft: "Borrador",
+      active: "Activo",
+      archived: "Archivado",
+    },
+    new: {
+      title: "Nuevo modelo",
+      description:
+        "Define la identidad del modelo. La IA generará un contact sheet de 3×2 paneles y recortará cada panel automáticamente.",
+      sections: {
+        base: "Identidad",
+      },
+      fields: {
+        ageRange: "Edad",
+        bodyType: "Tipo de cuerpo",
+        heightRange: "Altura aproximada",
+        skinTone: "Tono de piel",
+        faceShape: "Forma de cara",
+        hairColor: "Color de pelo",
+        hairShape: "Peinado",
+        hairType: "Tipo de pelo",
+      },
+      placeholderSelect: "Elige una opción",
+      submit: "Generar",
+      submitting: "Generando…",
+      cancel: "Cancelar",
+    },
+    detail: {
+      backToList: "Modelos",
+      generating: "Generando contact sheet…",
+      generatingHint: "Esto suele tardar entre 30 y 60 segundos.",
+      generationFailed: "La generación falló",
+      generationFailedBody:
+        "Puedes reintentar con los mismos parámetros o descartar el modelo.",
+      retry: "Reintentar",
+      contactSheetAlt: "Contact sheet del modelo",
+      cropsAvailable: "6 paneles recortados disponibles",
+      cropsUnavailable:
+        "Recortes no disponibles · regenera para volver a intentarlo",
+      identityHeading: "Parámetros de identidad",
+      panelsHeading: "Paneles recortados",
+      panelLabels: {
+        front_full: "Frontal · cuerpo entero",
+        front_portrait: "Frontal · retrato",
+        front_editorial: "Frontal · torso superior (hombros a abdomen)",
+        side_portrait: "Perfil · retrato",
+        back_full: "Espalda · cuerpo entero",
+        threequarter_full: "Tres cuartos · cuerpo entero",
+      },
+      labelLabel: "Nombre del modelo",
+      labelPlaceholder: "ej. Lucía",
+      save: "Guardar",
+      saving: "Guardando…",
+      regenerate: "Regenerar",
+      regenerating: "Regenerando…",
+      retryCrop: "Reintentar recorte",
+      retryingCrop: "Recortando…",
+      retryCropSucceededToast: "Recortes generados",
+      retryCropStillFailedToast:
+        "El algoritmo sigue sin detectar los 6 paneles — prueba a regenerar",
+      discard: "Descartar",
+      discardConfirm:
+        "¿Descartar este modelo? La imagen se eliminará del bucket.",
+      archive: "Archivar",
+      archived: "Modelo archivado",
+      restore: "Restaurar",
+      restored: "Modelo restaurado",
+      savedToast: "Modelo guardado",
+      discardedToast: "Modelo descartado",
+    },
+    ageRanges: {
+      "woman in her early 20s": "Mujer 20-24",
+      "woman in her late 20s": "Mujer 25-29",
+      "woman in her early 30s": "Mujer 30-34",
+    },
+    bodyTypes: {
+      slim: "Delgada",
+      athletic: "Atlética",
+      curvy: "Curvilínea",
+    },
+    heightRanges: {
+      "160cm": "≈160 cm",
+      "170cm": "≈170 cm",
+      "180cm": "≈180 cm",
+    },
+    skinTones: {
+      "fair skin": "Piel clara",
+      "warm tan skin": "Bronceada cálida",
+    },
+    faceShapes: {
+      oval: "Ovalada",
+      "heart-shaped": "Corazón",
+      round: "Redonda",
+      square: "Cuadrada",
+      diamond: "Diamante",
+    },
+    hairColors: {
+      blonde: "Rubio",
+      red: "Pelirrojo",
+      black: "Negro",
+      "dark brown": "Castaño oscuro",
+      "light brown": "Castaño claro",
+    },
+    hairShapes: {
+      "short bob": "Bob corto",
+      "low ponytail": "Coleta baja",
+      "high ponytail": "Coleta alta",
+      updo: "Recogido",
+      bun: "Moño",
+    },
+    hairTypes: {
+      wavy: "Ondulado",
+      straight: "Liso",
+    },
+    errors: {
+      modelNotFound: "Modelo no encontrado.",
+      onlyDraftsCanBeDiscarded:
+        "Solo los borradores se pueden descartar. Archiva el modelo en su lugar.",
+      noSheetToCrop:
+        "Este modelo aún no tiene contact sheet — espera a que termine la generación.",
+    },
   },
 } as const;

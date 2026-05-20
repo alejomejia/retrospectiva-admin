@@ -6,11 +6,13 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { MediaUploader } from "@/components/forms/media-uploader";
+import { AiImageOverrideField } from "@/components/forms/new-product/ai-image-override-field";
 import { AutosaveIndicator } from "@/components/forms/new-product/autosave-indicator";
 import { AutosaveProvider } from "@/components/forms/new-product/autosave-context";
 import { ConditionField } from "@/components/forms/new-product/condition-field";
 import { GarmentTypeField } from "@/components/forms/new-product/garment-type-field";
 import { MeasurementsField } from "@/components/forms/new-product/measurements-field";
+import { BuyPriceField } from "@/components/forms/new-product/buy-price-field";
 import { PriceField } from "@/components/forms/new-product/price-field";
 import { SizesField } from "@/components/forms/new-product/sizes-field";
 import {
@@ -78,11 +80,13 @@ const STATUS_BADGE_VARIANT: Record<
 export function ProductEditForm({
   product,
   shopMarkupPercent,
+  shopAiImageEnabled,
   imageItems,
   videoItems,
 }: {
   product: Product;
   shopMarkupPercent: number;
+  shopAiImageEnabled: boolean;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
 }) {
@@ -149,6 +153,11 @@ export function ProductEditForm({
           videoItems={videoItems}
         />
 
+        <AiImageSection
+          aiImageEnabled={product.aiImageEnabled}
+          shopAiImageEnabled={shopAiImageEnabled}
+        />
+
         <EtsySection product={product} />
       </div>
     </AutosaveProvider>
@@ -176,6 +185,9 @@ function IdentitySection({
   );
   const [markupOverride, setMarkupOverride] = useState<number | null>(
     product.markupPercentOverride,
+  );
+  const [buyPriceCents, setBuyPriceCents] = useState<number | null>(
+    product.buyPriceCents,
   );
   const [measurements, setMeasurements] = useState<ProductMeasurements>({
     shoulderCm: product.shoulderCm,
@@ -209,6 +221,12 @@ function IdentitySection({
           currency={product.currency}
           onBaseChange={setBasePriceCents}
           onMarkupChange={setMarkupOverride}
+        />
+        <BuyPriceField
+          buyPriceCents={buyPriceCents}
+          basePriceCents={basePriceCents}
+          currency={product.currency}
+          onChange={setBuyPriceCents}
         />
         <div className="space-y-2">
           <p className="text-caplet">
@@ -258,6 +276,31 @@ function MediaSection({
           </h3>
           <VideoList videos={videoItems} />
         </section>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AiImageSection({
+  aiImageEnabled,
+  shopAiImageEnabled,
+}: {
+  aiImageEnabled: boolean | null;
+  shopAiImageEnabled: boolean;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{m.products.editForm.aiImage.title}</CardTitle>
+        <CardDescription>
+          {m.products.editForm.aiImage.description}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <AiImageOverrideField
+          value={aiImageEnabled}
+          shopAiImageEnabled={shopAiImageEnabled}
+        />
       </CardContent>
     </Card>
   );

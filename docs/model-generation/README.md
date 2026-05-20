@@ -78,7 +78,7 @@ The chosen design principles, locked at the start:
 | # | Phase | Doc | Status |
 | --- | --- | --- | --- |
 | 1 | Base model generation | [phase-1-base-model.md](./phase-1-base-model.md) | Drafted |
-| 2 | Garment application | _TBD_ | Pending |
+| 2 | Garment application | [phase-2-garment-application.md](./phase-2-garment-application.md) | Drafted |
 | 3 | Pose transformation | _TBD_ | Pending |
 | 4 | Environment generation | _TBD_ | Pending |
 

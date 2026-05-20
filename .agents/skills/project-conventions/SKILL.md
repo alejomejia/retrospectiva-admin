@@ -38,6 +38,20 @@ The canonical multi-file component layout: `index.tsx` (compound root via
 `Object.assign`), `<name>.types.ts`, `<name>.const.ts`, `<name>.context.ts`,
 `use-<name>.ts`, `<name>-<sub>.tsx` per subcomponent.
 
+**Default to this pattern whenever a component has — or is about to grow —
+named sub-pieces, slots, or shared state.** A single-file component that
+takes a `steps={[…]}` array, a `sections={[…]}` array, or a `slots={{…}}`
+prop is almost always better expressed as a compound (`<Stepper.Item>`,
+`<PageHeader.Title>`). Composition beats array-of-objects configuration:
+callers get JSX-native ergonomics, per-slot props, and tree-shakeable
+sub-components. Reach for `Object.assign(Root, { Sub })` before designing a
+config-object API.
+
+Live exemplars in this repo:
+- `src/components/layout/page-header/` — pure composition, no shared state.
+- `src/components/forms/stepper/` — composition + `stepper.context.ts` for
+  the shared `currentStepIndex`, consumed via a guard hook.
+
 See [component-pattern.md](./component-pattern.md) for:
 - File layout and naming
 - The `Object.assign(Root, { Sub })` compound export

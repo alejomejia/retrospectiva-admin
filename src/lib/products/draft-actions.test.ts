@@ -33,6 +33,13 @@ vi.mock("@/lib/integrations/openai/ai-runs-log", () => ({
   latestRunForKind: latestRunForKindMock,
 }));
 
+const buyPriceDefaultMock = vi.fn().mockResolvedValue(null);
+vi.mock("./buy-price-defaults", () => ({
+  getBuyPriceDefaultForClothingType: buyPriceDefaultMock,
+  getAllBuyPriceDefaults: vi.fn().mockResolvedValue({}),
+  saveBuyPriceDefault: vi.fn(),
+}));
+
 type UpdateCall = {
   table: "products";
   values: Record<string, unknown>;
@@ -65,10 +72,18 @@ vi.mock("@/lib/db/client", () => {
   //   db.update(table).set(values).where(condition)
   //   db.update(table).set(values).where(condition).returning(...)
   //   db.insert(table).values(values)
+  //   db.select(cols).from(table).where(...).limit(...)
   //
   // We use a real Promise as the `.where()` result and attach
   // `.returning()` to it so both call shapes work without a custom
   // thenable (which fights TypeScript's PromiseLike generics).
+  const select = (_cols: unknown) => ({
+    from: (_table: unknown) => ({
+      where: (_cond: unknown) => ({
+        limit: async () => [{ buyPriceCents: null }],
+      }),
+    }),
+  });
   const update = (_table: unknown) => ({
     set: (values: Record<string, unknown>) => ({
       where: () => {
@@ -110,7 +125,7 @@ vi.mock("@/lib/db/client", () => {
       return Promise.resolve();
     },
   });
-  return { db: { update, insert, delete: del } };
+  return { db: { update, insert, delete: del, select } };
 });
 
 const {
@@ -221,6 +236,30 @@ describe("updateProductDraftField", () => {
     expect(dbState.updateCalls[0]?.values).not.toHaveProperty(
       "etsyTaxonomyId",
     );
+  });
+
+  it("overwrites buyPriceCents with the type's default on every clothingType change", async () => {
+    buyPriceDefaultMock.mockResolvedValueOnce(1500);
+    const res = await updateProductDraftField("p1", { clothingType: "jacket" });
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.buyPriceCents).toBe(1500);
+  });
+
+  it("clears buyPriceCents when no default is set for the new clothingType", async () => {
+    buyPriceDefaultMock.mockResolvedValueOnce(null);
+    const res = await updateProductDraftField("p1", { clothingType: "jean" });
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.buyPriceCents).toBeNull();
+  });
+
+  it("honors an explicit buyPriceCents sent alongside a clothingType change", async () => {
+    buyPriceDefaultMock.mockResolvedValueOnce(1500);
+    const res = await updateProductDraftField("p1", {
+      clothingType: "jacket",
+      buyPriceCents: 9999,
+    });
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.buyPriceCents).toBe(9999);
   });
 });
 

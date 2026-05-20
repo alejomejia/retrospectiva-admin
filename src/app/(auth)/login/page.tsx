@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Suspense } from "react";
 import { LoginForm } from "./login-form";
+import { Logo } from "@/components/ui/logo";
 
 /**
  * Login page (server component). Wraps the client-side <LoginForm> in
@@ -14,10 +15,9 @@ export default function LoginPage() {
     <div className="flex flex-col items-center gap-8">
       <header className="flex items-end justify-between gap-6 border-b border-border pb-6">
         <div className="space-y-3 text-center">
-          <h1 className="font-sans text-5xl font-medium tracking-tight">
-            Retrospectiva{" "}
-            <span className="text-brand-terracotta">Admin</span>
-          </h1>
+          <div className="max-w-64 mx-auto">
+            <Logo />
+          </div>
           <p className="max-w-xl text-brand-olive-deep/80">
             Vintage clothing, second-hand stories — the admin panel is
             being wired up.

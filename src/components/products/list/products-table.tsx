@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils/helpers";
 
 import { useColumnPrefs } from "./column-prefs";
 import { COLUMN_LABELS } from "./column-selector";
+import { RowActions } from "./row-actions";
 import type { ColumnKey, ProductListItem } from "./types";
 
 const STATUS_VARIANT: Record<
@@ -55,6 +56,9 @@ export function ProductsTable({ rows }: { rows: ProductListItem[] }) {
                 {COLUMN_LABELS[key]}
               </TableHead>
             ))}
+            <TableHead className="w-12">
+              <span className="sr-only">{m.products.rowActions.menuLabel}</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -63,6 +67,9 @@ export function ProductsTable({ rows }: { rows: ProductListItem[] }) {
               {visible.map((key) => (
                 <Cell key={key} columnKey={key} row={row} />
               ))}
+              <TableCell className="w-12 text-right">
+                <RowActions row={row} />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

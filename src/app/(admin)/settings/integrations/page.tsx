@@ -1,6 +1,7 @@
 import { AlertCircle, CheckCircle2, ExternalLink } from "lucide-react";
 
 import { EtsyDefaultsForm } from "@/components/forms/etsy-defaults-form";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,12 +41,12 @@ async function loadShopInfo(shopId: number): Promise<ShopInfo | null> {
   try {
     const res = await etsyFetch(`/shops/${shopId}`);
     if (!res.ok) {
-      devError("settings/etsy: /shops fetch", res.status);
+      devError("settings/integrations: /shops fetch", res.status);
       return null;
     }
     return (await res.json()) as ShopInfo;
   } catch (err) {
-    devError("settings/etsy: /shops threw", err);
+    devError("settings/integrations: /shops threw", err);
     return null;
   }
 }
@@ -58,7 +59,7 @@ async function loadDefaultsData(shopId: number): Promise<DefaultsData> {
     ]);
     return { shippingProfiles, returnPolicies, failed: false };
   } catch (err) {
-    devError("settings/etsy: defaults fetch threw", err);
+    devError("settings/integrations: defaults fetch threw", err);
     return { shippingProfiles: [], returnPolicies: [], failed: true };
   }
 }
@@ -68,7 +69,7 @@ function errorMessage(code: string): string | null {
   return map[code] ?? null;
 }
 
-export default async function EtsySettingsPage({
+export default async function IntegrationsSettingsPage({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
@@ -79,7 +80,6 @@ export default async function EtsySettingsPage({
   const rows = await db.select().from(etsyOauth).limit(1);
   const connection = rows[0] ?? null;
 
-  // Run shop info + defaults fetches in parallel only if connected.
   const [shopInfo, defaults] = connection
     ? await Promise.all([
         loadShopInfo(Number(connection.shopId)),
@@ -89,46 +89,54 @@ export default async function EtsySettingsPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <p className="text-sm font-medium text-muted-foreground">
-          {m.settings.etsy.kicker}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {m.settings.etsy.title}
-        </h1>
-        <p className="text-muted-foreground">{m.settings.etsy.description}</p>
-      </header>
+      <PageHeader>
+      <PageHeader.Column className="flex-1 flex-col">
+          <PageHeader.Eyebrow number="04" label={m.settings.integrations.kicker} />
+          <PageHeader.Title>{m.settings.integrations.title}</PageHeader.Title>
+          <PageHeader.Description>
+            {m.settings.integrations.description}
+          </PageHeader.Description>
+        </PageHeader.Column>
+      </PageHeader>
 
-      {errorMsg && (
-        <Card className="border-destructive/40 bg-destructive/5">
-          <CardHeader className="flex flex-row items-start gap-3 space-y-0">
-            <AlertCircle className="mt-0.5 size-5 text-destructive" />
-            <div className="space-y-1">
-              <CardTitle className="text-base">
-                {m.settings.etsy.fetchShopErrorTitle}
-              </CardTitle>
-              <CardDescription>{errorMsg}</CardDescription>
-            </div>
-          </CardHeader>
-        </Card>
-      )}
+      <section className="space-y-4">
+        <header className="space-y-1">
+          <h2 className="text-xl font-semibold">{m.settings.etsy.title}</h2>
+          <p className="text-sm text-muted-foreground">
+            {m.settings.etsy.description}
+          </p>
+        </header>
 
-      {connection ? (
-        <>
-          <ConnectedCard
-            shopId={Number(connection.shopId)}
-            shopInfo={shopInfo}
-          />
-          <DefaultsCard
-            data={defaults!}
-            currentShippingProfileId={connection.defaultShippingProfileId}
-            currentReturnPolicyId={connection.defaultReturnPolicyId}
-            currentMarkupPercent={connection.markupPercent}
-          />
-        </>
-      ) : (
-        <DisconnectedCard />
-      )}
+        {errorMsg && (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardHeader className="flex flex-row items-start gap-3 space-y-0">
+              <AlertCircle className="mt-0.5 size-5 text-destructive" />
+              <div className="space-y-1">
+                <CardTitle className="text-base">
+                  {m.settings.etsy.fetchShopErrorTitle}
+                </CardTitle>
+                <CardDescription>{errorMsg}</CardDescription>
+              </div>
+            </CardHeader>
+          </Card>
+        )}
+
+        {connection ? (
+          <>
+            <ConnectedCard
+              shopId={Number(connection.shopId)}
+              shopInfo={shopInfo}
+            />
+            <DefaultsCard
+              data={defaults!}
+              currentShippingProfileId={connection.defaultShippingProfileId}
+              currentReturnPolicyId={connection.defaultReturnPolicyId}
+            />
+          </>
+        ) : (
+          <DisconnectedCard />
+        )}
+      </section>
     </div>
   );
 }
@@ -138,9 +146,7 @@ function DisconnectedCard() {
     <Card>
       <CardHeader>
         <CardTitle>{m.settings.etsy.disconnectedTitle}</CardTitle>
-        <CardDescription>
-          {m.settings.etsy.disconnectedBody}
-        </CardDescription>
+        <CardDescription>{m.settings.etsy.disconnectedBody}</CardDescription>
       </CardHeader>
       <CardContent>
         <Button asChild>
@@ -195,12 +201,10 @@ function DefaultsCard({
   data,
   currentShippingProfileId,
   currentReturnPolicyId,
-  currentMarkupPercent,
 }: {
   data: DefaultsData;
   currentShippingProfileId: number | null;
   currentReturnPolicyId: number | null;
-  currentMarkupPercent: number;
 }) {
   return (
     <Card>
@@ -221,14 +225,14 @@ function DefaultsCard({
             </p>
           </div>
         )}
-        <EtsyDefaultsForm
-          shippingProfiles={data.shippingProfiles}
-          returnPolicies={data.returnPolicies}
-          currentShippingProfileId={currentShippingProfileId}
-          currentReturnPolicyId={currentReturnPolicyId}
-          currentMarkupPercent={currentMarkupPercent}
-          etsyDataUnavailable={data.failed}
-        />
+        {!data.failed && (
+          <EtsyDefaultsForm
+            shippingProfiles={data.shippingProfiles}
+            returnPolicies={data.returnPolicies}
+            currentShippingProfileId={currentShippingProfileId}
+            currentReturnPolicyId={currentReturnPolicyId}
+          />
+        )}
       </CardContent>
     </Card>
   );

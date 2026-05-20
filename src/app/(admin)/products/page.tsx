@@ -2,6 +2,7 @@ import { count, desc, sql } from "drizzle-orm";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -123,46 +124,47 @@ export default async function ProductsPage({
   );
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-end justify-between gap-6 border-b border-border pb-6">
-        <div className="space-y-3">
-          <p className="text-caplet">
-            <span className="text-brand-terracotta">02</span>{" "}
-            <span>{m.products.kicker}</span>
-          </p>
-          <h1 className="font-sans text-4xl font-medium tracking-tight">
-            {m.products.title}
-          </h1>
-          <p className="max-w-xl text-brand-olive-deep/80">
+    <>
+      <PageHeader>
+        <PageHeader.Column className="flex-1 flex-col">
+          <PageHeader.Eyebrow number="02" label={m.products.kicker} />
+          <PageHeader.Title>{m.products.title}</PageHeader.Title>
+          <PageHeader.Description>
             {m.products.description}
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/products/new">
-            <Plus className="size-4" />
-            {m.products.newProduct}
-          </Link>
-        </Button>
-      </header>
+          </PageHeader.Description>
+        </PageHeader.Column>
+        <PageHeader.Column className="self-end content-end">
+          <Button asChild>
+            <Link href="/products/new">
+              <Plus className="size-4" />
+              {m.products.newProduct}
+            </Link>
+          </Button>
+        </PageHeader.Column>
+      </PageHeader>
 
       <div className="space-y-4">
-        <StatusTabs current={params.tab} searchParams={searchParamsObj} />
-        <FilterBar />
-      </div>
+        <div className="flex gap-4">
+          <StatusTabs current={params.tab} searchParams={searchParamsObj} />
+          <div className="flex-1">
+            <FilterBar />
+          </div>
+        </div>
 
-      {totalCount === 0 ? (
-        <EmptyState />
-      ) : (
-        <>
-          <ProductListShell rows={rows} totalLabel={totalLabel} />
-          <Pagination
-            page={params.page}
-            pageSize={params.pageSize}
-            totalCount={totalCount}
-          />
-        </>
-      )}
-    </div>
+        {totalCount === 0 ? (
+          <EmptyState />
+        ) : (
+          <>
+            <ProductListShell rows={rows} totalLabel={totalLabel} />
+            <Pagination
+              page={params.page}
+              pageSize={params.pageSize}
+              totalCount={totalCount}
+            />
+          </>
+        )}
+      </div>
+    </>
   );
 }
 

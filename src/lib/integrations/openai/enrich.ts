@@ -7,7 +7,11 @@ import { devGroup } from "@/lib/utils/dev";
 import { completeRun, failRun, startRun } from "./ai-runs-log";
 import { MODELS, openai } from "./client";
 import { BRAND_VOICE, ENRICH_SYSTEM } from "./prompts";
-import { extractOutputText, estimateCostUsd } from "./responses-helpers";
+import {
+  estimateCostUsd,
+  extractOutputText,
+  logCacheUsage,
+} from "./responses-helpers";
 import { EnrichmentOutput } from "./schemas";
 
 const dev = devGroup("openai.enrich");
@@ -144,6 +148,8 @@ export async function runEnrichment(productId: string): Promise<void> {
       // mechanical.
       reasoning: { effort: "minimal" },
     });
+
+    logCacheUsage({ kind: "enrich", model: MODELS.text, response });
 
     const text = extractOutputText(response);
     const parsed = EnrichmentOutput.safeParse(safeJsonParse(text));

@@ -38,6 +38,8 @@ explaining why):
 | `src/lib/queue/env-bootstrap.ts` | (calls `loadEnvConfig`) | Loads `.env.local` into `process.env` for the worker; mirrors the trick used in `drizzle.config.ts`. |
 | `src/lib/integrations/openai/client.ts` | `OPENAI_API_KEY`, `OPENAI_*_MODEL`, `NODE_ENV` | Same reason — used from the worker via the enrich processor. |
 | `src/lib/integrations/openai/prompts.ts` | `BRAND_VOICE_PROMPT`, `*_PROMPT`, `LOCATION_POOL` | Used from the worker; prompts are env-overridable so they need direct `process.env` access. |
+| `src/lib/integrations/r2/client.ts` | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `NODE_ENV` | The BullMQ worker uploads model contact sheets + cropped panels to R2 via `model-generate.ts` → `r2/upload.ts` → `r2/client.ts`. Reads env directly so the chain doesn't load `config` (whose `server-only` throws under raw `tsx`). Client-bundle protection comes from `@aws-sdk/client-s3` itself being Node-only. |
+| `src/lib/integrations/r2/upload.ts` | — | Same chain: imported from the model-generation worker. Stays Node-only via its dependency on the SDK and `r2/client.ts`. |
 
 Anything outside this list reading `process.env` is a bug.
 
@@ -51,7 +53,8 @@ grep -rn "process\.env" src/ scripts/ --include='*.ts' --include='*.tsx' \
   | grep -v "src/lib/queue/redis.ts" \
   | grep -v "src/lib/queue/env-bootstrap.ts" \
   | grep -v "src/lib/integrations/openai/client.ts" \
-  | grep -v "src/lib/integrations/openai/prompts.ts"
+  | grep -v "src/lib/integrations/openai/prompts.ts" \
+  | grep -v "src/lib/integrations/r2/client.ts"
 # should return zero lines
 ```
 

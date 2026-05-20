@@ -16,7 +16,7 @@ shaped each phase.
 | 4c — Etsy publish | ⏳ Pending | Listing-mapper + draft→images→video→inline translations→activate. The `etsy-publish` queue + a **stub processor** (flips `status='published'` locally, no Etsy traffic) ship as part of Task 9 so the scheduling round-trip is verifiable end-to-end; Phase 4c replaces the stub. |
 | 5 — BullMQ infrastructure | ✅ Done (idle) | Worker boots, queues empty. Each downstream phase adds its processor by side-effect import. |
 | 6 — Product form rebuild + AI enrichment | 🚧 In progress | List view (filters/tabs/search/pagination/column selector), 4-step new-product stepper (inputs → AI → preview → publish), flat edit form, OpenAI Responses API for title/description/tags/materials/era/taxonomy. Admin UI edits Spanish only; the `runTranslation(productId, field)` primitive ships but is invoked **inline by the Phase 4c Etsy-publish processor**, not on the autosave path. Per-product gpt-image-2 work is **split out** into its own task that consumes the Model Studio library (see Phase 6.5). See [product-form.md](./product-form.md) + [ai-enrichment.md](./ai-enrichment.md). |
-| 6.5 — Model Studio | ⏳ Pending | New top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + variables; saved models live in R2 `assets/models/{id}/` and a new `ai_models` table. Per-product image generation (the original gpt-image-2 placement task) is rebuilt to consume this library. See [model-generation/](./model-generation/README.md). |
+| 6.5 — Model Studio | ✅ Done (lib v1) | Top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + 7 select-driven variables; saves models to R2 `assets/models/{id}/` (contact sheet + 6 cropped panels via gutter detection with graceful fallback) and the new `ai_models` table. Lifecycle: draft → active → archived. Per-product image generation (the original gpt-image-2 placement task) consumes this library in Task 11. See [model-generation/](./model-generation/README.md). |
 | 7 — Webhooks (in/out, HMAC) | ⏳ Pending | Outbound to `retrospectiva-website` (bilingual payload), inbound Etsy receipts (poll-based, optional push). |
 | 8 — Dashboard | ⏳ Pending | Date-range picker, revenue/sales KPIs, listings-by-status, activity feed, Tremor sales chart. |
 | 9 — QoL extras | ⏳ Pending | Audit log, CSV import, product duplicator, pending-sync badge, Telegram notifier, image manager, cost tracker, keyboard shortcuts, orphan-draft cleanup. |
@@ -227,6 +227,73 @@ publish). See [product-form.md](./product-form.md) +
 - **Curated Etsy taxonomy short list** in `taxonomy.ts` — drafted
   by Claude, reviewed by the user. AI picks from that closed set
   rather than the full Etsy taxonomy tree.
+
+### Model Studio shipped + hardening (2026-05-19)
+
+**Task 8 shipped**: `/models` admin section, generation form,
+`gpt-image-2` worker, gutter-detect cropping with graceful fallback,
+R2 storage (contact sheet + 6 cropped panels), `ai_models` table
+with `draft → active → archived` lifecycle. See
+[model-generation/model-studio.md](./model-generation/model-studio.md).
+
+Decisions and fixes layered on top, post-Task-8:
+
+- **Crop algorithm rewrite (2026-05-19).** Column-projection gutter
+  detection retired — too fragile for narrow standing-pose figures
+  inside white-on-white panels (every column outside the figure
+  silhouette looked like a gutter). Replaced with: horizontal middle
+  detected by projection (works thanks to portrait panels anchoring
+  it), columns split into equal thirds of the image width, validated
+  by a "split lines fall in mostly-white columns" sanity check.
+  Empirically passes on `gpt-image-2` output that previously failed.
+
+- **R2 keys carry the `{run_id}` segment.** `assets/models/{id}/{run_id}/...`
+  instead of `assets/models/{id}/...`. Each regeneration writes to
+  a fresh path so the 1-year-immutable cache headers don't bite us
+  when keys are overwritten. Old prefixes become orphans (cheap;
+  cleanup deferred). Discard still wipes via prefix delete.
+
+- **Regenerar UX**: `kickedAt` local state in `ModelDetailView`
+  (mirrors the `step-2-ai-review.tsx` pattern). Flips to skeleton
+  the instant the user clicks, before the server round-trip lands a
+  new run in the polling endpoint. Pattern is the project default
+  for any regenerate flow.
+
+- **Retry-crop button**: `retryCropModel(id)` action downloads the
+  existing sheet from R2, re-runs `cropPanelsFromSheet` against the
+  current algorithm. Useful for old `cropsAvailable=false` rows
+  after algorithm tweaks. Button shows only when
+  `model.contactSheetKey && !model.cropsAvailable`.
+
+- **Prompt tightening (Phase 1 base)**: added explicit "figures
+  occupy full vertical height" + "40px gutters on all sides"
+  language to `BASE_MODEL_GENERATION`. Empirically improved gutter
+  cleanliness in `gpt-image-2` output.
+
+- **Cost estimator fix**: image models are flat-rate per call, not
+  token-based. New `estimateImageCostUsd({ model, size, quality })`
+  in `responses-helpers.ts`; the old token-based fallback was off
+  by ~10× for `gpt-image-2`. Backfilled 7 existing
+  `model_generation` rows so `ai_runs.cost_usd` matches the OpenAI
+  dashboard. Token-based `estimateCostUsd` stays for text models.
+
+### Idempotent enrich + auto-taxonomy (2026-05-18)
+
+- **`enqueueEnrichJob` is now idempotent** when the latest enrich
+  run is `succeeded`. Pass `{ force: true }` to bypass (used by
+  Regenerar). Stops step 1 → step 2 navigation from re-running
+  enrichment every time + losing manual tweaks.
+- **Regenerar button on `AiContentSection`** (shared between step
+  2 + edit form). Step 2 uses the unified `kick` pattern (retry +
+  regenerate go through the same handler with `force: true`); edit
+  form has on-click polling + `window.confirm` warning.
+- **Etsy taxonomy auto-derived from `clothing_type`**. Picker
+  removed from step 2 / summary. `clothing-types.ts` registry
+  gained an `etsyTaxonomyKey` per garment; `updateProductDraftField`
+  derives `etsyTaxonomyId` server-side. AI schema dropped
+  `etsyTaxonomyKey` (one less field).
+- **`runEnrichment` bumps `products.updatedAt`** so the
+  `AiContentSection` key remounts after regenerate.
 
 ### Scheduled-publish queueing (2026-05-18)
 

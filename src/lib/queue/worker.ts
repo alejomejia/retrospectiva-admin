@@ -39,6 +39,7 @@ async function main() {
   // Side-effect imports for each phase's workers go here.
   await import("@/lib/integrations/openai/enrich-worker"); // Task 6 (AI enrich)
   await import("@/lib/integrations/etsy/publish-worker"); // Task 9 stub (Phase 4c replaces)
+  await import("@/lib/integrations/openai/model-generate-worker"); // Task 8 (Model Studio)
   // Coming next:
   //   await import("@/lib/integrations/openai/image-placement-worker"); // Task 11
   //   await import("@/lib/integrations/website/revalidate-worker"); // Phase 7

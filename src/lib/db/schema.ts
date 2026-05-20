@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   pgEnum,
   pgTable,
   text,
@@ -78,6 +79,13 @@ export const aiRunKind = pgEnum("ai_run_kind", [
   "when_made",
   "translation",
   "enrich",
+  "model_generation",
+]);
+
+export const aiModelStatus = pgEnum("ai_model_status", [
+  "draft",
+  "active",
+  "archived",
 ]);
 
 export const aiRunStatus = pgEnum("ai_run_status", [
@@ -107,6 +115,12 @@ export const products = pgTable(
     currency: text("currency").notNull().default("EUR"),
     markupPercentOverride: smallint("markup_percent_override"),
     listPriceCentsOverride: integer("list_price_cents_override"),
+    // Cost of the garment to the shop, in EUR cents. Snapshotted from
+    // `clothing_buy_price_defaults` when the clothing type is first
+    // set (only when this column is null) — later changes to defaults
+    // do NOT backfill existing products. User can override via the
+    // step-1 input. Earnings = base_price_cents - buy_price_cents.
+    buyPriceCents: integer("buy_price_cents"),
 
     // User-provided attributes (set in step 1 of the stepper).
     clothingType: clothingType("clothing_type"),
@@ -144,6 +158,12 @@ export const products = pgTable(
       .default(sql`'{}'::text[]`),
     etsyWhenMade: text("etsy_when_made"),
     etsyTaxonomyId: bigint("etsy_taxonomy_id", { mode: "number" }),
+
+    // Per-product override for the shop-wide AI image generation
+    // toggle (etsy_oauth.ai_image_enabled). null = inherit shop
+    // default; true/false = explicit per-product override. Read at
+    // the image-placement-worker boundary (Task 11).
+    aiImageEnabled: boolean("ai_image_enabled"),
 
     // Lifecycle.
     status: productStatus("status").notNull().default("draft"),
@@ -232,9 +252,20 @@ export const aiRuns = pgTable(
   "ai_runs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    productId: uuid("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
+    /**
+     * Subject the run is attached to. For per-product runs
+     * (`enrich`, `translation`, `model_placement`, etc.) this is the
+     * product UUID. For shop-wide runs (`model_generation` from the
+     * Model Studio) we leave it null — the back-reference lives on
+     * `ai_models.ai_run_id` instead. Nullable on the FK side so the
+     * cascade on product deletion still works for product-scoped
+     * runs.
+     */
+    productId: uuid("product_id").references(() => products.id, {
+      onDelete: "cascade",
+    }),
+    /** Set for `kind='model_generation'` runs; null otherwise. */
+    aiModelId: uuid("ai_model_id"),
     kind: aiRunKind("kind").notNull(),
     status: aiRunStatus("status").notNull().default("pending"),
     model: text("model"),
@@ -252,6 +283,73 @@ export const aiRuns = pgTable(
   (t) => [
     index("ai_runs_product_idx").on(t.productId),
     index("ai_runs_created_at_idx").on(t.createdAt),
+  ],
+);
+
+/**
+ * Synthetic AI fashion models. Generated once via the Model Studio
+ * (`/models`) and reused across product image generations. Decoupled
+ * from `products` — these are shop-wide assets, not per-product.
+ *
+ * Lifecycle: `draft` (just generated, awaiting user review) → `active`
+ * (saved with a label, available for per-product selection) →
+ * `archived` (out of rotation but kept for provenance on products
+ * that already used the model).
+ *
+ * R2 layout: `assets/models/{id}/{contact-sheet|front_full|…}.png`.
+ * The contact sheet is the canonical artifact; the six panel crops
+ * are derivatives produced by `grid-crop.ts` after the worker
+ * downloads the OpenAI output. If gutter detection fails, only the
+ * sheet is stored and `crops_available=false`.
+ */
+export const aiModels = pgTable(
+  "ai_models",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** User-chosen short name ("Lucía", "Sofía", …). Null until the
+     *  user clicks Guardar on the post-generation preview. */
+    label: text("label"),
+    status: aiModelStatus("status").notNull().default("draft"),
+
+    // Generation inputs — exact strings interpolated into the
+    // BASE_MODEL_GENERATION prompt. Stored verbatim so "Regenerar"
+    // and "Clonar" workflows can reuse the same vars.
+    ageRange: text("age_range").notNull(),
+    bodyType: text("body_type").notNull(),
+    heightRange: text("height_range").notNull(),
+    skinTone: text("skin_tone").notNull(),
+    faceShape: text("face_shape").notNull(),
+    hairColor: text("hair_color").notNull(),
+    hairShape: text("hair_shape").notNull(),
+    hairType: text("hair_type").notNull(),
+
+    // R2 keys. `contactSheetKey` is null until generation succeeds.
+    // The six panel keys are null when `cropsAvailable=false` (gutter
+    // detection couldn't find a clean 3×2 grid in the model output).
+    contactSheetKey: text("contact_sheet_key"),
+    frontFullKey: text("front_full_key"),
+    frontPortraitKey: text("front_portrait_key"),
+    frontEditorialKey: text("front_editorial_key"),
+    sidePortraitKey: text("side_portrait_key"),
+    backFullKey: text("back_full_key"),
+    threequarterFullKey: text("threequarter_full_key"),
+    cropsAvailable: boolean("crops_available").notNull().default(false),
+
+    /** Pointer to the last successful generation run. Audit/cost. */
+    aiRunId: uuid("ai_run_id").references(() => aiRuns.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("ai_models_status_idx").on(t.status),
+    index("ai_models_created_at_idx").on(t.createdAt),
   ],
 );
 
@@ -284,8 +382,9 @@ export const etsyOauth = pgTable("etsy_oauth", {
   refreshToken: text("refresh_token").notNull(),
   scopes: text("scopes").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  // Shop-wide publish defaults — set in /settings/etsy. Per-product
-  // fields (taxonomy, section, era) live on the product, not here.
+  // Shop-wide publish defaults — shipping/returns set in
+  // /settings/integrations, markup set in /settings/products.
+  // Per-product fields (taxonomy, section, era) live on the product.
   defaultShippingProfileId: bigint("default_shipping_profile_id", {
     mode: "number",
   }),
@@ -305,6 +404,42 @@ export const etsyOauth = pgTable("etsy_oauth", {
 });
 
 /**
+ * Singleton row of shop-wide product defaults that aren't tied to
+ * any single integration. Lives at /settings/products. The `id`
+ * column defaults to a fixed sentinel so the row is upserted once
+ * and never duplicated.
+ */
+export const productSettings = pgTable("product_settings", {
+  id: text("id").primaryKey().default("singleton"),
+  // Shop-wide default for AI image generation on products. Per-product
+  // override lives on `products.ai_image_enabled` (null = inherit).
+  // Read at the image-placement-worker boundary (Task 11) — cheaper
+  // to short-circuit at enqueue time than to skip mid-worker.
+  aiImageEnabled: boolean("ai_image_enabled").notNull().default(true),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .default(sql`now()`),
+});
+
+/**
+ * Per clothing-type default buy price (cost to the shop), in EUR
+ * cents. One row per clothing type. New products read this on first
+ * clothing_type set to snapshot the value onto `products.buy_price_cents`;
+ * later changes here do NOT cascade into existing products. Edited in
+ * /settings/products.
+ */
+export const clothingBuyPriceDefaults = pgTable(
+  "clothing_buy_price_defaults",
+  {
+    clothingType: clothingType("clothing_type").primaryKey(),
+    defaultBuyPriceCents: integer("default_buy_price_cents").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+  },
+);
+
+/**
  * Deduplication for webhook deliveries and idempotent job triggers.
  * `purpose` lets multiple subsystems share the same table (e.g.
  * `etsy-receipt:1234`, `r2-cleanup:product:abc`).
@@ -322,7 +457,10 @@ export type NewProduct = typeof products.$inferInsert;
 export type ProductImage = typeof productImages.$inferSelect;
 export type ProductVideo = typeof productVideos.$inferSelect;
 export type AiRun = typeof aiRuns.$inferSelect;
+export type AiModel = typeof aiModels.$inferSelect;
+export type NewAiModel = typeof aiModels.$inferInsert;
 export type EventRow = typeof events.$inferSelect;
 export type ProductStatus = (typeof productStatus.enumValues)[number];
 export type ProductCondition = (typeof productCondition.enumValues)[number];
 export type ClothingType = (typeof clothingType.enumValues)[number];
+export type AiModelStatus = (typeof aiModelStatus.enumValues)[number];

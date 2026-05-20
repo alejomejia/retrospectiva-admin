@@ -5,6 +5,10 @@
 @import "./utilities.css";
 
 @layer base {
+  html {
+    overscroll-behavior: none;
+  }
+  
   body {
     background: var(--color-background);
     color: var(--color-foreground);

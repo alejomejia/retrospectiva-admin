@@ -51,43 +51,46 @@ const MarkupPercent = z
     ]),
   );
 
-const SaveSchema = z.object({
+const EtsyDefaultsSchema = z.object({
   shippingProfileId: EtsyIdOrNull,
   returnPolicyId: EtsyIdOrNull,
+});
+
+const MarkupSchema = z.object({
   markupPercent: MarkupPercent,
 });
 
 export type SaveEtsyDefaultsInput = {
   shippingProfileId: string;
   returnPolicyId: string;
+};
+
+export type SaveShopMarkupInput = {
   markupPercent: string;
 };
 
-export type SaveEtsyDefaultsResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export type SaveResult = { ok: true } | { ok: false; error: string };
 
 /**
- * Persist the shop-wide publish defaults onto the single
- * `etsy_oauth` row.
+ * Persist Etsy-specific publish defaults (shipping profile + return
+ * policy) onto the single `etsy_oauth` row.
  *
  * - Single-shop admin: we use the only row in `etsy_oauth`.
- * - Either value can be cleared by passing an empty string from the
- *   form.
- * - Returns a typed result instead of throwing so the form can
- *   render the error inline.
+ * - Either value can be cleared by passing an empty string.
+ * - Returns a typed result instead of throwing so the form can render
+ *   the error inline.
  */
 export async function saveEtsyDefaults(
   input: SaveEtsyDefaultsInput,
-): Promise<SaveEtsyDefaultsResult> {
+): Promise<SaveResult> {
   await requireSession();
 
-  const parsed = SaveSchema.safeParse(input);
+  const parsed = EtsyDefaultsSchema.safeParse(input);
   if (!parsed.success) {
-    dev.warn("invalid input:", parsed.error.issues);
+    dev.warn("invalid etsy defaults input:", parsed.error.issues);
     return { ok: false, error: m.errors.invalidForm };
   }
-  const { shippingProfileId, returnPolicyId, markupPercent } = parsed.data;
+  const { shippingProfileId, returnPolicyId } = parsed.data;
 
   const [row] = await db.select().from(etsyOauth).limit(1);
   if (!row) {
@@ -99,6 +102,46 @@ export async function saveEtsyDefaults(
     .set({
       defaultShippingProfileId: shippingProfileId,
       defaultReturnPolicyId: returnPolicyId,
+      updatedAt: new Date(),
+    })
+    .where(eq(etsyOauth.id, row.id));
+
+  dev.log("saved etsy defaults", { shippingProfileId, returnPolicyId });
+  revalidatePath("/settings/integrations");
+  return { ok: true };
+}
+
+/**
+ * Persist the shop-wide markup percent (used by the Etsy list-price
+ * calculation but conceptually a product-pricing default, hence
+ * exposed under /settings/products).
+ *
+ * Currently stored on the `etsy_oauth` row; will migrate to a
+ * `shop_settings` table when that lands.
+ *
+ * Empty string clears the override and falls back to the schema
+ * default (30%).
+ */
+export async function saveShopMarkup(
+  input: SaveShopMarkupInput,
+): Promise<SaveResult> {
+  await requireSession();
+
+  const parsed = MarkupSchema.safeParse(input);
+  if (!parsed.success) {
+    dev.warn("invalid markup input:", parsed.error.issues);
+    return { ok: false, error: m.errors.invalidForm };
+  }
+  const { markupPercent } = parsed.data;
+
+  const [row] = await db.select().from(etsyOauth).limit(1);
+  if (!row) {
+    return { ok: false, error: m.settings.etsy.defaults.notConnectedError };
+  }
+
+  await db
+    .update(etsyOauth)
+    .set({
       // Empty string → null → fall back to schema default (30). The
       // NOT NULL column means we coerce to 30 on the way out.
       markupPercent: markupPercent ?? 30,
@@ -106,14 +149,9 @@ export async function saveEtsyDefaults(
     })
     .where(eq(etsyOauth.id, row.id));
 
-  dev.log("saved defaults", {
-    shippingProfileId,
-    returnPolicyId,
-    markupPercent,
-  });
-  // Revalidate both the settings page and the products list (the list
-  // recomputes Etsy prices from the shop markup).
-  revalidatePath("/settings/etsy");
+  dev.log("saved shop markup", { markupPercent });
+  revalidatePath("/settings/products");
+  // The product list recomputes Etsy prices from the shop markup.
   revalidatePath("/products");
   return { ok: true };
 }

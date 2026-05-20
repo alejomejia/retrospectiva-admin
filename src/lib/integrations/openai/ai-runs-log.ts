@@ -19,7 +19,10 @@ import { aiRuns, type AiRun } from "@/lib/db/schema";
 export type AiRunKind = AiRun["kind"];
 
 export type StartRunInput = {
-  productId: string;
+  /** Product-scoped runs (enrich, translation, model_placement). */
+  productId?: string;
+  /** Shop-wide runs (model_generation in the Model Studio). */
+  aiModelId?: string;
   kind: AiRunKind;
   model?: string | null;
   input?: unknown;
@@ -44,10 +47,16 @@ export type FailRunInput = {
  * `completeRun` or `failRun`.
  */
 export async function startRun(input: StartRunInput): Promise<string> {
+  if (!input.productId && !input.aiModelId) {
+    throw new Error(
+      "startRun: must specify either productId or aiModelId",
+    );
+  }
   const [row] = await db
     .insert(aiRuns)
     .values({
-      productId: input.productId,
+      productId: input.productId ?? null,
+      aiModelId: input.aiModelId ?? null,
       kind: input.kind,
       status: "running",
       model: input.model ?? null,

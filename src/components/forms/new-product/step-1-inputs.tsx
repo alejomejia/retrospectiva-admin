@@ -24,7 +24,9 @@ import { STEP_1_REQUIRED, type SizeValue } from "@/lib/products/draft-schema";
 import type { ProductMeasurements } from "@/lib/products/measurements";
 import { toast } from "sonner";
 
+import { AiImageOverrideField } from "./ai-image-override-field";
 import { useAutosave } from "./autosave-context";
+import { BuyPriceField } from "./buy-price-field";
 import { ConditionField } from "./condition-field";
 import { GarmentTypeField } from "./garment-type-field";
 import { MeasurementsField } from "./measurements-field";
@@ -38,17 +40,21 @@ import { SizesField } from "./sizes-field";
 export function Step1Inputs({
   product,
   shopMarkupPercent,
+  shopAiImageEnabled,
+  buyPriceDefaults,
   imageItems,
   videoItems,
   onNext,
 }: {
   product: Product;
   shopMarkupPercent: number;
+  shopAiImageEnabled: boolean;
+  buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
   onNext: () => void;
 }) {
-  const { flush } = useAutosave();
+  const { schedule, flush } = useAutosave();
   const [submitting, setSubmitting] = useState(false);
 
   // Local state mirrors the product row; autosave handles persistence.
@@ -69,6 +75,9 @@ export function Step1Inputs({
   const [markupOverride, setMarkupOverride] = useState<number | null>(
     product.markupPercentOverride,
   );
+  const [buyPriceCents, setBuyPriceCents] = useState<number | null>(
+    product.buyPriceCents,
+  );
   const [measurements, setMeasurements] = useState<ProductMeasurements>({
     shoulderCm: product.shoulderCm,
     chestCm: product.chestCm,
@@ -79,6 +88,16 @@ export function Step1Inputs({
     lengthCm: product.lengthCm,
     braSize: product.braSize,
   });
+
+  const handleClothingTypeChange = (ct: ClothingType) => {
+    setClothingType(ct);
+    // Always overwrite the per-product buy price with the type's
+    // default on each change. `null` when no default is set —
+    // intentionally clears the input.
+    const def = buyPriceDefaults[ct] ?? null;
+    setBuyPriceCents(def);
+    schedule({ buyPriceCents: def });
+  };
 
   const requiredFilled =
     !!clothingType &&
@@ -120,7 +139,7 @@ export function Step1Inputs({
           <div className="grid gap-6 sm:grid-cols-2">
             <GarmentTypeField
               value={clothingType}
-              onChange={setClothingType}
+              onChange={handleClothingTypeChange}
             />
             <ConditionField value={condition} onChange={setCondition} />
           </div>
@@ -136,6 +155,16 @@ export function Step1Inputs({
             onMarkupChange={setMarkupOverride}
           />
 
+          <BuyPriceField
+            // Remount on clothing-type-driven overwrites so the input
+            // reflects the new default; user blur sets state locally.
+            key={`buy-${clothingType ?? "none"}`}
+            buyPriceCents={buyPriceCents}
+            basePriceCents={basePriceCents}
+            currency={product.currency}
+            onChange={setBuyPriceCents}
+          />
+
           <div className="space-y-2">
             <p className="text-caplet">{m.products.stepper.step1.measurementsTitle}</p>
             <MeasurementsField
@@ -144,6 +173,21 @@ export function Step1Inputs({
               onChange={setMeasurements}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{m.products.editForm.aiImage.title}</CardTitle>
+          <CardDescription>
+            {m.products.editForm.aiImage.description}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AiImageOverrideField
+            value={product.aiImageEnabled}
+            shopAiImageEnabled={shopAiImageEnabled}
+          />
         </CardContent>
       </Card>
 

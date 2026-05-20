@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { SidebarNav } from "@/components/layout/sidebar-nav";
-import { Topbar } from "@/components/layout/topbar";
-import { requireSession } from "@/lib/auth/require-session";
+import { Logo } from "@/components/ui/logo";
+import { Logout } from "@/components/layout/logout";
+import { Badge } from "@/components/ui/badge";
+import { config, isProd } from "@/lib/utils/config";
 
 /**
  * Shared layout for every authenticated screen. Sidebar holds the
@@ -17,24 +19,26 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await requireSession();
-
   return (
     <div className="flex min-h-full flex-1">
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-card/40 md:flex">
+      <aside className="fixed top-0 left-0 bottom-0 hidden w-56 shrink-0 flex-col border-r border-border bg-card md:flex">
         <Link
           href="/"
-          className="flex h-14 items-center border-b border-border px-4 font-medium tracking-tight"
+          className="flex py-4 items-center border-b border-border/50 px-4 font-medium tracking-tight"
         >
-          Retrospectiva{" "}
-          <span className="ml-1 text-brand-terracotta">Admin</span>
+          <Logo />
         </Link>
         <SidebarNav />
+        <div className="flex items-center justify-center py-3">
+          <Badge variant="secondary" className="font-mono text-xs uppercase tracking-widest">
+              v0.1 · {isProd ? "prod" : "dev"}
+          </Badge>
+        </div>
+        <Logout />
       </aside>
-      <div className="flex flex-1 flex-col">
-        <Topbar username={session.username} />
-        <main className="flex-1 px-6 py-8 md:px-10">{children}</main>
-      </div>
+      <main className="flex flex-col gap-6 w-full ml-56 p-6">
+        {children}
+      </main>
     </div>
   );
 }

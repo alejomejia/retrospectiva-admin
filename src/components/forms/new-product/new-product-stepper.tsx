@@ -3,10 +3,10 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
-import { Stepper, type StepperStep } from "@/components/forms/stepper";
+import { Stepper } from "@/components/forms/stepper";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
-import type { Product } from "@/lib/db/schema";
+import type { ClothingType, Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 
 import { AutosaveIndicator } from "./autosave-indicator";
@@ -42,11 +42,15 @@ function parseStep(raw: string | null): StepKey {
 export function NewProductStepper({
   product,
   shopMarkupPercent,
+  shopAiImageEnabled,
+  buyPriceDefaults,
   imageItems,
   videoItems,
 }: {
   product: Product;
   shopMarkupPercent: number;
+  shopAiImageEnabled: boolean;
+  buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
 }) {
@@ -57,7 +61,7 @@ export function NewProductStepper({
   const currentStep = parseStep(searchParams.get("step"));
   const currentIndex = STEP_ORDER.indexOf(currentStep);
 
-  const steps = useMemo<StepperStep[]>(
+  const steps = useMemo(
     () => [
       { id: "inputs", label: m.products.stepper.steps.inputs },
       { id: "ai", label: m.products.stepper.steps.aiReview },
@@ -84,14 +88,26 @@ export function NewProductStepper({
       initialUpdatedAt={product.updatedAt}
     >
       <div className="space-y-6">
-        <div className="flex justify-end">
-          <AutosaveIndicator />
-        </div>
-        <Stepper steps={steps} currentStepIndex={currentIndex}>
+        <Stepper currentStepIndex={currentIndex}>
+          <div className="flex justify-between items-center gap-4">
+            <Stepper.List>
+              {steps.map((step, index) => (
+                <Stepper.Item
+                  key={step.id}
+                  index={index}
+                  label={step.label}
+                  isLast={index === steps.length - 1}
+                />
+              ))}
+            </Stepper.List>
+            <AutosaveIndicator />
+          </div>
           {currentStep === "inputs" && (
             <Step1Inputs
               product={product}
               shopMarkupPercent={shopMarkupPercent}
+              shopAiImageEnabled={shopAiImageEnabled}
+              buyPriceDefaults={buyPriceDefaults}
               imageItems={imageItems}
               videoItems={videoItems}
               onNext={() => go("ai")}
