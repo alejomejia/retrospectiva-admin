@@ -35,6 +35,8 @@ import {
   HAIR_TYPE_VALUES,
   HEIGHT_RANGE_DEFAULT,
   HEIGHT_RANGE_VALUES,
+  IMAGE_QUALITY_DEFAULT,
+  IMAGE_QUALITY_VALUES,
   SKIN_TONE_DEFAULT,
   SKIN_TONE_VALUES,
 } from "@/lib/ai-models/variables";
@@ -56,6 +58,7 @@ export function NewModelForm() {
     bodyType: BODY_TYPE_DEFAULT,
     heightRange: HEIGHT_RANGE_DEFAULT,
     skinTone: SKIN_TONE_DEFAULT,
+    imageQuality: IMAGE_QUALITY_DEFAULT,
   });
 
   const set = <K extends keyof NewModelInput>(
@@ -183,6 +186,25 @@ export function NewModelForm() {
               onChange={(v) => set("hairType", v as NewModelInput["hairType"])}
             />
           </div>
+          <div className="mt-6 max-w-xs space-y-1">
+            <FormSelect
+              id="imageQuality"
+              label={m.models.new.fields.imageQuality}
+              value={form.imageQuality}
+              options={IMAGE_QUALITY_VALUES}
+              optionLabel={(v) =>
+                m.models.new.imageQualities[
+                  v as keyof typeof m.models.new.imageQualities
+                ] ?? v
+              }
+              onChange={(v) =>
+                set("imageQuality", v as NewModelInput["imageQuality"])
+              }
+            />
+            <p className="text-sm text-muted-foreground">
+              {m.models.new.imageQualityHelp}
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -222,7 +244,7 @@ function FormSelect<T extends string>({
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-caplet">
+      <Label htmlFor={id} className="text-caplet" required>
         {label}
       </Label>
       <Select

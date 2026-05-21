@@ -40,6 +40,7 @@ type ModelRow = {
   hairColor: string;
   hairShape: string;
   hairType: string;
+  imageQuality: string;
 };
 
 const dbState: {
@@ -110,6 +111,7 @@ const baseRow: ModelRow = {
   hairColor: "dark brown",
   hairShape: "low ponytail",
   hairType: "straight",
+  imageQuality: "low",
 };
 
 beforeEach(() => {
@@ -265,6 +267,32 @@ describe("runModelGeneration", () => {
       status: "failed",
       error: "OpenAI image-gen exploded",
     });
+  });
+
+  it("honors per-row image_quality (e.g. 'high' override)", async () => {
+    dbState.rows = [{ ...baseRow, imageQuality: "high" }];
+    imagesGenerateMock.mockResolvedValueOnce({
+      data: [{ b64_json: Buffer.from("fake-png").toString("base64") }],
+    });
+    cropPanelsMock.mockResolvedValueOnce(null);
+
+    await runModelGeneration("m1");
+
+    const call = imagesGenerateMock.mock.calls[0]![0];
+    expect(call.quality).toBe("high");
+  });
+
+  it("falls back to 'low' when the row's image_quality value is unrecognized", async () => {
+    dbState.rows = [{ ...baseRow, imageQuality: "garbage" }];
+    imagesGenerateMock.mockResolvedValueOnce({
+      data: [{ b64_json: Buffer.from("fake-png").toString("base64") }],
+    });
+    cropPanelsMock.mockResolvedValueOnce(null);
+
+    await runModelGeneration("m1");
+
+    const call = imagesGenerateMock.mock.calls[0]![0];
+    expect(call.quality).toBe("low");
   });
 
   it("throws when the model doesn't exist", async () => {

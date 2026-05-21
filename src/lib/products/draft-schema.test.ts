@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+import { PANEL_ORDER } from "@/lib/integrations/openai/panel-keys";
+
 import {
+  AI_ENVIRONMENT_PRESETS,
+  AI_FIT_OVERRIDES,
+  AI_FRAMING_PRESETS,
+  AI_POSE_PRESETS,
   ETSY_ERA_VALUES,
   ProductDraftPatchSchema,
   SIZE_VALUES,
@@ -225,6 +231,124 @@ describe("ProductDraftPatchSchema", () => {
       expect(
         ProductDraftPatchSchema.safeParse({ etsyTaxonomyId: null }).success,
       ).toBe(true);
+    });
+  });
+
+  describe("image-placement fields (Task 11)", () => {
+    it("accepts a valid UUID for aiModelId and null to clear", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiModelId: "00000000-0000-0000-0000-000000000000",
+        }).success,
+      ).toBe(true);
+      expect(
+        ProductDraftPatchSchema.safeParse({ aiModelId: null }).success,
+      ).toBe(true);
+    });
+
+    it("rejects a non-UUID aiModelId", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({ aiModelId: "not-a-uuid" }).success,
+      ).toBe(false);
+    });
+
+    it("accepts every valid pose / framing / environment preset", () => {
+      for (const p of AI_POSE_PRESETS) {
+        expect(
+          ProductDraftPatchSchema.safeParse({ aiPosePreset: p }).success,
+        ).toBe(true);
+      }
+      for (const f of AI_FRAMING_PRESETS) {
+        expect(
+          ProductDraftPatchSchema.safeParse({ aiFramingPreset: f }).success,
+        ).toBe(true);
+      }
+      for (const e of AI_ENVIRONMENT_PRESETS) {
+        expect(
+          ProductDraftPatchSchema.safeParse({ aiEnvironmentPreset: e })
+            .success,
+        ).toBe(true);
+      }
+    });
+
+    it("rejects unknown preset values", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiPosePreset: "lounge" as never,
+        }).success,
+      ).toBe(false);
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiFramingPreset: "head_only" as never,
+        }).success,
+      ).toBe(false);
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiEnvironmentPreset: "beach" as never,
+        }).success,
+      ).toBe(false);
+    });
+
+    it("does NOT accept null for the not-nullable presets", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({ aiPosePreset: null as never })
+          .success,
+      ).toBe(false);
+      expect(
+        ProductDraftPatchSchema.safeParse({ aiFramingPreset: null as never })
+          .success,
+      ).toBe(false);
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiEnvironmentPreset: null as never,
+        }).success,
+      ).toBe(false);
+    });
+
+    it("accepts every fit-override + null", () => {
+      for (const fit of AI_FIT_OVERRIDES) {
+        expect(
+          ProductDraftPatchSchema.safeParse({ aiFitOverride: fit }).success,
+        ).toBe(true);
+      }
+      expect(
+        ProductDraftPatchSchema.safeParse({ aiFitOverride: null }).success,
+      ).toBe(true);
+    });
+
+    it("accepts every panel key for aiSourcePanel + null", () => {
+      for (const p of PANEL_ORDER) {
+        expect(
+          ProductDraftPatchSchema.safeParse({ aiSourcePanel: p }).success,
+        ).toBe(true);
+      }
+      expect(
+        ProductDraftPatchSchema.safeParse({ aiSourcePanel: null }).success,
+      ).toBe(true);
+    });
+
+    it("accepts every quality tier for aiImageQuality", () => {
+      for (const q of ["low", "medium", "high"] as const) {
+        expect(
+          ProductDraftPatchSchema.safeParse({ aiImageQuality: q }).success,
+        ).toBe(true);
+      }
+    });
+
+    it("rejects an unknown aiImageQuality value", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiImageQuality: "ultra" as never,
+        }).success,
+      ).toBe(false);
+    });
+
+    it("rejects an unknown source-panel value", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({
+          aiSourcePanel: "back_portrait" as never,
+        }).success,
+      ).toBe(false);
     });
   });
 

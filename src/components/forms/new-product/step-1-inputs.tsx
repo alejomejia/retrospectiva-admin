@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
+import type { PanelKey } from "@/lib/integrations/openai/panel-keys";
 
 import { MediaUploader } from "@/components/forms/media-uploader";
 import { Button } from "@/components/ui/button";
@@ -20,12 +22,18 @@ import type {
 } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 import { enqueueEnrichJob } from "@/lib/products/draft-actions";
+import { generateProductImage } from "@/lib/products/image-placement-actions";
 import { STEP_1_REQUIRED, type SizeValue } from "@/lib/products/draft-schema";
 import type { ProductMeasurements } from "@/lib/products/measurements";
 import { toast } from "sonner";
 
-import { AiImageOverrideField } from "./ai-image-override-field";
+import {
+  AiImageSection,
+  type AiReferenceImage,
+  type GeneratedAiImage,
+} from "./ai-image-section";
 import { useAutosave } from "./autosave-context";
+import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import { BuyPriceField } from "./buy-price-field";
 import { ConditionField } from "./condition-field";
 import { GarmentTypeField } from "./garment-type-field";
@@ -44,6 +52,10 @@ export function Step1Inputs({
   buyPriceDefaults,
   imageItems,
   videoItems,
+  aiModels,
+  aiReferenceImage,
+  aiGeneratedImage,
+  r2BaseUrl,
   onNext,
 }: {
   product: Product;
@@ -52,6 +64,10 @@ export function Step1Inputs({
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
+  aiModels: ActiveAiModelListItem[];
+  aiReferenceImage: AiReferenceImage;
+  aiGeneratedImage: GeneratedAiImage;
+  r2BaseUrl: string;
   onNext: () => void;
 }) {
   const { schedule, flush } = useAutosave();
@@ -77,6 +93,21 @@ export function Step1Inputs({
   );
   const [buyPriceCents, setBuyPriceCents] = useState<number | null>(
     product.buyPriceCents,
+  );
+  const [aiModelId, setAiModelId] = useState<string | null>(product.aiModelId);
+  const [aiSourcePanel, setAiSourcePanel] = useState<PanelKey | null>(
+    product.aiSourcePanel as PanelKey | null,
+  );
+  const [aiHasReference, setAiHasReference] = useState<boolean>(
+    aiReferenceImage !== null,
+  );
+  const handleAiRequiredStateChange = useCallback(
+    (s: { modelId: string | null; sourcePanel: PanelKey | null; hasReference: boolean }) => {
+      setAiModelId(s.modelId);
+      setAiSourcePanel(s.sourcePanel);
+      setAiHasReference(s.hasReference);
+    },
+    [],
   );
   const [measurements, setMeasurements] = useState<ProductMeasurements>({
     shoulderCm: product.shoulderCm,
@@ -105,7 +136,18 @@ export function Step1Inputs({
     basePriceCents !== null &&
     basePriceCents > 0;
   const hasImage = imageItems.length > 0;
-  const canProceed = requiredFilled && hasImage;
+
+  // Per-product AI image generation is gated by BOTH the shop-wide
+  // toggle (resolved at page load) AND the per-product override —
+  // mirrors the server-side gate in `generateProductImage`. Used
+  // here to decide whether `handleNext` should fan out to the
+  // placement queue alongside the enrichment one.
+  const aiImageOn = product.aiImageEnabled ?? shopAiImageEnabled;
+  const aiRequiredFilled =
+    !aiImageOn || (!!aiModelId && aiHasReference && !!aiSourcePanel);
+  const canProceed = requiredFilled && hasImage && aiRequiredFilled;
+  const canAutoEnqueuePlacement =
+    aiImageOn && !!aiModelId && aiHasReference && !!clothingType;
 
   async function handleNext() {
     setSubmitting(true);
@@ -118,11 +160,27 @@ export function Step1Inputs({
     // step 1 + surface the error — otherwise step 2 would poll
     // until the 2-min timeout for a job that never ran.
     const enqueued = await enqueueEnrichJob(product.id);
-    setSubmitting(false);
     if (!enqueued.ok) {
+      setSubmitting(false);
       toast.error(enqueued.error);
       return;
     }
+    // Fan out the placement job in parallel with enrichment when
+    // the user has everything wired up. Idempotent on the server
+    // side (succeeded runs short-circuit) so the duplicate enqueue
+    // on a back-then-Next re-entry is a no-op. We deliberately do
+    // NOT block step navigation on this call: enrichment is the
+    // gating signal for step 2; placement only feeds the image
+    // preview, which polls on its own.
+    if (canAutoEnqueuePlacement) {
+      const placement = await generateProductImage(product.id);
+      if (!placement.ok) {
+        // Quiet warning, not an error toast — the user can still
+        // hit Generar imagen manually on step 1 (or later).
+        toast.message(placement.error);
+      }
+    }
+    setSubmitting(false);
     onNext();
   }
 
@@ -176,20 +234,19 @@ export function Step1Inputs({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{m.products.editForm.aiImage.title}</CardTitle>
-          <CardDescription>
-            {m.products.editForm.aiImage.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AiImageOverrideField
-            value={product.aiImageEnabled}
-            shopAiImageEnabled={shopAiImageEnabled}
-          />
-        </CardContent>
-      </Card>
+      <AiImageSection
+        product={product}
+        shopAiImageEnabled={shopAiImageEnabled}
+        aiModels={aiModels}
+        referenceImage={aiReferenceImage}
+        generatedImage={aiGeneratedImage}
+        clothingType={clothingType}
+        r2BaseUrl={r2BaseUrl}
+        // Stepper auto-enqueues placement on Next; a manual button
+        // here would only invite duplicate calls.
+        showGenerateControls={false}
+        onAiRequiredStateChange={handleAiRequiredStateChange}
+      />
 
       <Card>
         <CardHeader>
@@ -226,6 +283,10 @@ export function Step1Inputs({
                 condition,
                 basePriceCents,
                 hasImage,
+                aiImageOn,
+                aiModelId,
+                aiSourcePanel,
+                aiHasReference,
               }),
             )}
           </p>
@@ -247,6 +308,10 @@ function missingFieldList(s: {
   condition: ProductCondition | null;
   basePriceCents: number | null;
   hasImage: boolean;
+  aiImageOn: boolean;
+  aiModelId: string | null;
+  aiSourcePanel: PanelKey | null;
+  aiHasReference: boolean;
 }): string {
   const labels: string[] = [];
   if (!s.clothingType) labels.push(m.products.form.clothingType);
@@ -254,6 +319,13 @@ function missingFieldList(s: {
   if (s.basePriceCents === null || s.basePriceCents <= 0)
     labels.push(m.products.form.basePrice);
   if (!s.hasImage) labels.push(m.products.stepper.step1.imageRequired);
+  if (s.aiImageOn) {
+    if (!s.aiModelId) labels.push(m.products.stepper.step1.aiModelRequired);
+    if (!s.aiHasReference)
+      labels.push(m.products.stepper.step1.aiReferenceRequired);
+    if (!s.aiSourcePanel)
+      labels.push(m.products.stepper.step1.aiSourcePanelRequired);
+  }
   return labels.join(" · ");
 }
 

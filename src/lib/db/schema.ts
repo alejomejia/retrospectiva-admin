@@ -12,6 +12,7 @@ import {
   bigint,
   index,
   uniqueIndex,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -65,21 +66,18 @@ export const clothingType = pgEnum("clothing_type", [
 export const imageRole = pgEnum("image_role", [
   "original",
   "ai_model",
+  // User-uploaded garment-on-white-wall input for Phase 2 image
+  // placement (Task 11). Excluded from the Etsy publish payload —
+  // only `original` + `ai_model` roles ship to listings.
+  "ai_reference",
   "thumbnail",
 ]);
 
 export const aiRunKind = pgEnum("ai_run_kind", [
-  "description",
-  "era",
-  "model_placement",
-  "title",
-  "tags",
-  "materials",
-  "taxonomy",
-  "when_made",
-  "translation",
   "enrich",
+  "translation",
   "model_generation",
+  "model_placement",
 ]);
 
 export const aiModelStatus = pgEnum("ai_model_status", [
@@ -124,7 +122,7 @@ export const products = pgTable(
 
     // User-provided attributes (set in step 1 of the stepper).
     clothingType: clothingType("clothing_type"),
-    condition: productCondition("condition"),
+    condition: productCondition("condition").default("perfect"),
     sizes: text("sizes").array().notNull().default(sql`'{}'::text[]`),
 
     // Measurements in cm, stored flat (as measured across the
@@ -160,10 +158,37 @@ export const products = pgTable(
     etsyTaxonomyId: bigint("etsy_taxonomy_id", { mode: "number" }),
 
     // Per-product override for the shop-wide AI image generation
-    // toggle (etsy_oauth.ai_image_enabled). null = inherit shop
+    // toggle (product_settings.ai_image_enabled). null = inherit shop
     // default; true/false = explicit per-product override. Read at
     // the image-placement-worker boundary (Task 11).
     aiImageEnabled: boolean("ai_image_enabled"),
+
+    // ----- Image-placement inputs (Task 11) ------------------------
+    //
+    // The 6 user-controllable variables consumed by
+    // `assembleImagePlacementPrompt`. Stored as text + validated at
+    // the zod boundary (`draft-schema.ts`) so prompt-preset iteration
+    // doesn't require a migration. Pose / framing / environment have
+    // hard-coded defaults; source panel + fit override default to null
+    // (worker resolves source panel from `clothingType` per-category).
+    aiModelId: uuid("ai_model_id").references(
+      (): AnyPgColumn => aiModels.id,
+      { onDelete: "set null" },
+    ),
+    aiSourcePanel: text("ai_source_panel"),
+    aiPosePreset: text("ai_pose_preset").notNull().default("soft_relaxed"),
+    aiFramingPreset: text("ai_framing_preset").notNull().default("waist_up"),
+    aiEnvironmentPreset: text("ai_environment_preset")
+      .notNull()
+      .default("textured_wall"),
+    aiFitOverride: text("ai_fit_override"),
+    /**
+     * `gpt-image-2` quality tier the image-placement worker passes
+     * to `openai.images.edit` for THIS product. Default `'low'` (the
+     * cheap, iteration-friendly tier — placement runs are the high
+     * volume call in the pipeline). Mirrors `ai_models.image_quality`.
+     */
+    aiImageQuality: text("ai_image_quality").notNull().default("low"),
 
     // Lifecycle.
     status: productStatus("status").notNull().default("draft"),
@@ -335,6 +360,17 @@ export const aiModels = pgTable(
     threequarterFullKey: text("threequarter_full_key"),
     cropsAvailable: boolean("crops_available").notNull().default(false),
 
+    /**
+     * `gpt-image-2` quality tier used for THIS row's generation.
+     * Default `'low'` (cheap, good enough for the identity pass);
+     * the operator can pick `'medium'` or `'high'` on the new-model
+     * form. Validated app-side as a zod enum so future tiers (e.g.
+     * `'auto'`) don't require a migration. Read by the worker each
+     * generation run, so `Regenerar` honors the latest persisted
+     * value.
+     */
+    imageQuality: text("image_quality").notNull().default("low"),
+
     /** Pointer to the last successful generation run. Audit/cost. */
     aiRunId: uuid("ai_run_id").references(() => aiRuns.id, {
       onDelete: "set null",
@@ -416,6 +452,31 @@ export const productSettings = pgTable("product_settings", {
   // Read at the image-placement-worker boundary (Task 11) — cheaper
   // to short-circuit at enqueue time than to skip mid-worker.
   aiImageEnabled: boolean("ai_image_enabled").notNull().default(true),
+
+  // ----- Image-placement shop defaults (Task 11) ------------------
+  //
+  // Snapshotted onto a fresh `products` row at draft-creation time
+  // (see `createDraftProduct`). Later changes here do NOT cascade
+  // into existing products — matches the `buyPriceCents` precedent.
+  // Per-product columns on `products` remain authoritative once set.
+  aiDefaultModelId: uuid("ai_default_model_id").references(
+    (): AnyPgColumn => aiModels.id,
+    { onDelete: "set null" },
+  ),
+  aiDefaultSourcePanel: text("ai_default_source_panel"),
+  aiDefaultPosePreset: text("ai_default_pose_preset")
+    .notNull()
+    .default("soft_relaxed"),
+  aiDefaultFramingPreset: text("ai_default_framing_preset")
+    .notNull()
+    .default("waist_up"),
+  aiDefaultEnvironmentPreset: text("ai_default_environment_preset")
+    .notNull()
+    .default("textured_wall"),
+  aiDefaultImageQuality: text("ai_default_image_quality")
+    .notNull()
+    .default("low"),
+
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .default(sql`now()`),

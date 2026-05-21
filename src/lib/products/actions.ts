@@ -11,6 +11,8 @@ import { productPrefix } from "@/lib/integrations/r2/keys";
 import { m } from "@/lib/i18n/messages.es";
 import { devGroup } from "@/lib/utils/dev";
 
+import { getProductSettings } from "./settings";
+
 const dev = devGroup("products");
 
 /** Statuses where hard-delete is allowed. Published/scheduled/sold are
@@ -31,9 +33,21 @@ export type CreateDraftResult = { id: string };
  */
 export async function createDraftProduct(): Promise<CreateDraftResult> {
   const session = await requireSession();
+  // Snapshot the shop-wide AI placement defaults onto the new row.
+  // Later changes to /settings/ai do NOT backfill existing drafts —
+  // matches the `buyPriceCents` precedent. The operator can still
+  // override every value per-product via the step-1 form.
+  const settings = await getProductSettings();
   const [row] = await db
     .insert(products)
-    .values({})
+    .values({
+      aiModelId: settings.aiDefaultModelId,
+      aiSourcePanel: settings.aiDefaultSourcePanel,
+      aiPosePreset: settings.aiDefaultPosePreset,
+      aiFramingPreset: settings.aiDefaultFramingPreset,
+      aiEnvironmentPreset: settings.aiDefaultEnvironmentPreset,
+      aiImageQuality: settings.aiDefaultImageQuality,
+    })
     .returning({ id: products.id });
   if (!row) {
     throw new Error("Could not create draft product");

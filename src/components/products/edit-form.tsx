@@ -1,12 +1,16 @@
 "use client";
 
-import { Archive, RotateCcw, XCircle } from "lucide-react";
+import { Archive, RotateCcw, Send, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { MediaUploader } from "@/components/forms/media-uploader";
-import { AiImageOverrideField } from "@/components/forms/new-product/ai-image-override-field";
+import {
+  AiImageSection,
+  type AiReferenceImage,
+  type GeneratedAiImage,
+} from "@/components/forms/new-product/ai-image-section";
 import { AutosaveIndicator } from "@/components/forms/new-product/autosave-indicator";
 import { AutosaveProvider } from "@/components/forms/new-product/autosave-context";
 import { ConditionField } from "@/components/forms/new-product/condition-field";
@@ -32,6 +36,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import type {
   ClothingType,
   Product,
@@ -42,6 +47,7 @@ import {
   archiveProduct,
   cancelSchedule,
   enqueueEnrichJob,
+  publishNow,
   restoreToDraft,
 } from "@/lib/products/draft-actions";
 import { type SizeValue } from "@/lib/products/draft-schema";
@@ -83,12 +89,20 @@ export function ProductEditForm({
   shopAiImageEnabled,
   imageItems,
   videoItems,
+  aiModels,
+  aiReferenceImage,
+  aiGeneratedImage,
+  r2BaseUrl,
 }: {
   product: Product;
   shopMarkupPercent: number;
   shopAiImageEnabled: boolean;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
+  aiModels: ActiveAiModelListItem[];
+  aiReferenceImage: AiReferenceImage;
+  aiGeneratedImage: GeneratedAiImage;
+  r2BaseUrl: string;
 }) {
   const router = useRouter();
   const [regenerating, setRegenerating] = useState(false);
@@ -154,8 +168,18 @@ export function ProductEditForm({
         />
 
         <AiImageSection
-          aiImageEnabled={product.aiImageEnabled}
+          product={product}
           shopAiImageEnabled={shopAiImageEnabled}
+          aiModels={aiModels}
+          referenceImage={aiReferenceImage}
+          generatedImage={aiGeneratedImage}
+          // Edit form is flat (no stepper) and clothingType isn't lifted
+          // into shared state — preview reflects the persisted value.
+          // Changing the type via IdentitySection updates the DB but
+          // the preview only refreshes on the next router.refresh()
+          // (e.g. after the Etsy lifecycle actions).
+          clothingType={product.clothingType}
+          r2BaseUrl={r2BaseUrl}
         />
 
         <EtsySection product={product} />
@@ -281,31 +305,6 @@ function MediaSection({
   );
 }
 
-function AiImageSection({
-  aiImageEnabled,
-  shopAiImageEnabled,
-}: {
-  aiImageEnabled: boolean | null;
-  shopAiImageEnabled: boolean;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{m.products.editForm.aiImage.title}</CardTitle>
-        <CardDescription>
-          {m.products.editForm.aiImage.description}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <AiImageOverrideField
-          value={aiImageEnabled}
-          shopAiImageEnabled={shopAiImageEnabled}
-        />
-      </CardContent>
-    </Card>
-  );
-}
-
 function EtsySection({ product }: { product: Product }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -373,6 +372,25 @@ function EtsySection({ product }: { product: Product }) {
           )}
         </div>
         <div className="flex flex-wrap gap-2 pt-2">
+          {(product.status === "draft" || product.status === "scheduled") && (
+            <Button
+              type="button"
+              size="sm"
+              disabled={pending}
+              onClick={() => {
+                if (!window.confirm(m.products.editForm.etsy.publishNowConfirm)) {
+                  return;
+                }
+                handle(
+                  () => publishNow(product.id),
+                  () => m.products.editForm.etsy.publishNowEnqueuedToast,
+                );
+              }}
+            >
+              <Send className="size-4" />
+              {m.products.editForm.etsy.publishNow}
+            </Button>
+          )}
           {product.status === "scheduled" && (
             <Button
               type="button"

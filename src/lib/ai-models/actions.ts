@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { requireSession } from "@/lib/auth/require-session";
@@ -72,6 +72,7 @@ export async function generateModel(
         hairColor: data.hairColor,
         hairShape: data.hairShape,
         hairType: data.hairType,
+        imageQuality: data.imageQuality,
       })
       .returning({ id: aiModels.id });
     if (!row) {
@@ -314,6 +315,50 @@ export async function retryCropModel(
  * default `.add()` becomes a no-op when a job with the same id
  * already exists (failure-retention window).
  */
+/**
+ * Lightweight read used by the product form's "Imagen IA" model
+ * picker (Task 11). Returns the columns the picker + panel preview
+ * render: label, all six cropped-panel R2 keys, and the contact-sheet
+ * key as the fallback when crops aren't available. Filters to
+ * `status='active'` since drafts are mid-review and archived models
+ * shouldn't be picked for new generations (existing products that
+ * already reference an archived model still resolve via the FK).
+ */
+export type ActiveAiModelListItem = {
+  id: string;
+  label: string;
+  contactSheetKey: string | null;
+  cropsAvailable: boolean;
+  frontFullKey: string | null;
+  frontPortraitKey: string | null;
+  frontEditorialKey: string | null;
+  sidePortraitKey: string | null;
+  backFullKey: string | null;
+  threequarterFullKey: string | null;
+};
+
+export async function listActiveAiModels(): Promise<ActiveAiModelListItem[]> {
+  await requireSession();
+  const rows = await db
+    .select({
+      id: aiModels.id,
+      label: aiModels.label,
+      contactSheetKey: aiModels.contactSheetKey,
+      cropsAvailable: aiModels.cropsAvailable,
+      frontFullKey: aiModels.frontFullKey,
+      frontPortraitKey: aiModels.frontPortraitKey,
+      frontEditorialKey: aiModels.frontEditorialKey,
+      sidePortraitKey: aiModels.sidePortraitKey,
+      backFullKey: aiModels.backFullKey,
+      threequarterFullKey: aiModels.threequarterFullKey,
+    })
+    .from(aiModels)
+    .where(eq(aiModels.status, "active"))
+    .orderBy(asc(aiModels.label));
+  return rows
+    .filter((r): r is ActiveAiModelListItem & { label: string } => r.label !== null);
+}
+
 async function enqueueGenerationJob(modelId: string): Promise<void> {
   await aiModelGenerateQueue.remove(modelId).catch(() => {
     /* no prior job, or already active — both fine */

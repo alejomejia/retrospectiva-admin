@@ -517,7 +517,7 @@ function ActionFooter({
         {model.status === "draft" && (
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[200px] space-y-2">
-              <Label htmlFor="model-label" className="text-caplet">
+              <Label htmlFor="model-label" className="text-caplet" required>
                 {m.models.detail.labelLabel}
               </Label>
               <Input

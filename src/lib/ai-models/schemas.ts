@@ -8,6 +8,8 @@ import {
   HAIR_SHAPE_VALUES,
   HAIR_TYPE_VALUES,
   HEIGHT_RANGE_VALUES,
+  IMAGE_QUALITY_DEFAULT,
+  IMAGE_QUALITY_VALUES,
   SKIN_TONE_VALUES,
 } from "./variables";
 
@@ -26,6 +28,10 @@ export const NewModelSchema = z.object({
   hairColor: z.enum(HAIR_COLOR_VALUES),
   hairShape: z.enum(HAIR_SHAPE_VALUES),
   hairType: z.enum(HAIR_TYPE_VALUES),
+  // Optional + defaulted so the existing client form (which always
+  // sends a value once we wire the select) stays compatible, and so
+  // a future CLI-driven insert can omit the field.
+  imageQuality: z.enum(IMAGE_QUALITY_VALUES).default(IMAGE_QUALITY_DEFAULT),
 });
 
 export type NewModelInput = z.infer<typeof NewModelSchema>;

@@ -21,6 +21,7 @@ import {
 } from "@/lib/integrations/etsy/shop-config";
 import { m } from "@/lib/i18n/messages.es";
 import { devError } from "@/lib/utils/dev";
+import { SidebarSettings } from "@/components/layout/sidebar-settings";
 
 type SearchParams = {
   error?: string;
@@ -99,13 +100,11 @@ export default async function IntegrationsSettingsPage({
         </PageHeader.Column>
       </PageHeader>
 
-      <section className="space-y-4">
-        <header className="space-y-1">
-          <h2 className="text-xl font-semibold">{m.settings.etsy.title}</h2>
-          <p className="text-sm text-muted-foreground">
-            {m.settings.etsy.description}
-          </p>
-        </header>
+      <div className="flex gap-4">
+        <div className="w-96">
+          <SidebarSettings />
+        </div>
+        <div className="w-full space-y-4">
 
         {errorMsg && (
           <Card className="border-destructive/40 bg-destructive/5">
@@ -136,7 +135,8 @@ export default async function IntegrationsSettingsPage({
         ) : (
           <DisconnectedCard />
         )}
-      </section>
+        </div>
+      </div>
     </div>
   );
 }
@@ -170,20 +170,23 @@ function ConnectedCard({
   return (
     <Card>
       <CardHeader className="flex flex-row items-start gap-3 space-y-0">
-        <CheckCircle2 className="mt-0.5 size-5 text-brand-olive" />
         <div className="space-y-1">
-          <CardTitle>{m.settings.etsy.connectedTitle}</CardTitle>
-          <CardDescription>
-            {shopInfo
-              ? m.settings.etsy.connectedAs(shopInfo.shop_name)
-              : m.settings.etsy.fetchShopErrorBody}
-          </CardDescription>
+          <CardTitle>{m.settings.etsy.title}</CardTitle>
+          <CardDescription>{m.settings.etsy.description}</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <p className="text-muted-foreground">
-          {m.settings.etsy.shopIdLabel(shopId)}
-        </p>
+        <div className="flex gap-2 items-center">
+          <CheckCircle2 className="mt-0.5 size-5 text-brand-olive" />
+          <span>{m.settings.etsy.connectedTitle} -</span>
+          <span>
+            {shopInfo
+              ? m.settings.etsy.connectedAs(shopInfo.shop_name)
+              : m.settings.etsy.fetchShopErrorBody} -
+          </span>
+          <span>{m.settings.etsy.shopIdLabel(shopId)}</span>
+        </div>
+        
         <p className="text-muted-foreground">
           {m.settings.etsy.expiresLabel}
         </p>

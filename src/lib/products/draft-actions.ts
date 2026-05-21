@@ -232,6 +232,59 @@ export async function scheduleProduct(
   }
 }
 
+/**
+ * On-demand publish. Enqueues the same `etsy-publish` job the
+ * scheduled flow uses, with `delay=0`. The worker runs the full
+ * translation + Etsy push (`runScheduledPublish`); the row flips to
+ * `status='published'` on success.
+ *
+ * Allowed from `draft` and `scheduled`. Scheduled runs are cancelled
+ * implicitly by `etsyPublishQueue.remove` so the user doesn't get a
+ * duplicate publish when the original delay fires later.
+ */
+export async function publishNow(id: string): Promise<DraftActionResult> {
+  await requireSession();
+  try {
+    const [row] = await db
+      .select({ status: products.status })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!row) {
+      return { ok: false, error: m.errors.productNotFound };
+    }
+    if (row.status !== "draft" && row.status !== "scheduled") {
+      return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+
+    await db
+      .update(products)
+      .set({
+        status: "scheduled",
+        scheduledPublishAt: new Date(),
+        updatedAt: sql`now()`,
+      })
+      .where(eq(products.id, id));
+
+    await etsyPublishQueue.remove(id).catch(() => {
+      /* prior delayed job or active — both fine */
+    });
+    await etsyPublishQueue.add(
+      "publish",
+      { productId: id },
+      { jobId: id },
+    );
+    dev.log("etsy-publish now", id);
+
+    revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
+    return { ok: true };
+  } catch (err) {
+    dev.error("publishNow error", err);
+    return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
+}
+
 export async function cancelSchedule(id: string): Promise<DraftActionResult> {
   await requireSession();
   try {

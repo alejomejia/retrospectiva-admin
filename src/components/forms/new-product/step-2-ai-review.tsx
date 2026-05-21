@@ -1,11 +1,13 @@
 "use client";
 
-import { AlertCircle, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { AlertCircle, ImageIcon, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { AiContentSection } from "@/components/products/edit-form/ai-content-section";
+import { useAiImageStatusPolling } from "@/components/products/use-ai-image-status-polling";
 import { useAiStatusPolling } from "@/components/products/use-ai-status-polling";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +21,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 import { enqueueEnrichJob } from "@/lib/products/draft-actions";
+import { generateProductImage } from "@/lib/products/image-placement-actions";
+
+import type { GeneratedAiImage } from "./ai-image-section";
 
 /** ~2.5 minutes at the 2.5 s polling cadence. */
 const POLL_TIMEOUT_MS = 150_000;
@@ -36,10 +41,12 @@ type Phase = "running" | "succeeded" | "failed";
  */
 export function Step2AiReview({
   product,
+  initialAiImage,
   onPrev,
   onNext,
 }: {
   product: Product;
+  initialAiImage: GeneratedAiImage;
   onPrev: () => void;
   onNext: () => void;
 }) {
@@ -129,6 +136,11 @@ export function Step2AiReview({
             regenerating={kickPending}
           />
         )}
+
+        <AiImagePlacementBlock
+          productId={product.id}
+          initialImage={initialAiImage}
+        />
 
         <div className="flex items-center justify-between gap-3 pt-2">
           <Button type="button" variant="ghost" onClick={onPrev}>
@@ -259,4 +271,115 @@ function FailureBanner({
 
 function truncate(s: string, max: number): string {
   return s.length <= max ? s : s.slice(0, max - 1) + "…";
+}
+
+/**
+ * Placement-job status block. Renders only when there's actual
+ * activity — running, failed, or a generated image exists. Polls
+ * `/ai-image-status` continuously while mounted; cheap (one indexed
+ * `ai_runs` lookup + one indexed `product_images` lookup).
+ *
+ * Step 2 doesn't gate navigation on this: enrichment is the gating
+ * signal. Placement just feeds the listing preview.
+ */
+function AiImagePlacementBlock({
+  productId,
+  initialImage,
+}: {
+  productId: string;
+  initialImage: GeneratedAiImage;
+}) {
+  const router = useRouter();
+  const status = useAiImageStatusPolling(productId);
+  const [retryPending, startRetry] = useTransition();
+  const t = m.products.stepper.step2.aiImage;
+
+  // One-shot refresh on transition to succeeded so downstream surfaces
+  // (step 3 summary, sidebar previews, edit-form re-entry) pick up
+  // the fresh `ai_model` image without a hard reload. Mirrors the
+  // enrichment refresh above. Deps capture both the status change AND
+  // the route key; React strict-mode double-effects are harmless
+  // because router.refresh is itself idempotent.
+  const runStatus = status?.run?.status ?? null;
+  const finishedAt = status?.run?.finishedAt ?? null;
+  useEffect(() => {
+    if (runStatus === "succeeded") {
+      router.refresh();
+    }
+  }, [runStatus, finishedAt, router]);
+
+  // Polling payload is authoritative once it lands; fall back to the
+  // initial image fetched at page load so a re-entry after a prior
+  // successful run doesn't briefly flash empty.
+  const image = status?.image ?? initialImage;
+
+  // Nothing to show — placement was never enqueued for this product
+  // (toggle off, missing inputs, etc.). Don't burn vertical space.
+  if (!image && !runStatus) return null;
+
+  const retry = () => {
+    startRetry(async () => {
+      const result = await generateProductImage(productId, { force: true });
+      if (!result.ok) toast.error(result.error);
+    });
+  };
+
+  return (
+    <div
+      className="space-y-3 rounded-md border bg-card/40 p-4"
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-2 text-caplet">
+        <ImageIcon className="size-4" />
+        {t.title}
+      </div>
+      {runStatus === "running" || runStatus === "pending" ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" />
+          {t.running}
+        </div>
+      ) : null}
+      {runStatus === "failed" && (
+        <div
+          className="flex flex-wrap items-start gap-3 rounded-md border border-brand-terracotta/40 bg-brand-terracotta/5 p-3"
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 size-4 text-brand-terracotta" />
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-medium">{t.failedTitle}</p>
+            {status?.run?.error && (
+              <p className="text-xs text-muted-foreground">
+                <code className="font-mono">
+                  {truncate(status.run.error, 200)}
+                </code>
+              </p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={retry}
+            disabled={retryPending}
+            className="gap-1.5"
+          >
+            <RefreshCw className="size-3.5" />
+            {t.retry}
+          </Button>
+        </div>
+      )}
+      {image && (
+        <div className="overflow-hidden rounded-md border bg-muted">
+          <Image
+            src={image.url}
+            alt=""
+            width={image.width ?? 400}
+            height={image.height ?? 600}
+            className="h-auto w-full max-w-xs"
+            unoptimized
+          />
+        </div>
+      )}
+    </div>
+  );
 }

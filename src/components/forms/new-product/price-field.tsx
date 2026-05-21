@@ -98,7 +98,7 @@ export function PriceField({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="base-price" className="text-caplet">
+      <Label htmlFor="base-price" className="text-caplet" required>
         {m.products.form.basePrice}
       </Label>
       <div className="flex flex-wrap items-start gap-3">

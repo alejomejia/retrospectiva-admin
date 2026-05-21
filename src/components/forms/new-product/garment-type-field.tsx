@@ -48,7 +48,7 @@ export function GarmentTypeField({
   };
   return (
     <div className="space-y-2">
-      <Label htmlFor="clothing-type" className="text-caplet">
+      <Label htmlFor="clothing-type" className="text-caplet" required>
         {m.products.form.clothingType}
       </Label>
       <Select value={value ?? undefined} onValueChange={handleChange}>

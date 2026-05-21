@@ -136,7 +136,7 @@ function TextField({
 
   return (
     <div className="space-y-2">
-      <Label className="text-caplet">{label}</Label>
+      <Label className="text-caplet" required>{label}</Label>
       <Input
         value={value}
         maxLength={maxLength}
@@ -170,7 +170,7 @@ function TextareaField({
 
   return (
     <div className="space-y-2">
-      <Label className="text-caplet">{label}</Label>
+      <Label className="text-caplet" required>{label}</Label>
       <Textarea
         value={value}
         rows={5}
@@ -210,7 +210,7 @@ function ChipField({
 
   return (
     <div className="space-y-2">
-      <Label className="text-caplet">{label}</Label>
+      <Label className="text-caplet" required>{label}</Label>
       <ChipInput
         value={value}
         onChange={(next) => {
@@ -237,7 +237,7 @@ function EraField({ initial }: { initial: EtsyEra | null }) {
   const [value, setValue] = useState<EtsyEra | null>(initial);
   return (
     <div className="space-y-2">
-      <Label htmlFor="etsy-era" className="text-caplet">
+      <Label htmlFor="etsy-era" className="text-caplet" required>
         {m.products.editForm.aiContent.era}
       </Label>
       <Select

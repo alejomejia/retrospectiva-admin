@@ -6,6 +6,7 @@ import { ProductEditForm } from "@/components/products/edit-form";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
 import { Badge } from "@/components/ui/badge";
+import { listActiveAiModels } from "@/lib/ai-models/actions";
 import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
@@ -13,7 +14,11 @@ import { publicUrlFor } from "@/lib/integrations/r2/keys";
 import { m } from "@/lib/i18n/messages.es";
 import { getProduct } from "@/lib/products/actions";
 import { getAllBuyPriceDefaults } from "@/lib/products/buy-price-defaults";
-import { listProductImages } from "@/lib/products/images-actions";
+import {
+  getAiModelImage,
+  getAiReferenceImage,
+  listProductImages,
+} from "@/lib/products/images-actions";
 import { listProductVideos } from "@/lib/products/videos-actions";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 import { getProductSettings } from "@/lib/products/settings";
@@ -28,17 +33,28 @@ export default async function ProductDetailPage({
   const product = await getProduct(id);
   if (!product) notFound();
 
-  const [images, videos, oauthRows, buyPriceDefaults, settings] =
-    await Promise.all([
-      listProductImages(id),
-      listProductVideos(id),
-      db
-        .select({ markupPercent: etsyOauth.markupPercent })
-        .from(etsyOauth)
-        .limit(1),
-      getAllBuyPriceDefaults(),
-      getProductSettings(),
-    ]);
+  const [
+    images,
+    videos,
+    oauthRows,
+    buyPriceDefaults,
+    settings,
+    aiModels,
+    aiReferenceRow,
+    aiModelImageRow,
+  ] = await Promise.all([
+    listProductImages(id),
+    listProductVideos(id),
+    db
+      .select({ markupPercent: etsyOauth.markupPercent })
+      .from(etsyOauth)
+      .limit(1),
+    getAllBuyPriceDefaults(),
+    getProductSettings(),
+    listActiveAiModels(),
+    getAiReferenceImage(id),
+    getAiModelImage(id),
+  ]);
   const shopMarkupPercent =
     oauthRows[0]?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
   const shopAiImageEnabled = settings.aiImageEnabled;
@@ -95,6 +111,26 @@ export default async function ProductDetailPage({
           buyPriceDefaults={buyPriceDefaults}
           imageItems={imageItems}
           videoItems={videoItems}
+          aiModels={aiModels}
+          aiReferenceImage={
+            aiReferenceRow
+              ? {
+                  url: publicUrlFor(aiReferenceRow.r2Key, R2_PUBLIC_BASE_URL),
+                  width: aiReferenceRow.width,
+                  height: aiReferenceRow.height,
+                }
+              : null
+          }
+          aiGeneratedImage={
+            aiModelImageRow
+              ? {
+                  url: publicUrlFor(aiModelImageRow.r2Key, R2_PUBLIC_BASE_URL),
+                  width: aiModelImageRow.width,
+                  height: aiModelImageRow.height,
+                }
+              : null
+          }
+          r2BaseUrl={R2_PUBLIC_BASE_URL}
         />
       ) : (
         <ProductEditForm
@@ -103,6 +139,26 @@ export default async function ProductDetailPage({
           shopAiImageEnabled={shopAiImageEnabled}
           imageItems={imageItems}
           videoItems={videoItems}
+          aiModels={aiModels}
+          aiReferenceImage={
+            aiReferenceRow
+              ? {
+                  url: publicUrlFor(aiReferenceRow.r2Key, R2_PUBLIC_BASE_URL),
+                  width: aiReferenceRow.width,
+                  height: aiReferenceRow.height,
+                }
+              : null
+          }
+          aiGeneratedImage={
+            aiModelImageRow
+              ? {
+                  url: publicUrlFor(aiModelImageRow.r2Key, R2_PUBLIC_BASE_URL),
+                  width: aiModelImageRow.width,
+                  height: aiModelImageRow.height,
+                }
+              : null
+          }
+          r2BaseUrl={R2_PUBLIC_BASE_URL}
         />
       )}
     </>

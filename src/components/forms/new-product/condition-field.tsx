@@ -28,7 +28,7 @@ export function ConditionField({
   };
   return (
     <div className="space-y-2">
-      <Label htmlFor="condition" className="text-caplet">
+      <Label htmlFor="condition" className="text-caplet" required>
         {m.products.form.condition}
       </Label>
       <Select value={value ?? undefined} onValueChange={handleChange}>

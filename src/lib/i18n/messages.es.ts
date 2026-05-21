@@ -35,6 +35,7 @@ export const m = {
     settings: "Ajustes",
     settingsIntegrations: "Integraciones",
     settingsProducts: "Productos",
+    settingsAi: "IA",
   },
 
   appShell: {
@@ -331,6 +332,10 @@ export const m = {
         archivedToast: "Producto archivado",
         restoreToDraft: "Restaurar como borrador",
         restoredToast: "Producto restaurado como borrador",
+        publishNow: "Publicar ahora",
+        publishNowEnqueuedToast: "Publicación en cola",
+        publishNowConfirm:
+          "¿Publicar ahora en Etsy? La traducción y la subida a Etsy se ejecutarán en segundo plano.",
       },
     },
     stepper: {
@@ -361,7 +366,92 @@ export const m = {
         mediaDescription:
           "La primera foto se usará como portada en Etsy y como base para la imagen generada por IA.",
         imageRequired: "Al menos una foto",
+        aiReferenceRequired: "Imagen de referencia IA",
+        aiModelRequired: "Modelo IA",
+        aiSourcePanelRequired: "Panel del modelo",
         nextDisabledReason: (missing: string) => `Falta: ${missing}`,
+        aiImageSection: {
+          title: "Imagen IA",
+          description:
+            "Genera una imagen del producto sobre una modelo IA. Si está desactivado no se enviará ninguna petición a OpenAI.",
+          disabledHint:
+            "Activa el interruptor para configurar la generación de imagen IA.",
+          modelLabel: "Modelo IA",
+          modelPlaceholder: "Selecciona un modelo",
+          modelEmptyTitle: "Sin modelos IA activos",
+          modelEmptyBody:
+            "Para generar imágenes de productos sobre una modelo, primero necesitas crear y activar al menos un modelo IA en el estudio.",
+          modelEmptyCta: "Ir al estudio de modelos",
+          referenceTitle: "Imagen de referencia",
+          referenceDescription:
+            "Foto de la prenda sobre pared blanca. Solo se usa como entrada para la IA: no se publica en Etsy.",
+          referenceChoose: "Elegir foto",
+          referenceReplace: "Reemplazar foto",
+          referenceRemove: "Quitar",
+          referenceUploading: "Subiendo…",
+          referenceUploaded: "Foto de referencia guardada",
+          referenceRemoved: "Foto de referencia eliminada",
+          sourcePanelLabel: "Panel del modelo",
+          sourcePanelAuto: "(Por categoría)",
+          previewLabel: "Vista previa",
+          previewAutoSuffix: "panel por defecto",
+          poseLabel: "Pose",
+          framingLabel: "Encuadre",
+          environmentLabel: "Entorno",
+          fitOverrideLabel: "Ajuste",
+          fitOverrideNone: "(Ninguno)",
+          qualityLabel: "Calidad de imagen",
+          qualityHelp:
+            "`Baja` reduce el coste en ~10×. Sube a media/alta solo cuando la calidad lo justifique.",
+          panels: {
+            front_full: "Frontal · cuerpo completo",
+            front_portrait: "Frontal · retrato",
+            front_editorial: "Frontal · torso",
+            side_portrait: "Lateral · retrato",
+            back_full: "Trasera · cuerpo completo",
+            threequarter_full: "3/4 · cuerpo completo",
+          },
+          poses: {
+            soft_relaxed: "Relajada",
+            soft_movement: "Movimiento suave",
+            structured_posture: "Postura estructurada",
+          },
+          framings: {
+            waist_up: "De cintura para arriba",
+            thighs_up: "De muslos para arriba",
+            full_body: "Cuerpo completo",
+            close_detail: "Detalle cercano",
+          },
+          environments: {
+            textured_wall: "Pared con textura",
+            minimal_apartment: "Apartamento minimalista",
+            soft_studio: "Estudio suave",
+            vintage_home: "Hogar vintage",
+            window_light: "Luz de ventana",
+          },
+          fitOverrides: {
+            tight: "Ajustado",
+            loose: "Holgado",
+            oversized: "Oversize",
+          },
+          generate: "Generar imagen",
+          regenerate: "Regenerar",
+          regenerateConfirm:
+            "¿Regenerar la imagen IA? Se reemplazará la anterior.",
+          generating: "Generando…",
+          startedToast: "Generación encolada",
+          successToast: "Imagen IA lista",
+          failedToast: "La generación falló",
+          generatedTitle: "Imagen generada",
+          errors: {
+            disabled:
+              "La generación de imagen IA está desactivada para este producto.",
+            noModel: "Selecciona un modelo IA antes de generar.",
+            noReference: "Sube una imagen de referencia antes de generar.",
+            noClothingType:
+              "Selecciona el tipo de prenda antes de generar la imagen IA.",
+          },
+        },
       },
       step2: {
         title: "Revisión con IA",
@@ -374,12 +464,19 @@ export const m = {
         failedBody:
           "Puedes reintentar o rellenar los campos a mano. La publicación no está bloqueada.",
         retry: "Reintentar",
+        aiImage: {
+          title: "Imagen IA",
+          running: "Generando imagen…",
+          failedTitle: "La generación de imagen falló",
+          retry: "Reintentar",
+        },
       },
       summary: {
         title: "Vista previa",
         description:
           "Así se verá el producto antes de publicarlo en Etsy. Si algo no encaja, vuelve a los pasos anteriores.",
         photos: "Fotos",
+        aiImage: "Imagen IA",
         photoCount: (n: number) => `${n} foto${n === 1 ? "" : "s"}`,
         videoCount: (n: number) => `${n} video${n === 1 ? "" : "s"}`,
         noPhotos: "Sin fotos",
@@ -470,7 +567,29 @@ export const m = {
       kicker: "Ajustes",
       title: "Integraciones",
       description:
-        "Conexiones con servicios externos: marketplaces, pasarelas y otros endpoints.",
+        "Conexiones con servicios externos como marketplaces.",
+    },
+    ai: {
+      kicker: "Ajustes",
+      title: "Imagen IA",
+      description:
+        "Valores por defecto para la generación de imagen IA por producto. Se copian a cada producto nuevo al crearlo; modificarlos aquí no afecta a productos existentes.",
+      cardTitle: "Valores por defecto",
+      cardDescription:
+        "Cada producto nuevo arranca con estos valores. Pueden anularse desde el formulario del producto en cualquier momento.",
+      modelLabel: "Modelo IA por defecto",
+      modelPlaceholder: "Sin selección",
+      sourcePanelLabel: "Panel del modelo por defecto",
+      sourcePanelAuto: "(Por categoría)",
+      posePresetLabel: "Pose por defecto",
+      framingPresetLabel: "Encuadre por defecto",
+      environmentPresetLabel: "Entorno por defecto",
+      imageQualityLabel: "Calidad por defecto",
+      save: "Guardar",
+      saving: "Guardando…",
+      saved: "Valores guardados",
+      modelEmpty:
+        "No hay modelos IA activos. Crea uno desde el estudio para poder seleccionarlo aquí.",
     },
     products: {
       kicker: "Ajustes",
@@ -703,7 +822,15 @@ export const m = {
         hairColor: "Color de pelo",
         hairShape: "Peinado",
         hairType: "Tipo de pelo",
+        imageQuality: "Calidad de imagen",
       },
+      imageQualities: {
+        low: "Baja (más barato)",
+        medium: "Media",
+        high: "Alta (más caro)",
+      },
+      imageQualityHelp:
+        "Aplica solo a la generación del contact sheet. `Baja` reduce el coste en ~10×.",
       placeholderSelect: "Elige una opción",
       submit: "Generar",
       submitting: "Generando…",

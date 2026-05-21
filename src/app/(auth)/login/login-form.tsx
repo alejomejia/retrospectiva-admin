@@ -44,7 +44,7 @@ export function LoginForm() {
         <form action={action} className="space-y-5" noValidate>
           <input type="hidden" name="next" value={next} />
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-caplet">
+            <Label htmlFor="username" className="text-caplet" required>
               {m.login.username}
             </Label>
             <Input
@@ -56,7 +56,7 @@ export function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-caplet">
+            <Label htmlFor="password" className="text-caplet" required>
               {m.login.password}
             </Label>
             <Input

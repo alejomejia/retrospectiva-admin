@@ -43,3 +43,23 @@ export function toCSSVars(vars: Record<string, number | string>, unit: "px" | "r
     ])
   )
 }
+
+/**
+ * Reads an environment variable, returning the fallback when the var is unset or blank.
+ *
+ * Used by modules that want a string with an env-driven override —
+ * AI prompt templates, feature flags, etc.
+ *
+ * @param key - The `process.env` key to read.
+ * @param fallback - String returned when the env var is missing or only whitespace.
+ * @returns The env value when present and non-blank; otherwise `fallback`.
+ *
+ * @example
+ * ```ts
+ * const SYSTEM_PROMPT = fromEnv("ENRICH_SYSTEM_PROMPT", DEFAULT_SYSTEM_PROMPT)
+ * ```
+ */
+export function fromEnv(key: string, fallback: string): string {
+  const v = process.env[key]
+  return typeof v === "string" && v.trim() !== "" ? v : fallback
+}

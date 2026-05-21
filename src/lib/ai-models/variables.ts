@@ -64,3 +64,14 @@ export type HairShape = (typeof HAIR_SHAPE_VALUES)[number];
 
 export const HAIR_TYPE_VALUES = ["wavy", "straight"] as const;
 export type HairType = (typeof HAIR_TYPE_VALUES)[number];
+
+/**
+ * Per-row `gpt-image-2` quality tier the worker passes to
+ * `openai.images.generate`. Persisted on `ai_models.image_quality`
+ * so a later "Regenerar" honors the user's pick. Defaults to `low`
+ * because the operator is cost-sensitive — bumping to `medium` or
+ * `high` is an explicit opt-in.
+ */
+export const IMAGE_QUALITY_VALUES = ["low", "medium", "high"] as const;
+export type ImageQuality = (typeof IMAGE_QUALITY_VALUES)[number];
+export const IMAGE_QUALITY_DEFAULT: ImageQuality = "low";

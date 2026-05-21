@@ -4,6 +4,7 @@ import {
   getTaxonomyByKey,
   type EtsyTaxonomyEntry,
 } from "@/lib/integrations/etsy/taxonomy";
+import type { PanelKey } from "@/lib/integrations/openai/panel-keys";
 
 /**
  * Garment registry — single source of truth for the 15 clothing types
@@ -54,6 +55,20 @@ export type ClothingTypeEntry = {
    * picks a taxonomy by hand.
    */
   etsyTaxonomyKey: string;
+  /**
+   * English noun phrase interpolated into the image-placement prompt
+   * as `{GARMENT_TYPE}` (Task 11). Not surfaced in the admin UI — the
+   * admin is Spanish-only; this lives in the registry because prompts
+   * are written in English per project-conventions.md §2.
+   */
+  englishLabel: string;
+  /**
+   * Default Phase-1 model panel the image-placement worker loads when
+   * the per-product `ai_source_panel` is null. Source: Phase 2 §12
+   * (per behavior category). Lives on the registry so the step-1
+   * preview can render the same panel that the worker would pick.
+   */
+  defaultAiSourcePanel: PanelKey;
 };
 
 export const CLOTHING_TYPES: ClothingTypeEntry[] = [
@@ -64,6 +79,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "length"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_tops_and_tees",
+    englishLabel: "shirt",
+    defaultAiSourcePanel: "front_full",
   },
   {
     value: "vest",
@@ -71,6 +88,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "length"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_tops_and_tees",
+    englishLabel: "vest",
+    defaultAiSourcePanel: "front_full",
   },
   {
     value: "top",
@@ -78,6 +97,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "length"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_tops_and_tees",
+    englishLabel: "top",
+    defaultAiSourcePanel: "front_full",
   },
   {
     value: "sweater",
@@ -85,6 +106,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "length"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_sweaters",
+    englishLabel: "sweater",
+    defaultAiSourcePanel: "front_full",
   },
   {
     value: "jacket",
@@ -92,6 +115,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "length"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_jackets_and_coats",
+    englishLabel: "jacket",
+    defaultAiSourcePanel: "front_full",
   },
   {
     value: "trench_coat",
@@ -99,6 +124,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "length"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_outerwear_trench",
+    englishLabel: "trench coat",
+    defaultAiSourcePanel: "threequarter_full",
   },
 
   // Special upper body.
@@ -108,6 +135,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["chest", "length", "braSize"],
     twoXMeasurements: ["chest"],
     etsyTaxonomyKey: "womens_intimates_corsets",
+    englishLabel: "corset",
+    defaultAiSourcePanel: "front_full",
   },
 
   // Lower body.
@@ -117,6 +146,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["waist", "hip", "rise", "leg", "length"],
     twoXMeasurements: ["waist", "hip", "leg"],
     etsyTaxonomyKey: "womens_jeans",
+    englishLabel: "jean",
+    defaultAiSourcePanel: "threequarter_full",
   },
   {
     value: "pant",
@@ -124,6 +155,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["waist", "hip", "rise", "leg", "length"],
     twoXMeasurements: ["waist", "hip", "leg"],
     etsyTaxonomyKey: "womens_pants",
+    englishLabel: "pant",
+    defaultAiSourcePanel: "threequarter_full",
   },
   {
     value: "skirt",
@@ -131,6 +164,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["waist", "hip", "length"],
     twoXMeasurements: ["waist", "hip"],
     etsyTaxonomyKey: "womens_skirts",
+    englishLabel: "skirt",
+    defaultAiSourcePanel: "threequarter_full",
   },
   {
     value: "short",
@@ -138,6 +173,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["waist", "hip", "rise", "leg", "length"],
     twoXMeasurements: ["waist", "hip", "leg"],
     etsyTaxonomyKey: "womens_shorts",
+    englishLabel: "short",
+    defaultAiSourcePanel: "threequarter_full",
   },
 
   // Complete garments.
@@ -147,6 +184,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "waist", "hip", "rise", "leg", "length"],
     twoXMeasurements: ["chest", "waist", "hip", "leg"],
     etsyTaxonomyKey: "womens_clothing_sets",
+    englishLabel: "two-piece set",
+    defaultAiSourcePanel: "threequarter_full",
   },
   {
     value: "overall",
@@ -154,6 +193,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "waist", "hip", "rise", "leg", "length"],
     twoXMeasurements: ["chest", "waist", "hip", "leg"],
     etsyTaxonomyKey: "womens_jumpsuits_and_rompers",
+    englishLabel: "overall",
+    defaultAiSourcePanel: "threequarter_full",
   },
   {
     value: "dress",
@@ -161,6 +202,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: ["shoulder", "chest", "waist", "hip", "length"],
     twoXMeasurements: ["chest", "waist", "hip"],
     etsyTaxonomyKey: "womens_dresses",
+    englishLabel: "dress",
+    defaultAiSourcePanel: "threequarter_full",
   },
   {
     value: "bodysuit",
@@ -168,6 +211,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     measurements: [],
     twoXMeasurements: [],
     etsyTaxonomyKey: "womens_bodysuits",
+    englishLabel: "bodysuit",
+    defaultAiSourcePanel: "threequarter_full",
   },
 ];
 
@@ -190,6 +235,26 @@ export function getClothingType(
 /** Spanish label (from i18n) for the given clothing type. */
 export function getClothingTypeLabel(value: ClothingType): string {
   return m.products.clothingTypes[value] ?? value;
+}
+
+/**
+ * English noun phrase for the given clothing type, interpolated into
+ * the image-placement prompt as `{GARMENT_TYPE}` (Task 11). Falls back
+ * to the registry value if the type is missing — which should never
+ * happen since the DB enum is the source of allowed values.
+ */
+export function getClothingTypeEnglishLabel(value: ClothingType): string {
+  return BY_VALUE.get(value)?.englishLabel ?? value;
+}
+
+/**
+ * Default Phase-1 model panel used by the image-placement worker when
+ * the per-product `ai_source_panel` is null. Source: Phase 2 §12.
+ * Falls back to `front_full` (the global default) when the type isn't
+ * registered.
+ */
+export function getDefaultAiSourcePanel(value: ClothingType): PanelKey {
+  return BY_VALUE.get(value)?.defaultAiSourcePanel ?? "front_full";
 }
 
 /** Measurements rendered for the given clothing type, or `[]`. */

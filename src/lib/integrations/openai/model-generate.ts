@@ -1,5 +1,9 @@
 import { eq, sql } from "drizzle-orm";
 
+import {
+  IMAGE_QUALITY_VALUES,
+  type ImageQuality,
+} from "@/lib/ai-models/variables";
 import { db } from "@/lib/db/client";
 import { aiModels } from "@/lib/db/schema";
 import { uploadToR2 } from "@/lib/integrations/r2/upload";
@@ -15,9 +19,10 @@ const dev = devGroup("openai.model-generate");
 
 /** Landscape, 3:2 aspect — matches the 3×2 panel grid. */
 const IMAGE_SIZE = "1536x1024";
-/** `high` keeps each cropped panel legible at ~512×512.
- *  Cost is ~$0.10–0.15 per call; acceptable for a low-frequency action. */
-const IMAGE_QUALITY = "low";
+/** Default when the row doesn't carry an explicit `image_quality`
+ *  (rows from before the column existed). `low` is cheap (~$0.016/call);
+ *  the operator can pick `medium` / `high` via the new-model form. */
+const DEFAULT_IMAGE_QUALITY: ImageQuality = "low";
 
 /**
  * R2 prefix for one generation run's output. The `runId` segment
@@ -88,11 +93,21 @@ export async function runModelGeneration(modelId: string): Promise<void> {
     HAIR_TYPE: row.hairType,
   });
 
+  // DB column is `text` (validation lives at the zod boundary);
+  // narrow here so the OpenAI call gets the strict union and any
+  // malformed legacy value falls back to the default rather than
+  // crashing the run.
+  const quality: ImageQuality = (
+    IMAGE_QUALITY_VALUES as readonly string[]
+  ).includes(row.imageQuality)
+    ? (row.imageQuality as ImageQuality)
+    : DEFAULT_IMAGE_QUALITY;
+
   const runId = await startRun({
     aiModelId: modelId,
     kind: "model_generation",
     model: MODELS.image,
-    input: { prompt, size: IMAGE_SIZE, quality: IMAGE_QUALITY },
+    input: { prompt, size: IMAGE_SIZE, quality },
   });
 
   try {
@@ -100,7 +115,7 @@ export async function runModelGeneration(modelId: string): Promise<void> {
       model: MODELS.image,
       prompt,
       size: IMAGE_SIZE,
-      quality: IMAGE_QUALITY,
+      quality,
       n: 1,
     });
 
@@ -108,7 +123,7 @@ export async function runModelGeneration(modelId: string): Promise<void> {
       kind: "model_generation",
       model: MODELS.image,
       size: IMAGE_SIZE,
-      quality: IMAGE_QUALITY,
+      quality,
     });
 
     const sheetBytes = await extractFirstImage(response);
@@ -161,7 +176,7 @@ export async function runModelGeneration(modelId: string): Promise<void> {
       costUsd: estimateImageCostUsd({
         model: MODELS.image,
         size: IMAGE_SIZE,
-        quality: IMAGE_QUALITY,
+        quality,
       }),
     });
 

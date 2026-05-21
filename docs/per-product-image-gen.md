@@ -35,10 +35,10 @@ produce an on-model image attached to the product.
 ```ts
 // products: 6 new columns
 products.aiModelId              uuid REFERENCES ai_models(id) ON DELETE SET NULL  // null = "no AI image for this product"
-products.aiSourcePanel          text DEFAULT 'threequarter_full'   // one of PANEL_ORDER
+products.aiSourcePanel          text          // one of PANEL_ORDER; null = "use category default" (see §Source-panel defaults)
 products.aiPosePreset           text DEFAULT 'soft_relaxed'
 products.aiFramingPreset        text DEFAULT 'waist_up'
-products.aiEnvironmentPreset    text DEFAULT 'soft_studio'
+products.aiEnvironmentPreset    text DEFAULT 'textured_wall'
 products.aiFitOverride          text                               // nullable: null | 'tight' | 'loose' | 'oversized'
 
 // image_role enum gains 'ai_reference' (input-only; excluded from publish payload)
@@ -91,7 +91,7 @@ products/{YYYY}/{MM}/{DD}/{productId}/ai_model/{uuid}.png      ← AI output, si
 ## Prompt assembly
 
 Single module: `src/lib/integrations/openai/image-placement-prompts.ts`.
-Exports each of the 7 module-paragraph constants verbatim from the
+Exports each of the 8 module-paragraph constants verbatim from the
 spec below + an `assembleImagePlacementPrompt(input)` function:
 
 ```ts
@@ -105,8 +105,8 @@ function assembleImagePlacementPrompt({
 ```
 
 The function joins, in order, **exactly one block per module** from
-{identity, garment-transfer, behavior, pose, framing, environment,
-realism}, separated by `\n\n`. Two special cases:
+{identity, garment-transfer, behavior, **styling**, pose, framing,
+environment, realism}, separated by `\n\n`. Special cases:
 
 1. **Garment behavior auto-mapping** from `clothingType`:
    - `shirt | vest | top | sweater | jacket` → §3.1
@@ -116,7 +116,9 @@ realism}, separated by `\n\n`. Two special cases:
    - `set | overall | dress | bodysuit` → §3.5
    - **`set` additionally appends §3.5.1** (only case where two blocks come from one module)
 
-2. **Fit override**: when non-null, appends a short sentence to the Garment Transfer block. Three pre-baked options:
+2. **Detail extension (always-on)**: a second paragraph is appended to the Garment Transfer block on every call. Preserves print scale / fading / weave detail. Constant lives next to Module 2 (see §2.1 below).
+
+3. **Fit override**: when non-null, appends a short sentence to the Garment Transfer block (after the detail extension). Three pre-baked options:
    - `tight`: "Apply a tight body-hugging fit with realistic fabric tension and natural compression points."
    - `loose`: "Apply a loose relaxed fit with generous fabric volume and natural draping."
    - `oversized`: "Apply an oversized fit with intentional excess fabric, relaxed proportions, and authentic vintage layering."
@@ -129,15 +131,31 @@ realism}, separated by `\n\n`. Two special cases:
 Spanish labels via i18n).
 
 Every block constant is env-overridable via
-`IMAGE_PLACEMENT_{IDENTITY|GARMENT_TRANSFER|BEHAVIOR_UPPER|…}_PROMPT` —
+`IMAGE_PLACEMENT_{IDENTITY|GARMENT_TRANSFER|GARMENT_DETAIL|BEHAVIOR_UPPER|…|STYLING|POSE_SOFT_RELAXED|…|REALISM}_PROMPT` —
 same pattern as `BASE_MODEL_GENERATION_PROMPT`.
+
+### Source-panel defaults
+
+`aiSourcePanel` is a UI select; when the user hasn't picked one
+(`null` in DB), the worker resolves it from `clothingType`:
+
+| Garment behavior category | Default panel |
+| --- | --- |
+| Upper body (`shirt`, `vest`, `top`, `sweater`, `jacket`) | `front_full` |
+| Trench coat (`trench_coat`) | `threequarter_full` |
+| Special structure (`corset`) | `front_full` |
+| Lower body (`jean`, `pant`, `skirt`, `short`) | `threequarter_full` |
+| Complete garments (`set`, `overall`, `dress`, `bodysuit`) | `threequarter_full` |
+
+The select is pre-populated with the category default but the user
+can override per product if a different angle reads better.
 
 ---
 
 ## File map
 
 **New:**
-- `src/lib/integrations/openai/image-placement-prompts.ts` — the 7 module constants + `assembleImagePlacementPrompt`.
+- `src/lib/integrations/openai/image-placement-prompts.ts` — the 8 module constants (+ Module 2.1 detail extension + Module 3.5.1 set extension) + `assembleImagePlacementPrompt`.
 - `src/lib/integrations/openai/image-placement.ts` — `runImagePlacement(productId)`. Loads product, downloads model panel + AI reference from R2, calls `openai.images.edit({ image: [panel, reference], prompt, … })`, uploads result, inserts `product_images` row (after hard-deleting any prior `ai_model` row), logs `ai_runs`.
 - `src/lib/integrations/openai/image-placement-worker.ts` — BullMQ glue.
 - `src/lib/products/image-placement-actions.ts` — server actions: `generateProductImage(productId, force?)`, `clearAiReferenceImage(productId)`, etc.
@@ -175,10 +193,10 @@ Bottom of step 1, after the media uploader. One card with:
 │ Imagen de referencia (colgada en pared blanca)         │
 │ [ dropzone — single image ]                            │
 │                                                         │
-│ Panel del modelo  [ 3/4 cuerpo            ▾ ]          │
+│ Panel del modelo  [ (auto por categoría)  ▾ ]          │
 │ Pose              [ Relajada              ▾ ]          │
 │ Encuadre          [ De cintura para arriba ▾ ]         │
-│ Entorno           [ Estudio suave         ▾ ]          │
+│ Entorno           [ Pared con textura     ▾ ]          │
 │ Ajuste            [ (ninguno)             ▾ ]          │
 │                                                         │
 │ [ Generar imagen ]                                     │
@@ -205,10 +223,10 @@ failure with Retry + Discard.
 | Variable | Default |
 |---|---|
 | `aiModelId` | null (no auto-pick) |
-| `aiSourcePanel` | `threequarter_full` |
+| `aiSourcePanel` | null in DB; resolved at worker time from `clothingType` category (see Source-panel defaults table above) |
 | `aiPosePreset` | `soft_relaxed` |
 | `aiFramingPreset` | `waist_up` |
-| `aiEnvironmentPreset` | `soft_studio` |
+| `aiEnvironmentPreset` | `textured_wall` |
 | `aiFitOverride` | null |
 
 ---
@@ -220,7 +238,7 @@ failure with Retry + Discard.
 3. Download panel bytes from R2 (`publicUrlFor(model.{selectedPanel}Key)` → `fetch`).
 4. Download reference bytes from R2.
 5. Assemble prompt via `assembleImagePlacementPrompt`.
-6. `openai.images.edit({ model: gpt-image-2, image: [panelBytes, referenceBytes], prompt, size: '1024x1536' /* portrait */, quality: 'high' })`.
+6. `openai.images.edit({ model: gpt-image-2, image: [panelBytes, referenceBytes], prompt, size: '1024x1536' /* portrait, largest gpt-image-2 portrait — Etsy listing photos want ≥2000px on the long edge, so the worker post-processes a sharp upscale before R2 upload */, quality: 'low' /* ship cheap until visual quality bar is met, then bump to 'high' */ })`.
 7. Download output bytes.
 8. Hard-delete any existing `product_images` row with `role='ai_model'` for this product (+ delete R2 object).
 9. Upload new image to R2, insert `product_images` row with `role='ai_model'`, `order = MAX(order) + 1`.
@@ -230,7 +248,7 @@ failure with Retry + Discard.
 
 ## Test strategy
 
-- `image-placement-prompts.test.ts` — every clothing-type maps to the right behavior block; set garments include 3.5 + 3.5.1; fit-override on/off; defaults produce the canonical layout; no module ever emits two blocks (except set).
+- `image-placement-prompts.test.ts` — every clothing-type maps to the right behavior block; set garments include 3.5 + 3.5.1; detail extension (2.1) always appended to Module 2; styling block always present; fit-override on/off; defaults produce the canonical 8-block layout; no module ever emits two blocks (except set + the always-appended 2.1).
 - `image-placement.test.ts` — mock `openai.images.edit`, `uploadToR2`, `fetch` (R2 downloads). Assert: skipped when ai_model_id null; called with both input images when set; hard-deletes prior ai_model; inserts new product_images row at correct order; logs run with `kind='model_placement'`.
 - `draft-actions.test.ts` — extend existing tests to cover the new AI columns being settable via the autosave patch.
 
@@ -257,6 +275,10 @@ in the original are commentary and not included.
 > Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
 >
 > `{FIT_OVERRIDE — appended only when non-null, see "Fit override" above}`
+
+### Module 2.1 · Garment Detail Extension (always, appended to Module 2)
+
+> Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
 
 ### Module 3 · Garment Behavior (one of these, auto-selected)
 
@@ -296,61 +318,75 @@ in the original are commentary and not included.
 
 > Preserve the coordinated relationship between all garment pieces, including matching fabric behavior, proportional consistency, textile continuity, and authentic outfit balance.
 
-### Module 4 · Pose (one of these, user-selected; default `soft_relaxed`)
+### Module 4 · Styling / Accessories (always)
 
-**4.1 Soft relaxed** (default):
+> Style the model with subtle vintage-inspired complementary clothing layers and minimal accessories that naturally match the garment's aesthetic, era, color palette, silhouette, and overall mood.
+>
+> The styling should feel authentic, understated, and naturally assembled by a real person rather than professionally fashion-styled.
+>
+> Accessories may include subtle vintage jewelry, small earrings, delicate necklaces, simple rings, thin belts, neutral layering basics, or soft lifestyle elements that complement the garment without competing with it.
+>
+> All additional styling elements must remain visually secondary to the main garment being sold.
+>
+> Avoid statement accessories, luxury fashion styling, excessive layering, loud colors, oversized jewelry, trend-heavy aesthetics, editorial fashion compositions, or distracting secondary garments.
+>
+> The primary garment must remain the clear visual focus of the entire image.
+
+### Module 5 · Pose (one of these, user-selected; default `soft_relaxed`)
+
+**5.1 Soft relaxed** (default):
 
 > Natural relaxed standing posture with subtle human asymmetry, soft shoulder positioning, relaxed arms, natural hand placement, slight weight shift, and believable casual body posture. The pose should feel natural and unintentionally stylish, like a real person casually modeling clothing for a vintage marketplace listing.
 
-**4.2 Soft movement**:
+**5.2 Soft movement**:
 
 > Subtle natural body movement with relaxed posture, gentle motion in the arms and torso, and believable casual lifestyle energy. Maintain realistic fabric movement without exaggerated fashion posing.
 
-**4.3 Structured posture**:
+**5.3 Structured posture**:
 
 > Confident upright posture with subtle relaxed elegance, minimal movement, natural arm positioning, and clear garment visibility while maintaining a believable human stance.
 
-### Module 5 · Framing (one of these, user-selected; default `waist_up`)
+### Module 6 · Framing (one of these, user-selected; default `waist_up`)
 
-**5.1 Waist up** (default):
+**6.1 Waist up** (default):
 
 > Medium lifestyle crop framed from approximately waist level upward, maintaining strong garment visibility, natural composition, and authentic vintage ecommerce photography aesthetics.
 
-**5.2 Thighs up**:
+**6.2 Thighs up**:
 
 > Lifestyle fashion crop framed from mid-thigh upward with balanced visibility of the garment silhouette, natural body proportions, and casual ecommerce photography composition.
 
-**5.3 Full body**:
+**6.3 Full body**:
 
 > Full body vertical composition with realistic proportions, natural stance, and clean visibility of the entire garment while maintaining relaxed lifestyle realism.
 
-**5.4 Close detail**:
+**6.4 Close detail**:
 
 > Closer editorial-style garment framing focused on textile detail, upper body styling, and realistic fabric texture while preserving believable lifestyle photography realism.
 
-### Module 6 · Environment (one of these, user-selected; default `soft_studio`)
+### Module 7 · Environment (one of these, user-selected; default `textured_wall`)
 
-**6.1 Textured wall**:
+**7.1 Textured wall** (default):
 
 > Soft natural lifestyle photography near a lightly textured neutral wall with subtle daylight illumination, minimal distractions, soft natural shadows, and clean vintage ecommerce aesthetics.
 
-**6.2 Minimal apartment**:
+**7.2 Minimal apartment**:
 
 > Minimal warm apartment interior with soft natural daylight, subtle furniture presence, neutral tones, and believable lived-in atmosphere without distracting from the garment.
 
-**6.3 Soft studio** (default):
+**7.3 Soft studio**:
 
 > Clean soft studio environment with subtle natural shadows, neutral tones, diffused daylight-style illumination, and realistic professional ecommerce photography atmosphere.
 
-**6.4 Vintage home**:
+**7.4 Vintage home**:
 
 > Subtle vintage-inspired home environment with soft natural lighting, warm neutral textures, minimal visual distractions, and authentic cozy lifestyle realism.
 
-**6.5 Window light**:
+**7.5 Window light**:
 
 > Soft window-side natural lighting with realistic daylight falloff, gentle shadows, warm natural atmosphere, and believable candid lifestyle photography aesthetics.
 
-### Module 7 · Realism Block (always)
+### Module 8 · Realism Block (always)
 
 > Ultra realistic humanized ecommerce photography with authentic natural imperfections, realistic textile behavior, subtle asymmetry, believable posture, realistic skin texture, soft natural lighting, and genuine human presence.
 >
@@ -366,14 +402,17 @@ in the original are commentary and not included.
 [Module 1 — Identity Lock]
 
 [Module 2 — Garment Transfer with {GARMENT_TYPE}="jacket", no fit override]
+[Module 2.1 — Garment Detail Extension (always appended)]
 
 [Module 3.1 — Upper-body Behavior]
 
-[Module 4.1 — Soft Relaxed Pose]
+[Module 4 — Styling / Accessories]
 
-[Module 5.1 — Waist-up Framing]
+[Module 5.1 — Soft Relaxed Pose]
 
-[Module 6.3 — Soft Studio Environment]
+[Module 6.1 — Waist-up Framing]
 
-[Module 7 — Realism Block]
+[Module 7.1 — Textured Wall Environment]
+
+[Module 8 — Realism Block]
 ```

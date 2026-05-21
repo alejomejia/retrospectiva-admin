@@ -112,7 +112,7 @@ function CmInput({
   const label = m.products.form.measurements[measurement];
   return (
     <div className="space-y-1">
-      <Label htmlFor={id} className="text-caplet">
+      <Label htmlFor={id} className="text-caplet" required>
         {label}
       </Label>
       <div className="relative">
@@ -151,7 +151,7 @@ function BraSizeInput({
   const [text, setText] = useState(value ?? "");
   return (
     <div className="space-y-1">
-      <Label htmlFor="meas-bra-size" className="text-caplet">
+      <Label htmlFor="meas-bra-size" className="text-caplet" required>
         {m.products.form.measurements.braSize}
       </Label>
       <Input

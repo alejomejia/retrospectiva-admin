@@ -114,8 +114,16 @@ of pinning identity; the image input does the work of providing it.
 
 | Name | Required | Notes |
 | --- | --- | --- |
-| `{GARMENT_TYPE}` | yes | Short noun phrase: `shirt`, `vest`, `trench coat`, `corset`, `jean`, `skirt`, `dress`, `overall`, `set`. Matches the garment-category mapping in §12. |
-| `{FIT_OVERRIDE}` | no | Optional sentence that nudges fit (e.g. `Maintain a relaxed oversized fit on the upper body.`). When omitted, the runtime inserts an empty string — do not leave the literal `{FIT_OVERRIDE}` in the output. |
+| `{GARMENT_TYPE}` | yes | Short noun phrase resolved at call time from the product's `clothingType` via the canonical clothing-types registry's English label (`src/lib/products/clothing-types.ts`). Examples: `shirt`, `vest`, `trench coat`, `corset`, `jean`, `skirt`, `dress`, `overall`, `two-piece set`. |
+| `{FIT_OVERRIDE}` | no | Enum: `null \| 'tight' \| 'loose' \| 'oversized'`. When non-null, the runtime appends one of three pre-baked sentences (see below) to the Garment Transfer block. When `null` the line is omitted entirely. |
+
+#### Pre-baked fit-override sentences
+
+```
+tight:     Apply a tight body-hugging fit with realistic fabric tension and natural compression points.
+loose:     Apply a loose relaxed fit with generous fabric volume and natural draping.
+oversized: Apply an oversized fit with intentional excess fabric, relaxed proportions, and authentic vintage layering.
+```
 
 ### Module
 
@@ -129,10 +137,11 @@ Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
 {FIT_OVERRIDE}
 ```
 
-### Optional detail extension
+### Detail extension (always appended)
 
-Append when the garment has prints, graphics, or notable fade /
-weave texture (controlled by the `detailExtension` flag in §10).
+This paragraph is appended to the Garment Transfer block on every
+call (no flag). Cheap insurance against the model flattening
+prints, fading, or weave texture even on plain garments.
 
 ```
 Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
@@ -197,10 +206,11 @@ Preserve natural garment continuity, realistic folds, subtle fabric tension, bel
 The garment should feel naturally worn and realistically fitted without exaggerated perfection or artificial fashion-editorial styling.
 ```
 
-### Optional set extension
+### Set extension (auto-appended for `set`)
 
-Append when category is `COMPLETE_GARMENTS` and the listing is a
-multi-piece set (controlled by the `setExtension` flag in §10).
+Appended automatically when `clothingType === 'set'` (no flag).
+The other COMPLETE_GARMENTS members — `overall`, `dress`,
+`bodysuit` — do not get this paragraph.
 
 ```
 Preserve the coordinated relationship between all garment pieces, including matching fabric behavior, proportional consistency, textile continuity, and authentic outfit balance.
@@ -325,125 +335,154 @@ Avoid overprocessed skin, artificial perfection, exaggerated posing, editorial f
 
 ---
 
-## 12 · Category → preset mapping
+## 12 · Category → default mapping
 
-The default routing the runtime should apply when the caller
-specifies only the garment category. Manual overrides on any
-individual preset are allowed.
+The defaults the runtime applies when the user hasn't explicitly
+picked a value on the product form. Behavior is hard-routed from
+`clothingType`; pose / framing / environment are global defaults;
+source panel defaults per category but is a select the user can
+override.
 
 ```json
 {
-  "UPPER_BODY": {
-    "behavior": "UPPER_BODY",
-    "pose": "SOFT_RELAXED",
-    "framing": "WAIST_UP",
-    "baseImage": "front_full OR threequarter_full"
-  },
-  "TRENCH_COAT": {
-    "behavior": "TRENCH_COAT",
-    "pose": "SOFT_MOVEMENT",
-    "framing": "THIGHS_UP OR FULL_BODY",
-    "baseImage": "side_portrait OR threequarter_full"
-  },
-  "SPECIAL_STRUCTURE": {
-    "behavior": "SPECIAL_STRUCTURE",
-    "pose": "STRUCTURED_POSTURE",
-    "framing": "WAIST_UP",
-    "baseImage": "front_full"
-  },
-  "LOWER_BODY": {
-    "behavior": "LOWER_BODY",
-    "pose": "SOFT_RELAXED",
-    "framing": "THIGHS_UP",
-    "baseImage": "front_full OR threequarter_full"
-  },
-  "COMPLETE_GARMENTS": {
-    "behavior": "COMPLETE_GARMENTS",
-    "pose": "SOFT_MOVEMENT",
-    "framing": "FULL_BODY OR THIGHS_UP",
-    "baseImage": "threequarter_full"
-  }
+  "UPPER_BODY":         { "behavior": "UPPER_BODY",         "sourcePanel": "front_full"         },
+  "TRENCH_COAT":        { "behavior": "TRENCH_COAT",        "sourcePanel": "threequarter_full"  },
+  "SPECIAL_STRUCTURE":  { "behavior": "SPECIAL_STRUCTURE",  "sourcePanel": "front_full"         },
+  "LOWER_BODY":         { "behavior": "LOWER_BODY",         "sourcePanel": "threequarter_full"  },
+  "COMPLETE_GARMENTS":  { "behavior": "COMPLETE_GARMENTS",  "sourcePanel": "threequarter_full"  }
 }
 ```
 
-> The original recommendation listed `side_full` as a `baseImage`
-> for `TRENCH_COAT`. The Phase 1 contact sheet does not produce a
-> full-body side panel — it produces `side_portrait` (head/shoulders
-> only). The mapping above substitutes `side_portrait` and falls
-> back to `threequarter_full` for cases where the lower body needs
-> to be visible. Revisit if iteration shows we need a true
-> full-body side panel; that would require adding a 7th panel to
-> the Phase 1 contact sheet rather than re-cropping the existing one.
+Global defaults (apply to every category unless overridden on the
+product form):
+
+| Field | Default |
+| --- | --- |
+| `aiPosePreset` | `soft_relaxed` |
+| `aiFramingPreset` | `waist_up` |
+| `aiEnvironmentPreset` | `textured_wall` |
+| `aiFitOverride` | `null` |
+
+> The original recommendation listed `side_full` as a candidate
+> source panel for trench coats. The Phase 1 contact sheet does
+> not produce a full-body side panel — it produces `side_portrait`
+> (head/shoulders only). `threequarter_full` substitutes; revisit
+> only if iteration shows the angle isn't enough.
 
 ---
 
 ## 13 · App input contract
 
-What the runtime expects from the caller. Required vs optional
-mirrors the original recommendation.
+Field names match what gets persisted as `products.ai*` columns
+(see [../per-product-image-gen.md](../per-product-image-gen.md)
+"Schema"). The runtime is the worker — `assembleImagePlacementPrompt`
+takes these inputs and produces the 8-block string.
 
 ### Required
 
-```json
-{
-  "garmentType": "",
-  "garmentCategory": "",
-  "baseImage": "",
-  "environmentPreset": "",
-  "posePreset": "",
-  "framingPreset": ""
-}
+```ts
+type ImagePlacementInput = {
+  aiModelId: string;          // FK → ai_models.id; must be status='active'
+  clothingType: string;       // canonical key from clothing-types registry; drives behavior + GARMENT_TYPE
+  aiPosePreset: PosePreset;
+  aiFramingPreset: FramingPreset;
+  aiEnvironmentPreset: EnvironmentPreset;
+};
 ```
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `garmentType` | string | Interpolated into `{GARMENT_TYPE}`. |
-| `garmentCategory` | enum | `UPPER_BODY` \| `TRENCH_COAT` \| `SPECIAL_STRUCTURE` \| `LOWER_BODY` \| `COMPLETE_GARMENTS`. Drives §6 + §12 routing. |
-| `baseImage` | enum | One of the six `PanelKey` values from `src/lib/integrations/openai/panel-keys.ts` (`front_full`, `front_portrait`, `front_editorial`, `side_portrait`, `back_full`, `threequarter_full`). Resolves to an R2 object under `assets/models/{modelId}/{runId}/{baseImage}.png` (see [model-studio.md §5](./model-studio.md) and `src/lib/integrations/openai/model-generate.ts`). |
-| `environmentPreset` | enum | One of §10. |
-| `posePreset` | enum | One of §8. |
-| `framingPreset` | enum | One of §9. |
+| `aiModelId` | uuid | Picks the Phase 1 model. Worker resolves the panel image via `aiSourcePanel` (or category default) and loads it from R2. |
+| `clothingType` | enum | One of the registry keys in `src/lib/products/clothing-types.ts`. Drives both `{GARMENT_TYPE}` (via registry English label) and the behavior block (§6 mapping). |
+| `aiPosePreset` | enum | Lowercase snake_case values: `soft_relaxed` \| `soft_movement` \| `structured_posture`. |
+| `aiFramingPreset` | enum | `waist_up` \| `thighs_up` \| `full_body` \| `close_detail`. |
+| `aiEnvironmentPreset` | enum | `textured_wall` \| `minimal_apartment` \| `soft_studio` \| `vintage_home` \| `window_light`. |
 
 ### Optional
 
-```json
-{
-  "fitOverride": "",
-  "detailExtension": true,
-  "setExtension": false
-}
+```ts
+type ImagePlacementOptional = {
+  aiSourcePanel?: PanelKey | null;          // null ⇒ use category default per §12
+  aiFitOverride?: 'tight' | 'loose' | 'oversized' | null;
+};
 ```
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `fitOverride` | string | Sentence interpolated into `{FIT_OVERRIDE}`. Empty string ⇒ block is dropped. |
-| `detailExtension` | bool | Append §5 detail extension when the garment has notable prints / weave / fading. |
-| `setExtension` | bool | Append §6 set extension when category is `COMPLETE_GARMENTS` and the listing is a multi-piece outfit. |
+| `aiSourcePanel` | enum or null | One of the six `PanelKey` values from `src/lib/integrations/openai/panel-keys.ts`. Null = use the category default from §12. Resolves to R2 `assets/models/{aiModelId}/{runId}/{aiSourcePanel}.png` (see `src/lib/integrations/openai/model-generate.ts:33-34`). |
+| `aiFitOverride` | enum or null | When non-null, appends one of the 3 pre-baked sentences in §5 to the Garment Transfer block. |
+
+Detail extension (§5) and set extension (§6) are not inputs —
+they are auto-applied:
+
+- Detail extension: **always** appended to the Garment Transfer block.
+- Set extension: appended only when `clothingType === 'set'`.
 
 ### Image inputs to `gpt-image-2`
 
 Phase 2 is an **image-edit / multi-image** call, not a pure
 text-to-image one. The runtime attaches:
 
-1. The resolved base-image panel (selected by `baseImage`) — the
-   identity reference.
-2. The garment photo from the product's `product_images` rows
-   (role = `original`).
+1. The resolved model panel (selected by `aiSourcePanel` or its
+   category default) — the identity reference.
+2. The product's `ai_reference`-role image (a single user-uploaded
+   garment-on-white-wall shot; see
+   [../per-product-image-gen.md](../per-product-image-gen.md) "Scope").
 
 Both image attachments are referenced in the prompt as "the base
 reference image" (identity lock) and "the reference garment image"
 (garment transfer) respectively. The order in which they are
 attached should match this — identity first, garment second.
 
+### R2 output path
+
+The generated image is written to:
+
+```
+products/{YYYY}/{MM}/{DD}/{productId}/ai_model/{uuid}.png
+```
+
+(date-partitioned shape, matches `products/.../original/` and
+`products/.../ai_reference/`; see
+`src/lib/integrations/r2/keys.ts`). The corresponding
+`product_images` row carries `role='ai_model'` and is consumed by
+the Etsy publish payload.
+
+### `gpt-image-2` call shape
+
+```ts
+openai.images.edit({
+  model: 'gpt-image-2',
+  image: [panelBytes, referenceBytes],
+  prompt,
+  size: '1024x1536',  // largest portrait gpt-image-2 supports; worker post-upscales to ≥2000px for Etsy listing photo requirements
+  quality: 'low',     // cheap during iteration; bump to 'high' once visual quality bar is met
+});
+```
+
 ---
 
 ## 14 · Filled example
 
 Concrete UPPER_BODY example for a vintage flannel shirt, model
-`Lucía` (assume model id `m_lucia`, latest run id `r_2026_05_20`,
-panel `front_full`). Defaults applied: `SOFT_RELAXED` pose,
-`WAIST_UP` framing, `TEXTURED_WALL` environment, styling on,
-`detailExtension` on, no `fitOverride`.
+`Lucía` (assume `aiModelId = m_lucia`, latest run id
+`r_2026_05_20`). Inputs:
+
+```ts
+{
+  aiModelId: 'm_lucia',
+  clothingType: 'shirt',          // → {GARMENT_TYPE}='shirt', behavior=UPPER_BODY, sourcePanel default=front_full
+  aiPosePreset: 'soft_relaxed',   // global default
+  aiFramingPreset: 'waist_up',    // global default
+  aiEnvironmentPreset: 'textured_wall', // global default
+  aiSourcePanel: null,            // ⇒ resolves to 'front_full' per §12
+  aiFitOverride: null,
+}
+```
+
+Styling block is always present; detail extension is always
+appended to Garment Transfer; set extension is omitted
+(`clothingType !== 'set'`).
 
 ```
 Preserve the exact same woman from the base reference image with identical facial structure, body proportions, skin tone, hairstyle, anatomy, and identity. Do not alter the model's face, body shape, height proportions, hands, shoulders, or overall appearance.
@@ -520,14 +559,31 @@ failure mode shows up in real outputs.
 - **Prompts stay in English**, per
   [../project-conventions.md](../project-conventions.md) §2.
 - **Two image attachments per call** — identity reference (Phase
-  1 panel) first, garment reference (product photo) second.
-- **`baseImage` enum mirrors the Phase 1 `PanelKey` set** in
+  1 panel) first, garment reference (`ai_reference` product image)
+  second.
+- **`aiSourcePanel` enum mirrors the Phase 1 `PanelKey` set** in
   `src/lib/integrations/openai/panel-keys.ts`. New panels would
   require regenerating the Phase 1 contact sheets.
-- **Default presets** match the original recommendation:
-  `SOFT_RELAXED` pose, `WAIST_UP` framing, `TEXTURED_WALL`
-  environment, styling module on, `detailExtension` on,
-  `setExtension` off.
+- **Defaults:** `soft_relaxed` pose, `waist_up` framing,
+  `textured_wall` environment, source panel resolved from
+  `clothingType` (per §12), `aiFitOverride=null`. Styling block
+  always on. Detail extension always appended. Set extension
+  auto-applied when `clothingType==='set'`.
+- **`aiFitOverride` is an enum**, not freeform —
+  `null \| 'tight' \| 'loose' \| 'oversized'` with pre-baked
+  sentences (see §5).
+- **`{GARMENT_TYPE}` is resolved from the clothing-types registry**
+  (`src/lib/products/clothing-types.ts`), not caller-supplied.
+- **Module strings are env-overridable per block** via
+  `IMAGE_PLACEMENT_{IDENTITY|GARMENT_TRANSFER|GARMENT_DETAIL|BEHAVIOR_UPPER|…|STYLING|POSE_SOFT_RELAXED|…|REALISM}_PROMPT`.
+- **Code/DB/input values use lowercase snake_case** (`soft_relaxed`,
+  `textured_wall`, …). UPPER_CASE preset names in this doc's section
+  headers are mnemonic only.
+- **One image per generation.** Regenerate replaces the prior
+  `ai_model`-role row; multi-angle fan-out is deferred.
+- **`gpt-image-2` call:** `size: '1024x1536'` portrait, post-upscaled
+  to ≥2000px to meet Etsy listing photo requirements; `quality: 'low'`
+  during iteration, bump to `'high'` once visual bar is met.
 - **No `{ETHNICITY}` axis.** Identity comes entirely from the
   attached Phase 1 panel — text-side identity descriptors are
   intentionally not reintroduced here (would conflict with the
@@ -537,47 +593,46 @@ failure mode shows up in real outputs.
 
 ## 17 · Next iterations
 
-Before wiring this into code, expect the following refinements as
-the prompt is tested live:
+Refinements expected once the prompt runs against the live model:
 
-1. Verify which `baseImage` panel actually works best per category
-   — the recommended `front_full OR threequarter_full` is a
-   starting heuristic, not a measured result.
-2. Confirm `TRENCH_COAT` works with `side_portrait` as the
-   identity reference (it crops out the lower body the trench
-   coat is meant to drape over). If it doesn't, add a true
-   `side_full` panel to Phase 1.
-3. Tune the `STYLING_ACCESSORIES_MODULE` — it's the most
-   subjective block; the line between "complementary" and
-   "competing" depends on the shop's aesthetic and may need
-   shop-specific copy later.
-4. Decide whether `fitOverride` is exposed in the product form
-   v1 or hidden behind an "advanced" toggle.
-5. Once stable, the next concrete code steps are:
-   1. Add `GARMENT_APPLICATION` block constants to
-      `src/lib/integrations/openai/prompts.ts` (env-overridable,
-      same pattern as the enrichment prompts and the Phase 1
-      `BASE_MODEL_GENERATION` prompt).
-   2. Add an assembly helper that composes the 8 blocks given
-      the app inputs in §13.
-   3. Add a new BullMQ queue + worker (`ai-image-placement` is
-      already referenced in `../ai-enrichment.md §6`).
-   4. Surface the inputs on the product form — model selector
-      (`Aleatorio` default per [model-studio.md §7](./model-studio.md))
-      + category/pose/framing/environment selects.
+1. Confirm the per-category source-panel defaults in §12 (UPPER_BODY
+   → `front_full`, TRENCH_COAT / LOWER_BODY / COMPLETE_GARMENTS →
+   `threequarter_full`, SPECIAL_STRUCTURE → `front_full`) hold up
+   in practice. The select makes overrides cheap; defaults are
+   starting heuristics.
+2. Confirm `TRENCH_COAT` works with `threequarter_full` as the
+   identity reference. If the angle isn't enough, add a true
+   `side_full` panel to Phase 1 (would require regenerating every
+   model's contact sheet).
+3. Tune the Styling / Accessories block — most subjective; the line
+   between "complementary" and "competing" depends on the shop's
+   aesthetic and may need shop-specific copy later.
+4. Bump `quality` from `'low'` to `'high'` once the prompt produces
+   acceptable output at low — costs ~6× more per call.
+5. Implementation steps (tracked in
+   [../per-product-image-gen.md](../per-product-image-gen.md)):
+   1. `src/lib/integrations/openai/image-placement-prompts.ts` —
+      8 module constants (+ detail + set extensions) +
+      `assembleImagePlacementPrompt`.
+   2. `src/lib/integrations/openai/image-placement.ts` — worker
+      flow, `openai.images.edit` call, R2 upload, `product_images`
+      insert with `role='ai_model'`.
+   3. BullMQ queue `ai-image-placement` + worker registration.
+   4. Product form `Imagen IA` section (step 1) with model select +
+      `ai_reference` uploader + 5 preset selects.
+   5. Replace the stub `IMAGE_PLACEMENT` + `LOCATION_POOL` in
+      `src/lib/integrations/openai/prompts.ts` once the module
+      constants land.
 
 ---
 
 ## 18 · Open questions
 
-- Should `detailExtension` and `setExtension` be auto-inferred
-  (e.g. detail-on when the product has tagged `prints` /
-  `graphic-tee` attributes) or always explicit toggles?
 - Should the product form expose all 4 framing presets, or pick
-  one based on category and let `CLOSE_DETAIL` be a separate
+  one based on category and let `close_detail` be a separate
   "generate detail shot" button?
-- How many image variants per product by default? The pasted
-  system describes 1 image per call, but listings often want
-  ~3-4 angles. Likely answer: call the prompt N times with
-  different `framingPreset` / `posePreset` combinations. Worth
-  picking a default fan-out before implementation.
+- Post-upscale path: which library / approach gives the best result
+  for AI-generated portraits (sharp 1.5×–2× upscale to clear the
+  Etsy 2000px bar) — sharp's built-in lanczos, an `Image-Magick`
+  pipeline, or a second OpenAI call to `gpt-image-2` with a higher
+  size request? Open until the worker is wired.

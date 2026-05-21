@@ -3,38 +3,41 @@
  * clothing shop. The AI step picks one of these per product;
  * users can also pick manually on the flat edit form.
  *
- * The numeric `id` is Etsy's `taxonomy_id` from
- * `/seller-taxonomy/nodes`. The placeholder zeros below need to be
- * replaced with real IDs once we hit the live Etsy taxonomy
- * endpoint (Phase 4c / Task 6). Until then, the value is recorded
- * so the UI flow works, and Task 6 wires the lookup.
+ * IDs sourced from Etsy's live `/seller-taxonomy/nodes` endpoint —
+ * regenerate via `pnpm etsy:taxonomy` (script in
+ * `scripts/fetch-etsy-taxonomy.ts`). Vintage is NOT a Etsy
+ * subtree: vintage items use the regular Clothing > Women's
+ * Clothing leaves and signal "vintage" via `when_made = <decade>`
+ * on the listing payload.
  *
- * TODO(taxonomy): replace `0` IDs with the real values fetched
- * from `/v3/application/seller-taxonomy/nodes`.
+ * Two keys lack a dedicated Etsy leaf:
+ *   - `womens_outerwear_trench` → reuses Jackets & Coats (507).
+ *   - `womens_clothing_sets` → reuses Jumpsuits & Rompers (509),
+ *     Etsy's closest catch-all for two-piece coordinated sets.
  */
 
 export type EtsyTaxonomyEntry = {
   /** Internal stable key (English, snake_case). Used as the
    *  i18n lookup key under `m.products.etsyTaxonomies.*`. */
   key: string;
-  /** Etsy `taxonomy_id`. `0` = placeholder pending taxonomy import. */
+  /** Etsy `taxonomy_id` from /seller-taxonomy/nodes. */
   id: number;
 };
 
 export const ETSY_TAXONOMIES: EtsyTaxonomyEntry[] = [
-  { key: "womens_dresses", id: 0 },
-  { key: "womens_skirts", id: 0 },
-  { key: "womens_tops_and_tees", id: 0 },
-  { key: "womens_sweaters", id: 0 },
-  { key: "womens_jackets_and_coats", id: 0 },
-  { key: "womens_pants", id: 0 },
-  { key: "womens_jeans", id: 0 },
-  { key: "womens_shorts", id: 0 },
-  { key: "womens_jumpsuits_and_rompers", id: 0 },
-  { key: "womens_bodysuits", id: 0 },
-  { key: "womens_intimates_corsets", id: 0 },
-  { key: "womens_outerwear_trench", id: 0 },
-  { key: "womens_clothing_sets", id: 0 },
+  { key: "womens_dresses", id: 505 },
+  { key: "womens_skirts", id: 536 },
+  { key: "womens_tops_and_tees", id: 553 },
+  { key: "womens_sweaters", id: 548 },
+  { key: "womens_jackets_and_coats", id: 507 },
+  { key: "womens_pants", id: 1835 },
+  { key: "womens_jeans", id: 508 },
+  { key: "womens_shorts", id: 1837 },
+  { key: "womens_jumpsuits_and_rompers", id: 509 },
+  { key: "womens_bodysuits", id: 503 },
+  { key: "womens_intimates_corsets", id: 517 },
+  { key: "womens_outerwear_trench", id: 507 },
+  { key: "womens_clothing_sets", id: 509 },
 ];
 
 const BY_ID = new Map<number, EtsyTaxonomyEntry>(

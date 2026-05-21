@@ -60,3 +60,20 @@ export const aiModelGenerateQueue = new Queue("ai-model-generate", {
 });
 
 export type AiModelGenerateJob = { modelId: string };
+
+/**
+ * Per-product on-model image generation (Phase 2, Task 11). One job
+ * per product. Worker assembles the 8-block prompt, calls
+ * `gpt-image-2` via `openai.images.edit` with two input images
+ * (model panel + ai_reference), hard-deletes any prior `ai_model`
+ * row for the product, then inserts the new one.
+ *
+ * jobId = productId so re-runs (Regenerar) coalesce on the same
+ * product instead of stacking work.
+ */
+export const aiImagePlacementQueue = new Queue("ai-image-placement", {
+  connection: redis,
+  defaultJobOptions: DEFAULT_JOB_OPTIONS,
+});
+
+export type AiImagePlacementJob = { productId: string };

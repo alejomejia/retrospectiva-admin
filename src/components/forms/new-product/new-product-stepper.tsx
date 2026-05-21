@@ -6,9 +6,14 @@ import { useCallback, useMemo } from "react";
 import { Stepper } from "@/components/forms/stepper";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
+import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import type { ClothingType, Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 
+import {
+  type AiReferenceImage,
+  type GeneratedAiImage,
+} from "./ai-image-section";
 import { AutosaveIndicator } from "./autosave-indicator";
 import { AutosaveProvider } from "./autosave-context";
 import { Step1Inputs } from "./step-1-inputs";
@@ -46,6 +51,10 @@ export function NewProductStepper({
   buyPriceDefaults,
   imageItems,
   videoItems,
+  aiModels,
+  aiReferenceImage,
+  aiGeneratedImage,
+  r2BaseUrl,
 }: {
   product: Product;
   shopMarkupPercent: number;
@@ -53,6 +62,10 @@ export function NewProductStepper({
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
+  aiModels: ActiveAiModelListItem[];
+  aiReferenceImage: AiReferenceImage;
+  aiGeneratedImage: GeneratedAiImage;
+  r2BaseUrl: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -110,12 +123,17 @@ export function NewProductStepper({
               buyPriceDefaults={buyPriceDefaults}
               imageItems={imageItems}
               videoItems={videoItems}
+              aiModels={aiModels}
+              aiReferenceImage={aiReferenceImage}
+              aiGeneratedImage={aiGeneratedImage}
+              r2BaseUrl={r2BaseUrl}
               onNext={() => go("ai")}
             />
           )}
           {currentStep === "ai" && (
             <Step2AiReview
               product={product}
+              initialAiImage={aiGeneratedImage}
               onPrev={() => go("inputs")}
               onNext={() => go("summary")}
             />
@@ -126,6 +144,7 @@ export function NewProductStepper({
               shopMarkupPercent={shopMarkupPercent}
               imageItems={imageItems}
               videoItems={videoItems}
+              aiGeneratedImage={aiGeneratedImage}
               onPrev={() => go("ai")}
               onNext={() => go("publish")}
             />

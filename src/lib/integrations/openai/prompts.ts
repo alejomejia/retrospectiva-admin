@@ -21,10 +21,7 @@
  * `docs/project-conventions.md` §1.
  */
 
-function fromEnv(key: string, fallback: string): string {
-  const v = process.env[key];
-  return typeof v === "string" && v.trim() !== "" ? v : fallback;
-}
+import { fromEnv } from "@/lib/utils/helpers";
 
 // ----- Brand voice -----
 
@@ -105,7 +102,7 @@ The woman stands in a neutral relaxed standing pose with natural posture, should
 
 The image is organized as a structured professional fashion reference contact sheet using a fixed 3-column by 2-row grid layout with equal panel dimensions, symmetrical spacing, and aligned composition.
 
-Each panel is separated by a clean solid pure-white gutter at least 40 pixels to a maximum of 60 pixeles wide on all sides, including the outer trim and inner dividers.
+Each panel is separated by a clean solid pure-white gutter at least 40 pixels to a maximum of 60 pixels wide on all sides, including the outer trim and inner dividers.
 
 The panel order must remain identical and consistent in every generation, arranged from left to right and top to bottom in the following exact order:
 

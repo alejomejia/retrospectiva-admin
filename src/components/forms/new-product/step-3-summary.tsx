@@ -5,6 +5,8 @@ import Image from "next/image";
 
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
+
+import type { GeneratedAiImage } from "./ai-image-section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +48,7 @@ export function Step3Summary({
   shopMarkupPercent,
   imageItems,
   videoItems,
+  aiGeneratedImage,
   onPrev,
   onNext,
 }: {
@@ -53,6 +56,7 @@ export function Step3Summary({
   shopMarkupPercent: number;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
+  aiGeneratedImage: GeneratedAiImage;
   onPrev: () => void;
   onNext: () => void;
 }) {
@@ -132,6 +136,22 @@ export function Step3Summary({
             </div>
           )}
         </section>
+
+        {aiGeneratedImage && (
+          <section className="space-y-3">
+            <Header label={m.products.stepper.summary.aiImage} />
+            <div className="overflow-hidden rounded-md border border-border bg-muted">
+              <Image
+                src={aiGeneratedImage.url}
+                alt=""
+                width={aiGeneratedImage.width ?? 400}
+                height={aiGeneratedImage.height ?? 600}
+                className="h-auto w-full max-w-xs"
+                unoptimized
+              />
+            </div>
+          </section>
+        )}
 
         <Separator />
 

@@ -1,0 +1,219 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`full-prompt snapshots > matches \`set\` (auto-appends the set-extension paragraph) 1`] = `
+"Preserve the exact same woman from the base reference image with identical facial structure, body proportions, skin tone, hairstyle, anatomy, and identity. Do not alter the model's face, body shape, height proportions, hands, shoulders, or overall appearance.
+
+The existing base image must remain the foundation of the composition. Only apply the garment naturally onto the existing model while preserving realistic anatomy, natural posture, and original photographic realism.
+
+Apply the provided two-piece set from the reference garment image onto the existing model while preserving the exact original garment structure, stitching, proportions, folds, wrinkles, fabric texture, buttons, seams, patterns, graphics, fading, wear, and authentic vintage details.
+
+Preserve the exact garment colors and textile behavior from the original garment image. Maintain realistic fabric physics, natural gravity-based draping, believable sleeve tension, realistic fabric bunching, and authentic second-hand garment characteristics.
+
+Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
+
+Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
+
+Maintain realistic full-body garment behavior with natural fabric flow across the upper and lower body, believable silhouette transitions, authentic textile draping, and realistic body movement interaction.
+
+Preserve natural garment continuity, realistic folds, subtle fabric tension, believable gravity behavior, and authentic vintage texture characteristics throughout the entire outfit.
+
+The garment should feel naturally worn and realistically fitted without exaggerated perfection or artificial fashion-editorial styling.
+
+Preserve the coordinated relationship between all garment pieces, including matching fabric behavior, proportional consistency, textile continuity, and authentic outfit balance.
+
+Style the model with subtle vintage-inspired complementary clothing layers and minimal accessories that naturally match the garment's aesthetic, era, color palette, silhouette, and overall mood.
+
+The styling should feel authentic, understated, and naturally assembled by a real person rather than professionally fashion-styled.
+
+Accessories may include subtle vintage jewelry, small earrings, delicate necklaces, simple rings, thin belts, neutral layering basics, or soft lifestyle elements that complement the garment without competing with it.
+
+All additional styling elements must remain visually secondary to the main garment being sold.
+
+Avoid statement accessories, luxury fashion styling, excessive layering, loud colors, oversized jewelry, trend-heavy aesthetics, editorial fashion compositions, or distracting secondary garments.
+
+The primary garment must remain the clear visual focus of the entire image.
+
+Subtle natural body movement with relaxed posture, gentle motion in the arms and torso, and believable casual lifestyle energy. Maintain realistic fabric movement without exaggerated fashion posing.
+
+Medium lifestyle crop framed from approximately waist level upward, maintaining strong garment visibility, natural composition, and authentic vintage ecommerce photography aesthetics.
+
+Subtle vintage-inspired home environment with soft natural lighting, warm neutral textures, minimal visual distractions, and authentic cozy lifestyle realism.
+
+Ultra realistic humanized ecommerce photography with authentic natural imperfections, realistic textile behavior, subtle asymmetry, believable posture, realistic skin texture, soft natural lighting, and genuine human presence.
+
+The final image should feel like a real vintage clothing listing photographed by a real person for a real marketplace, not like an AI-generated luxury fashion campaign.
+
+Avoid overprocessed skin, artificial perfection, exaggerated posing, editorial fashion aesthetics, cinematic lighting, unrealistic anatomy, distorted hands, distorted garments, excessive beauty retouching, or overly stylized AI aesthetics."
+`;
+
+exports[`full-prompt snapshots > matches CORSET with structured posture + close detail framing 1`] = `
+"Preserve the exact same woman from the base reference image with identical facial structure, body proportions, skin tone, hairstyle, anatomy, and identity. Do not alter the model's face, body shape, height proportions, hands, shoulders, or overall appearance.
+
+The existing base image must remain the foundation of the composition. Only apply the garment naturally onto the existing model while preserving realistic anatomy, natural posture, and original photographic realism.
+
+Apply the provided corset from the reference garment image onto the existing model while preserving the exact original garment structure, stitching, proportions, folds, wrinkles, fabric texture, buttons, seams, patterns, graphics, fading, wear, and authentic vintage details.
+
+Preserve the exact garment colors and textile behavior from the original garment image. Maintain realistic fabric physics, natural gravity-based draping, believable sleeve tension, realistic fabric bunching, and authentic second-hand garment characteristics.
+
+Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
+
+Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
+
+Maintain realistic corset structure, authentic fabric tension, natural compression behavior, and believable body contour interaction. Preserve the exact corset shape, boning structure, stitching, tightening behavior, and realistic textile rigidity without distorting anatomy.
+
+The corset should feel naturally worn with subtle realistic fabric tension around the torso, believable shaping behavior, and authentic vintage garment structure while maintaining realistic human proportions and soft natural posture.
+
+Style the model with subtle vintage-inspired complementary clothing layers and minimal accessories that naturally match the garment's aesthetic, era, color palette, silhouette, and overall mood.
+
+The styling should feel authentic, understated, and naturally assembled by a real person rather than professionally fashion-styled.
+
+Accessories may include subtle vintage jewelry, small earrings, delicate necklaces, simple rings, thin belts, neutral layering basics, or soft lifestyle elements that complement the garment without competing with it.
+
+All additional styling elements must remain visually secondary to the main garment being sold.
+
+Avoid statement accessories, luxury fashion styling, excessive layering, loud colors, oversized jewelry, trend-heavy aesthetics, editorial fashion compositions, or distracting secondary garments.
+
+The primary garment must remain the clear visual focus of the entire image.
+
+Confident upright posture with subtle relaxed elegance, minimal movement, natural arm positioning, and clear garment visibility while maintaining a believable human stance.
+
+Closer editorial-style garment framing focused on textile detail, upper body styling, and realistic fabric texture while preserving believable lifestyle photography realism.
+
+Soft natural lifestyle photography near a lightly textured neutral wall with subtle daylight illumination, minimal distractions, soft natural shadows, and clean vintage ecommerce aesthetics.
+
+Ultra realistic humanized ecommerce photography with authentic natural imperfections, realistic textile behavior, subtle asymmetry, believable posture, realistic skin texture, soft natural lighting, and genuine human presence.
+
+The final image should feel like a real vintage clothing listing photographed by a real person for a real marketplace, not like an AI-generated luxury fashion campaign.
+
+Avoid overprocessed skin, artificial perfection, exaggerated posing, editorial fashion aesthetics, cinematic lighting, unrealistic anatomy, distorted hands, distorted garments, excessive beauty retouching, or overly stylized AI aesthetics."
+`;
+
+exports[`full-prompt snapshots > matches LOWER_BODY with a tight fit override and full-body framing 1`] = `
+"Preserve the exact same woman from the base reference image with identical facial structure, body proportions, skin tone, hairstyle, anatomy, and identity. Do not alter the model's face, body shape, height proportions, hands, shoulders, or overall appearance.
+
+The existing base image must remain the foundation of the composition. Only apply the garment naturally onto the existing model while preserving realistic anatomy, natural posture, and original photographic realism.
+
+Apply the provided jean from the reference garment image onto the existing model while preserving the exact original garment structure, stitching, proportions, folds, wrinkles, fabric texture, buttons, seams, patterns, graphics, fading, wear, and authentic vintage details.
+
+Preserve the exact garment colors and textile behavior from the original garment image. Maintain realistic fabric physics, natural gravity-based draping, believable sleeve tension, realistic fabric bunching, and authentic second-hand garment characteristics.
+
+Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
+
+Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
+
+Apply a tight body-hugging fit with realistic fabric tension and natural compression points.
+
+Maintain realistic lower-body garment behavior with authentic fabric interaction around the waist, hips, thighs, knees, and legs. Preserve natural folds, believable compression points, realistic draping, subtle bunching, and authentic second-hand textile behavior.
+
+The garment should respond naturally to posture, gravity, and body positioning while maintaining believable vintage wear patterns, realistic silhouette flow, and authentic fabric tension.
+
+Style the model with subtle vintage-inspired complementary clothing layers and minimal accessories that naturally match the garment's aesthetic, era, color palette, silhouette, and overall mood.
+
+The styling should feel authentic, understated, and naturally assembled by a real person rather than professionally fashion-styled.
+
+Accessories may include subtle vintage jewelry, small earrings, delicate necklaces, simple rings, thin belts, neutral layering basics, or soft lifestyle elements that complement the garment without competing with it.
+
+All additional styling elements must remain visually secondary to the main garment being sold.
+
+Avoid statement accessories, luxury fashion styling, excessive layering, loud colors, oversized jewelry, trend-heavy aesthetics, editorial fashion compositions, or distracting secondary garments.
+
+The primary garment must remain the clear visual focus of the entire image.
+
+Natural relaxed standing posture with subtle human asymmetry, soft shoulder positioning, relaxed arms, natural hand placement, slight weight shift, and believable casual body posture. The pose should feel natural and unintentionally stylish, like a real person casually modeling clothing for a vintage marketplace listing.
+
+Full body vertical composition with realistic proportions, natural stance, and clean visibility of the entire garment while maintaining relaxed lifestyle realism.
+
+Soft natural lifestyle photography near a lightly textured neutral wall with subtle daylight illumination, minimal distractions, soft natural shadows, and clean vintage ecommerce aesthetics.
+
+Ultra realistic humanized ecommerce photography with authentic natural imperfections, realistic textile behavior, subtle asymmetry, believable posture, realistic skin texture, soft natural lighting, and genuine human presence.
+
+The final image should feel like a real vintage clothing listing photographed by a real person for a real marketplace, not like an AI-generated luxury fashion campaign.
+
+Avoid overprocessed skin, artificial perfection, exaggerated posing, editorial fashion aesthetics, cinematic lighting, unrealistic anatomy, distorted hands, distorted garments, excessive beauty retouching, or overly stylized AI aesthetics."
+`;
+
+exports[`full-prompt snapshots > matches TRENCH_COAT with oversized fit + window_light 1`] = `
+"Preserve the exact same woman from the base reference image with identical facial structure, body proportions, skin tone, hairstyle, anatomy, and identity. Do not alter the model's face, body shape, height proportions, hands, shoulders, or overall appearance.
+
+The existing base image must remain the foundation of the composition. Only apply the garment naturally onto the existing model while preserving realistic anatomy, natural posture, and original photographic realism.
+
+Apply the provided trench coat from the reference garment image onto the existing model while preserving the exact original garment structure, stitching, proportions, folds, wrinkles, fabric texture, buttons, seams, patterns, graphics, fading, wear, and authentic vintage details.
+
+Preserve the exact garment colors and textile behavior from the original garment image. Maintain realistic fabric physics, natural gravity-based draping, believable sleeve tension, realistic fabric bunching, and authentic second-hand garment characteristics.
+
+Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
+
+Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
+
+Apply an oversized fit with intentional excess fabric, relaxed proportions, and authentic vintage layering.
+
+Maintain realistic trench coat weight, vertical draping, layered outerwear structure, natural sleeve volume, and believable long-garment fabric gravity. Preserve authentic oversized silhouette behavior, realistic coat movement, natural open-front layering behavior, and subtle heavy-fabric tension.
+
+The trench coat should feel naturally worn with realistic lower-body draping, soft movement, and believable vintage outerwear structure without exaggerated fashion-editorial posing.
+
+Style the model with subtle vintage-inspired complementary clothing layers and minimal accessories that naturally match the garment's aesthetic, era, color palette, silhouette, and overall mood.
+
+The styling should feel authentic, understated, and naturally assembled by a real person rather than professionally fashion-styled.
+
+Accessories may include subtle vintage jewelry, small earrings, delicate necklaces, simple rings, thin belts, neutral layering basics, or soft lifestyle elements that complement the garment without competing with it.
+
+All additional styling elements must remain visually secondary to the main garment being sold.
+
+Avoid statement accessories, luxury fashion styling, excessive layering, loud colors, oversized jewelry, trend-heavy aesthetics, editorial fashion compositions, or distracting secondary garments.
+
+The primary garment must remain the clear visual focus of the entire image.
+
+Natural relaxed standing posture with subtle human asymmetry, soft shoulder positioning, relaxed arms, natural hand placement, slight weight shift, and believable casual body posture. The pose should feel natural and unintentionally stylish, like a real person casually modeling clothing for a vintage marketplace listing.
+
+Medium lifestyle crop framed from approximately waist level upward, maintaining strong garment visibility, natural composition, and authentic vintage ecommerce photography aesthetics.
+
+Soft window-side natural lighting with realistic daylight falloff, gentle shadows, warm natural atmosphere, and believable candid lifestyle photography aesthetics.
+
+Ultra realistic humanized ecommerce photography with authentic natural imperfections, realistic textile behavior, subtle asymmetry, believable posture, realistic skin texture, soft natural lighting, and genuine human presence.
+
+The final image should feel like a real vintage clothing listing photographed by a real person for a real marketplace, not like an AI-generated luxury fashion campaign.
+
+Avoid overprocessed skin, artificial perfection, exaggerated posing, editorial fashion aesthetics, cinematic lighting, unrealistic anatomy, distorted hands, distorted garments, excessive beauty retouching, or overly stylized AI aesthetics."
+`;
+
+exports[`full-prompt snapshots > matches the canonical UPPER_BODY default (per Phase 2 §14 example) 1`] = `
+"Preserve the exact same woman from the base reference image with identical facial structure, body proportions, skin tone, hairstyle, anatomy, and identity. Do not alter the model's face, body shape, height proportions, hands, shoulders, or overall appearance.
+
+The existing base image must remain the foundation of the composition. Only apply the garment naturally onto the existing model while preserving realistic anatomy, natural posture, and original photographic realism.
+
+Apply the provided jacket from the reference garment image onto the existing model while preserving the exact original garment structure, stitching, proportions, folds, wrinkles, fabric texture, buttons, seams, patterns, graphics, fading, wear, and authentic vintage details.
+
+Preserve the exact garment colors and textile behavior from the original garment image. Maintain realistic fabric physics, natural gravity-based draping, believable sleeve tension, realistic fabric bunching, and authentic second-hand garment characteristics.
+
+Do not redesign, reinterpret, modernize, clean up, or stylize the garment.
+
+Preserve the authentic vintage print scale, original textile color fading, realistic woven fabric texture, and natural aged fabric characteristics from the original garment image.
+
+Maintain realistic upper-body garment behavior with natural fabric draping around the shoulders, chest, waist, sleeves, and torso. Preserve authentic fabric tension, realistic folds, soft bunching, sleeve compression, and believable textile weight.
+
+The garment should interact naturally with the model's posture and anatomy while maintaining realistic relaxed vintage clothing behavior, authentic second-hand texture characteristics, and believable casual wear imperfections.
+
+Style the model with subtle vintage-inspired complementary clothing layers and minimal accessories that naturally match the garment's aesthetic, era, color palette, silhouette, and overall mood.
+
+The styling should feel authentic, understated, and naturally assembled by a real person rather than professionally fashion-styled.
+
+Accessories may include subtle vintage jewelry, small earrings, delicate necklaces, simple rings, thin belts, neutral layering basics, or soft lifestyle elements that complement the garment without competing with it.
+
+All additional styling elements must remain visually secondary to the main garment being sold.
+
+Avoid statement accessories, luxury fashion styling, excessive layering, loud colors, oversized jewelry, trend-heavy aesthetics, editorial fashion compositions, or distracting secondary garments.
+
+The primary garment must remain the clear visual focus of the entire image.
+
+Natural relaxed standing posture with subtle human asymmetry, soft shoulder positioning, relaxed arms, natural hand placement, slight weight shift, and believable casual body posture. The pose should feel natural and unintentionally stylish, like a real person casually modeling clothing for a vintage marketplace listing.
+
+Medium lifestyle crop framed from approximately waist level upward, maintaining strong garment visibility, natural composition, and authentic vintage ecommerce photography aesthetics.
+
+Soft natural lifestyle photography near a lightly textured neutral wall with subtle daylight illumination, minimal distractions, soft natural shadows, and clean vintage ecommerce aesthetics.
+
+Ultra realistic humanized ecommerce photography with authentic natural imperfections, realistic textile behavior, subtle asymmetry, believable posture, realistic skin texture, soft natural lighting, and genuine human presence.
+
+The final image should feel like a real vintage clothing listing photographed by a real person for a real marketplace, not like an AI-generated luxury fashion campaign.
+
+Avoid overprocessed skin, artificial perfection, exaggerated posing, editorial fashion aesthetics, cinematic lighting, unrealistic anatomy, distorted hands, distorted garments, excessive beauty retouching, or overly stylized AI aesthetics."
+`;

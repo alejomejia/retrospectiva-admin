@@ -2,6 +2,7 @@ import { AiImageToggleForm } from "@/components/forms/ai-image-toggle-form";
 import { BuyPriceDefaultsForm } from "@/components/forms/buy-price-defaults-form";
 import { ShopMarkupForm } from "@/components/forms/shop-markup-form";
 import { PageHeader } from "@/components/layout/page-header";
+import { SidebarSettings } from "@/components/layout/sidebar-settings";
 import {
   Card,
   CardContent,
@@ -36,43 +37,50 @@ export default async function ProductSettingsPage() {
         </PageHeader.Column>
       </PageHeader>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{m.settings.products.markupCardTitle}</CardTitle>
-          <CardDescription>
-            {m.settings.products.markupCardDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ShopMarkupForm currentMarkupPercent={currentMarkupPercent} />
-        </CardContent>
-      </Card>
+      <div className="flex gap-4">
+        <div className="w-96">
+          <SidebarSettings />
+        </div>
+        <div className="w-full space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>{m.settings.products.markupCardTitle}</CardTitle>
+              <CardDescription>
+                {m.settings.products.markupCardDescription}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ShopMarkupForm currentMarkupPercent={currentMarkupPercent} />
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{m.settings.products.aiImage.cardTitle}</CardTitle>
-          <CardDescription>
-            {m.settings.products.aiImage.cardDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AiImageToggleForm
-            currentAiImageEnabled={settings.aiImageEnabled}
-          />
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{m.settings.products.aiImage.cardTitle}</CardTitle>
+              <CardDescription>
+                {m.settings.products.aiImage.cardDescription}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AiImageToggleForm
+                currentAiImageEnabled={settings.aiImageEnabled}
+              />
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{m.settings.products.buyPrice.cardTitle}</CardTitle>
-          <CardDescription>
-            {m.settings.products.buyPrice.cardDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BuyPriceDefaultsForm defaults={buyPriceDefaults} />
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>{m.settings.products.buyPrice.cardTitle}</CardTitle>
+              <CardDescription>
+                {m.settings.products.buyPrice.cardDescription}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BuyPriceDefaultsForm defaults={buyPriceDefaults} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
