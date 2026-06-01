@@ -9,6 +9,7 @@ import {
   runTranslation,
   type TranslatableField,
 } from "@/lib/integrations/openai/translate";
+import { websiteWebhookQueue } from "@/lib/queue/queues";
 import { devGroup } from "@/lib/utils/dev";
 
 import {
@@ -70,7 +71,7 @@ export type ScheduledPublishResult =
 const TRANSLATION_ATTEMPTS = 3;
 const TRANSLATION_RETRY_BASE_DELAY_MS = 500;
 
-async function translateWithRetry(
+export async function translateWithRetry(
   productId: string,
   field: TranslatableField,
 ): Promise<void> {
@@ -100,13 +101,13 @@ async function translateWithRetry(
   );
 }
 
-function extFromR2Key(key: string): string {
+export function extFromR2Key(key: string): string {
   const dot = key.lastIndexOf(".");
   if (dot < 0) return "bin";
   return key.slice(dot + 1).toLowerCase();
 }
 
-function contentTypeForImage(ext: string): string {
+export function contentTypeForImage(ext: string): string {
   switch (ext) {
     case "jpg":
     case "jpeg":
@@ -122,7 +123,7 @@ function contentTypeForImage(ext: string): string {
   }
 }
 
-function contentTypeForVideo(ext: string, fallback: string | null): string {
+export function contentTypeForVideo(ext: string, fallback: string | null): string {
   switch (ext) {
     case "mp4":
       return "video/mp4";
@@ -135,15 +136,15 @@ function contentTypeForVideo(ext: string, fallback: string | null): string {
   }
 }
 
-async function loadShopConfig() {
+export async function loadShopConfig() {
   const [row] = await db.select().from(etsyOauth).limit(1);
   if (!row) {
     throw new Error("etsy_oauth row missing — connect the shop first");
   }
   return {
     shopId: row.shopId,
-    shippingProfileId: row.defaultShippingProfileId,
     returnPolicyId: row.defaultReturnPolicyId,
+    readinessStateId: row.defaultReadinessStateId,
     markupPercent: row.markupPercent,
   };
 }
@@ -213,20 +214,30 @@ export async function runScheduledPublish(
   dev.log("draft listing created", productId, `listingId=${draft.listing_id}`);
 
   // Upload images in stored order. Rank is 1-indexed; rank=1 becomes
-  // Etsy's cover image (originals[0] in our list, by design).
+  // Etsy's cover image (originals[0] in our list, by design). We
+  // collect the resulting listing_image_id from each upload and PUT
+  // them back via updateListing(image_ids=…) — uploadListingImage's
+  // `rank` parameter has proven unreliable in practice (Etsy ignores
+  // it when multiple images land in the same listing within a few
+  // hundred ms), but the bulk reorder on the listing always sticks.
   const images = await listImagesForEtsyPublish(productId);
   const altText = (product.titleEn ?? "").trim() || undefined;
+  const imageIds: number[] = [];
   for (let i = 0; i < images.length; i++) {
     const img = images[i]!;
     const { bytes, contentType } = await fetchBytesFromR2({ key: img.r2Key });
     const ext = extFromR2Key(img.r2Key);
-    await uploadListingImage(shop.shopId, draft.listing_id, {
+    const uploaded = await uploadListingImage(shop.shopId, draft.listing_id, {
       bytes,
       filename: `image-${i + 1}.${ext}`,
       contentType: contentType ?? contentTypeForImage(ext),
       rank: i + 1,
       altText,
     });
+    imageIds.push(uploaded.listing_image_id);
+  }
+  if (imageIds.length > 1) {
+    await updateListing(shop.shopId, draft.listing_id, { image_ids: imageIds });
   }
   dev.log("images uploaded", productId, `count=${images.length}`);
 
@@ -245,6 +256,7 @@ export async function runScheduledPublish(
       bytes,
       filename: `video.${ext}`,
       contentType: contentType ?? contentTypeForVideo(ext, video.mimeType),
+      name: `video.${ext}`,
     });
     dev.log("video uploaded", productId);
   }
@@ -289,5 +301,23 @@ export async function runScheduledPublish(
     `listingId=${draft.listing_id}`,
     `etsyState=${finalEtsyState}`,
   );
+
+  // Fire-and-forget website revalidation. The enqueue itself is
+  // best-effort: a Redis hiccup here must not flip the publish back
+  // to failed, because the listing is already live on Etsy. The
+  // BullMQ retry policy covers transient website failures inside
+  // the worker. jobId scopes coalescing per-product per-kind so a
+  // double-publish doesn't enqueue twice.
+  try {
+    await websiteWebhookQueue.add(
+      "publish",
+      { productId, kind: "publish" },
+      { jobId: `publish:${productId}` },
+    );
+  } catch (e) {
+    const m = e instanceof Error ? e.message : String(e);
+    dev.warn("website webhook enqueue failed (non-fatal)", productId, m);
+  }
+
   return { ok: true, skipped: false, listingId: draft.listing_id };
 }

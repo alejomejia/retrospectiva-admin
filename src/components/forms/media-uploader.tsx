@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -62,6 +63,7 @@ function isVideo(file: File): boolean {
  * end summarizes both counts in a single message.
  */
 export function MediaUploader({ productId }: { productId: string }) {
+  const router = useRouter();
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -141,12 +143,17 @@ export function MediaUploader({ productId }: { productId: string }) {
         }
         if (imagesOk > 0 || videosOk > 0) {
           toast.success(m.toasts.mediaUploaded(imagesOk, videosOk));
+          // Server actions call `revalidatePath` but the currently
+          // mounted page doesn't always re-fetch its server props
+          // without an explicit refresh — so the new ImageList /
+          // VideoList items wouldn't appear until the next navigation.
+          router.refresh();
         }
       } finally {
         setBusy(false);
       }
     },
-    [productId],
+    [productId, router],
   );
 
   return (

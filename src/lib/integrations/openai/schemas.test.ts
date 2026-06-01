@@ -12,6 +12,8 @@ describe("EnrichmentOutput", () => {
     etsyTagsEs: ["vestido", "vintage", "anos 80"],
     etsyMaterialsEs: ["algodon", "poliester"],
     etsyWhenMade: "1980s" as const,
+    etsyPrimaryColor: "blue" as const,
+    etsySecondaryColor: null,
   };
 
   it("accepts a well-formed enrichment payload", () => {

@@ -43,9 +43,9 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <Card className="mx-auto max-w-lg">
+    <Card className="w-full mx-auto max-w-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 mb-3">
           <AlertTriangle className="size-5 text-destructive" />
           {m.errorBoundary.title}
         </CardTitle>

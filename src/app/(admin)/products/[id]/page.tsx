@@ -2,13 +2,17 @@ import { notFound } from "next/navigation";
 
 import { NewProductStepper } from "@/components/forms/new-product/new-product-stepper";
 import { PageHeader } from "@/components/layout/page-header";
-import { ProductEditForm } from "@/components/products/edit-form";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
 import { Badge } from "@/components/ui/badge";
 import { listActiveAiModels } from "@/lib/ai-models/actions";
 import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
+import {
+  listShippingProfiles,
+  type ShippingProfile,
+} from "@/lib/integrations/etsy/shop-config";
+import { devError } from "@/lib/utils/dev";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
 import { m } from "@/lib/i18n/messages.es";
@@ -46,7 +50,14 @@ export default async function ProductDetailPage({
     listProductImages(id),
     listProductVideos(id),
     db
-      .select({ markupPercent: etsyOauth.markupPercent })
+      .select({
+        shopId: etsyOauth.shopId,
+        markupPercent: etsyOauth.markupPercent,
+        shippingProfileLightId: etsyOauth.shippingProfileLightId,
+        shippingProfileMediumId: etsyOauth.shippingProfileMediumId,
+        shippingProfileHeavyId: etsyOauth.shippingProfileHeavyId,
+        defaultReturnPolicyId: etsyOauth.defaultReturnPolicyId,
+      })
       .from(etsyOauth)
       .limit(1),
     getAllBuyPriceDefaults(),
@@ -58,6 +69,24 @@ export default async function ProductDetailPage({
   const shopMarkupPercent =
     oauthRows[0]?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
   const shopAiImageEnabled = settings.aiImageEnabled;
+  const hasAnyShippingMapping =
+    oauthRows[0]?.shippingProfileLightId != null ||
+    oauthRows[0]?.shippingProfileMediumId != null ||
+    oauthRows[0]?.shippingProfileHeavyId != null;
+  const etsyPoliciesConfigured =
+    hasAnyShippingMapping && oauthRows[0]?.defaultReturnPolicyId != null;
+
+  const shopId = oauthRows[0]?.shopId ?? null;
+  // Shipping profiles are needed in both modes — draft uses the
+  // select to pick one before publish; edit mode shows the current
+  // selection (and lets the operator change it post-publish).
+  const shippingProfiles: ShippingProfile[] =
+    shopId !== null
+      ? await listShippingProfiles(Number(shopId)).catch((err) => {
+          devError("products/[id]: shipping-profiles fetch failed", err);
+          return [];
+        })
+      : [];
 
   const imageItems: ImageListItem[] = images.map((img) => ({
     id: img.id,
@@ -79,7 +108,7 @@ export default async function ProductDetailPage({
     order: v.order,
   }));
 
-  const isDraft = product.status === "draft";
+  const mode = product.status === "draft" ? "draft" : "edit";
 
   return (
     <>
@@ -103,11 +132,13 @@ export default async function ProductDetailPage({
         </PageHeader.Column>
       </PageHeader>
 
-      {isDraft ? (
+      <main>
         <NewProductStepper
           product={product}
+          mode={mode}
           shopMarkupPercent={shopMarkupPercent}
           shopAiImageEnabled={shopAiImageEnabled}
+          etsyPoliciesConfigured={etsyPoliciesConfigured}
           buyPriceDefaults={buyPriceDefaults}
           imageItems={imageItems}
           videoItems={videoItems}
@@ -130,37 +161,15 @@ export default async function ProductDetailPage({
                 }
               : null
           }
+          shippingProfiles={shippingProfiles}
+          shippingMapping={{
+            light: oauthRows[0]?.shippingProfileLightId ?? null,
+            medium: oauthRows[0]?.shippingProfileMediumId ?? null,
+            heavy: oauthRows[0]?.shippingProfileHeavyId ?? null,
+          }}
           r2BaseUrl={R2_PUBLIC_BASE_URL}
         />
-      ) : (
-        <ProductEditForm
-          product={product}
-          shopMarkupPercent={shopMarkupPercent}
-          shopAiImageEnabled={shopAiImageEnabled}
-          imageItems={imageItems}
-          videoItems={videoItems}
-          aiModels={aiModels}
-          aiReferenceImage={
-            aiReferenceRow
-              ? {
-                  url: publicUrlFor(aiReferenceRow.r2Key, R2_PUBLIC_BASE_URL),
-                  width: aiReferenceRow.width,
-                  height: aiReferenceRow.height,
-                }
-              : null
-          }
-          aiGeneratedImage={
-            aiModelImageRow
-              ? {
-                  url: publicUrlFor(aiModelImageRow.r2Key, R2_PUBLIC_BASE_URL),
-                  width: aiModelImageRow.width,
-                  height: aiModelImageRow.height,
-                }
-              : null
-          }
-          r2BaseUrl={R2_PUBLIC_BASE_URL}
-        />
-      )}
+      </main>
     </>
   );
 }

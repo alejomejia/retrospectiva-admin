@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { m } from "@/lib/i18n/messages.es";
 import { productCondition, type ProductCondition } from "@/lib/db/schema";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
 export function ConditionField({
   value,

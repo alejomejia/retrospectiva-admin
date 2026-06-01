@@ -78,6 +78,7 @@ export const aiRunKind = pgEnum("ai_run_kind", [
   "translation",
   "model_generation",
   "model_placement",
+  "field_regenerate",
 ]);
 
 export const aiModelStatus = pgEnum("ai_model_status", [
@@ -113,6 +114,11 @@ export const products = pgTable(
     currency: text("currency").notNull().default("EUR"),
     markupPercentOverride: smallint("markup_percent_override"),
     listPriceCentsOverride: integer("list_price_cents_override"),
+    // Optional per-product sale. When set, the Etsy listing (and the
+    // website "compare-at" price) is inflated so a matching `%` sale —
+    // run manually in Etsy Shop Manager — lands the buyer back near the
+    // effective list price. null/0 = no discount. See `inflatedListCents`.
+    discountPercent: smallint("discount_percent"),
     // Cost of the garment to the shop, in EUR cents. Snapshotted from
     // `clothing_buy_price_defaults` when the clothing type is first
     // set (only when this column is null) — later changes to defaults
@@ -120,10 +126,22 @@ export const products = pgTable(
     // step-1 input. Earnings = base_price_cents - buy_price_cents.
     buyPriceCents: integer("buy_price_cents"),
 
+    // Free-text notes the user adds in step 1. Passed to the AI
+    // enrichment prompt so the model weaves them into the description.
+    comments: text("comments"),
+
     // User-provided attributes (set in step 1 of the stepper).
     clothingType: clothingType("clothing_type"),
     condition: productCondition("condition").default("perfect"),
-    sizes: text("sizes").array().notNull().default(sql`'{}'::text[]`),
+    // Single size value matching Etsy's "US Women's Letter" scale
+    // (XXS, XS, S, M, L, XL, 1X, 2X, 3X). Migrated from the prior
+    // `sizes` text[] by snapshotting the first array element.
+    size: text("size"),
+    // Whether this listing should be marked as a shop-featured
+    // product. Mapped to Etsy's `featured_rank` on publish; Etsy
+    // caps featured listings at 4 per shop so the operator picks
+    // sparingly.
+    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Measurements in cm, stored flat (as measured across the
     // garment). Doubled (×2) at the Etsy / website-payload boundary
@@ -156,6 +174,18 @@ export const products = pgTable(
       .default(sql`'{}'::text[]`),
     etsyWhenMade: text("etsy_when_made"),
     etsyTaxonomyId: bigint("etsy_taxonomy_id", { mode: "number" }),
+    // Etsy listing colors (free-form values pulled from Etsy's
+    // primary/secondary color vocabulary). AI enrich fills these from
+    // the product photos; user can override in step 2. Stored as
+    // canonical lowercase strings matching the validator in
+    // `etsy-colors.ts`.
+    etsyPrimaryColor: text("etsy_primary_color"),
+    etsySecondaryColor: text("etsy_secondary_color"),
+
+    // Etsy shipping profile for this listing. Auto-picked at step-1
+    // from the shop-wide weight-class mapping based on `clothingType`,
+    // user can override via the step-1 picker. Required before publish.
+    shippingProfileId: bigint("shipping_profile_id", { mode: "number" }),
 
     // Per-product override for the shop-wide AI image generation
     // toggle (product_settings.ai_image_enabled). null = inherit shop
@@ -198,6 +228,15 @@ export const products = pgTable(
     // Populated once a published product is created on Etsy.
     etsyListingId: bigint("etsy_listing_id", { mode: "number" }),
     etsyState: text("etsy_state"),
+    // Inbound-sync mirror of the live Etsy listing price, in cents.
+    // Populated by the 15-min inbound poll (`inbound.ts`) so the admin
+    // reflects price/discount edits made directly on Etsy. Display-only
+    // — never feeds the charm-priced outbound payload, to avoid a
+    // re-publish drift loop. See `etsyPriceToCents`.
+    etsyPriceCents: integer("etsy_price_cents"),
+    etsyPriceSyncedAt: timestamp("etsy_price_synced_at", {
+      withTimezone: true,
+    }),
     soldAt: timestamp("sold_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -418,13 +457,32 @@ export const etsyOauth = pgTable("etsy_oauth", {
   refreshToken: text("refresh_token").notNull(),
   scopes: text("scopes").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  // Shop-wide publish defaults — shipping/returns set in
+  // Shop-wide publish defaults — shipping mapping + returns set in
   // /settings/integrations, markup set in /settings/products.
   // Per-product fields (taxonomy, section, era) live on the product.
-  defaultShippingProfileId: bigint("default_shipping_profile_id", {
+  //
+  // Shipping is configured as a three-tier mapping (light / medium /
+  // heavy) rather than a single default. Step-1 auto-picks the
+  // matching profile based on the garment's `shippingWeightClass`
+  // (see clothing-types.ts) and writes it onto `products.shipping_profile_id`.
+  shippingProfileLightId: bigint("shipping_profile_light_id", {
+    mode: "number",
+  }),
+  shippingProfileMediumId: bigint("shipping_profile_medium_id", {
+    mode: "number",
+  }),
+  shippingProfileHeavyId: bigint("shipping_profile_heavy_id", {
     mode: "number",
   }),
   defaultReturnPolicyId: bigint("default_return_policy_id", {
+    mode: "number",
+  }),
+  // Shop-wide default Etsy "readiness state" (processing profile).
+  // Etsy v3 made this required on createDraftListing for physical
+  // listings — the operator picks one in /settings/integrations from
+  // the list fetched via `listReadinessStates`. The publish processor
+  // emits it as `readiness_state_id` on the create-draft payload.
+  defaultReadinessStateId: bigint("default_readiness_state_id", {
     mode: "number",
   }),
   // Etsy-fee + commission markup applied to `products.base_price_cents`

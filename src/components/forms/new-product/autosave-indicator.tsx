@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { m } from "@/lib/i18n/messages.es";
 import { cn } from "@/lib/utils/helpers";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
 /**
  * Small chip in the corner of the stepper showing autosave status:
@@ -16,7 +16,7 @@ import { useAutosave } from "./autosave-context";
  */
 export function AutosaveIndicator({ className }: { className?: string }) {
   const { status, lastSavedAt, error } = useAutosave();
-  const [, setTick] = useState(0);
+  const [ _tick, setTick] = useState(0);
 
   useEffect(() => {
     if (status !== "saved") return;
@@ -59,12 +59,13 @@ export function AutosaveIndicator({ className }: { className?: string }) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 text-xs text-muted-foreground",
+          "inline-flex items-center gap-1 text-xs",
+          "p-2 text-amber-100 bg-brand-olive rounded-full",
           className,
         )}
         aria-live="polite"
       >
-        <Check className="size-3" />
+        <Check className="size-4 p-1 bg-brand-olive-deep rounded-full" />
         {m.products.stepper.autosave.savedAgo(relativeFromNow(lastSavedAt))}
       </span>
     );

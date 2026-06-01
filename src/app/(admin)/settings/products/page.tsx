@@ -26,7 +26,7 @@ export default async function ProductSettingsPage() {
   const currentMarkupPercent = rows[0]?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader>
         <PageHeader.Column className="flex-1 flex-col">
           <PageHeader.Eyebrow number="04" label={m.settings.products.kicker} />
@@ -36,51 +36,53 @@ export default async function ProductSettingsPage() {
           </PageHeader.Description>
         </PageHeader.Column>
       </PageHeader>
+      
+      <main className="p-6">
+        <div className="flex gap-4">
+          <div className="w-96">
+            <SidebarSettings />
+          </div>
+          <div className="w-full space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{m.settings.products.markupCardTitle}</CardTitle>
+                <CardDescription>
+                  {m.settings.products.markupCardDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ShopMarkupForm currentMarkupPercent={currentMarkupPercent} />
+              </CardContent>
+            </Card>
 
-      <div className="flex gap-4">
-        <div className="w-96">
-          <SidebarSettings />
+            <Card>
+              <CardHeader>
+                <CardTitle>{m.settings.products.aiImage.cardTitle}</CardTitle>
+                <CardDescription>
+                  {m.settings.products.aiImage.cardDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AiImageToggleForm
+                  currentAiImageEnabled={settings.aiImageEnabled}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{m.settings.products.buyPrice.cardTitle}</CardTitle>
+                <CardDescription>
+                  {m.settings.products.buyPrice.cardDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <BuyPriceDefaultsForm defaults={buyPriceDefaults} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        <div className="w-full space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{m.settings.products.markupCardTitle}</CardTitle>
-              <CardDescription>
-                {m.settings.products.markupCardDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ShopMarkupForm currentMarkupPercent={currentMarkupPercent} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{m.settings.products.aiImage.cardTitle}</CardTitle>
-              <CardDescription>
-                {m.settings.products.aiImage.cardDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AiImageToggleForm
-                currentAiImageEnabled={settings.aiImageEnabled}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{m.settings.products.buyPrice.cardTitle}</CardTitle>
-              <CardDescription>
-                {m.settings.products.buyPrice.cardDescription}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <BuyPriceDefaultsForm defaults={buyPriceDefaults} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

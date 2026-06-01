@@ -6,14 +6,27 @@ import { z } from "zod";
 
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
-import { aiRuns, products } from "@/lib/db/schema";
+import { aiRuns, etsyOauth, products } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 import { latestRunForKind } from "@/lib/integrations/openai/ai-runs-log";
-import { aiEnrichQueue, etsyPublishQueue } from "@/lib/queue/queues";
+import {
+  REGENERABLE_FIELDS,
+  type RegenerableField,
+  type RegeneratedValue,
+  regenerateField,
+} from "@/lib/integrations/openai/regenerate-field";
+import {
+  aiEnrichQueue,
+  etsyPublishQueue,
+  etsyUpdateQueue,
+} from "@/lib/queue/queues";
 import { devGroup } from "@/lib/utils/dev";
 
 import { getBuyPriceDefaultForClothingType } from "./buy-price-defaults";
-import { getEtsyTaxonomyForClothingType } from "./clothing-types";
+import {
+  getEtsyTaxonomyForClothingType,
+  getShippingWeightClass,
+} from "./clothing-types";
 import {
   ProductDraftPatchSchema,
   type ProductDraftPatch,
@@ -69,6 +82,12 @@ export async function updateProductDraftField(
       const ct = data.clothingType;
       if (ct == null) {
         set.etsyTaxonomyId = null;
+        // Clear the shipping profile alongside taxonomy when the user
+        // unsets the clothing type; it will be re-derived once a new
+        // type is picked.
+        if (set.shippingProfileId === undefined) {
+          set.shippingProfileId = null;
+        }
       } else {
         const taxonomy = getEtsyTaxonomyForClothingType(ct);
         set.etsyTaxonomyId =
@@ -84,6 +103,14 @@ export async function updateProductDraftField(
         if (set.buyPriceCents === undefined) {
           const def = await getBuyPriceDefaultForClothingType(ct);
           set.buyPriceCents = def;
+        }
+        // Same pattern for the shipping profile: resolve from the
+        // shop-wide weight-class mapping on every clothing-type
+        // change. The user can still override the picked profile via
+        // the step-1 dropdown — an explicit `shippingProfileId` in
+        // the same patch wins over the auto-pick.
+        if (set.shippingProfileId === undefined) {
+          set.shippingProfileId = await resolveShippingProfileId(ct);
         }
       }
     }
@@ -105,6 +132,27 @@ export async function updateProductDraftField(
           ? m.errors.couldNotSaveChangesDetail(err.message)
           : m.errors.couldNotSaveChanges,
     };
+  }
+}
+
+/**
+ * Resolve the shop-wide Etsy shipping profile id for the given
+ * clothing type via its registered weight class. Returns `null` when
+ * the shop isn't connected yet OR the operator hasn't filled in a
+ * profile for that weight class in /settings/integrations.
+ */
+async function resolveShippingProfileId(
+  ct: Exclude<ProductDraftPatch["clothingType"], null | undefined>,
+): Promise<number | null> {
+  const [row] = await db.select().from(etsyOauth).limit(1);
+  if (!row) return null;
+  switch (getShippingWeightClass(ct)) {
+    case "light":
+      return row.shippingProfileLightId;
+    case "medium":
+      return row.shippingProfileMediumId;
+    case "heavy":
+      return row.shippingProfileHeavyId;
   }
 }
 
@@ -285,6 +333,62 @@ export async function publishNow(id: string): Promise<DraftActionResult> {
   }
 }
 
+/**
+ * Edit-mode "Actualizar" — pushes the current product state to its
+ * existing Etsy listing. Allowed from `published` and `scheduled`
+ * (both have an `etsy_listing_id`). Enqueues a job on the
+ * `etsy-update` queue; the worker handles translation + listing
+ * sync + media re-upload. The client polls
+ * `/api/products/{id}/publish-status` for the terminal event
+ * (`etsy-update.completed` / `.failed`).
+ */
+export async function updateEtsyListing(
+  id: string,
+): Promise<DraftActionResult> {
+  await requireSession();
+  try {
+    const [row] = await db
+      .select({
+        status: products.status,
+        etsyListingId: products.etsyListingId,
+      })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!row) {
+      return { ok: false, error: m.errors.productNotFound };
+    }
+    if (row.status !== "published" && row.status !== "scheduled") {
+      return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+    if (row.etsyListingId == null) {
+      return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+
+    await db
+      .update(products)
+      .set({ updatedAt: sql`now()` })
+      .where(eq(products.id, id));
+
+    const jobId = `update:${id}`;
+    await etsyUpdateQueue.remove(jobId).catch(() => {
+      /* no prior or already active — both fine */
+    });
+    await etsyUpdateQueue.add(
+      "update",
+      { productId: id },
+      { jobId },
+    );
+    dev.log("etsy-update enqueued", id);
+
+    revalidatePath(`/products/${id}`);
+    return { ok: true };
+  } catch (err) {
+    dev.error("updateEtsyListing error", err);
+    return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
+}
+
 export async function cancelSchedule(id: string): Promise<DraftActionResult> {
   await requireSession();
   try {
@@ -382,6 +486,56 @@ export async function enqueueEnrichJob(
   } catch (err) {
     dev.error("enqueueEnrichJob error", err);
     return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
+}
+
+export type RegenerateFieldResult =
+  | { ok: true; value: RegeneratedValue["value"] }
+  | { ok: false; error: string };
+
+/**
+ * Per-field AI regeneration, used by the per-input "Regenerar"
+ * buttons in step 2. Synchronous (no queue / polling) because a
+ * one-field generation is fast enough to wait on, and the client gets
+ * the new value back inline — no router refresh, so the other field
+ * inputs keep their in-progress user edits.
+ *
+ * The OpenAI call replays the cached input from the latest succeeded
+ * enrich run (see `regenerateField`), so we don't burn extra tokens
+ * re-describing the product on every per-field click.
+ */
+export async function regenerateProductFieldAction(
+  productId: string,
+  field: RegenerableField,
+): Promise<RegenerateFieldResult> {
+  await requireSession();
+  if (!REGENERABLE_FIELDS.includes(field)) {
+    return { ok: false, error: m.errors.invalidForm };
+  }
+  try {
+    const result = await regenerateField(productId, field);
+    return { ok: true, value: result.value };
+  } catch (err) {
+    dev.error("regenerateProductFieldAction error", productId, field, err);
+    // Drizzle wraps DB errors and exposes the underlying PG message
+    // on `.cause`. Without unwrapping it the toast just says "Failed
+    // query: <sql>" with no actionable cause.
+    const cause = (err as { cause?: unknown }).cause;
+    const causeMessage =
+      cause instanceof Error
+        ? cause.message
+        : typeof cause === "string"
+          ? cause
+          : null;
+    const baseMessage =
+      err instanceof Error ? err.message : String(err);
+    const fullMessage = causeMessage
+      ? `${causeMessage} — ${baseMessage}`
+      : baseMessage;
+    return {
+      ok: false,
+      error: m.errors.couldNotSaveChangesDetail(fullMessage),
+    };
   }
 }
 

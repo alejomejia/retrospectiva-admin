@@ -1,15 +1,15 @@
 "use client";
 
-import { Pencil } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { m } from "@/lib/i18n/messages.es";
 import {
-  DEFAULT_MARKUP_PERCENT,
+  DEFAULT_DISCOUNT_PERCENT,
   effectiveListCents,
+  inflatedListCents,
 } from "@/lib/products/pricing";
 import {
   centsToPriceEur,
@@ -18,7 +18,7 @@ import {
   MONEY_STRING_RE,
 } from "@/lib/utils/money";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
 /**
  * Base-price input with a live "Etsy: €XX,XX" hint computed from
@@ -29,24 +29,25 @@ export function PriceField({
   basePriceCents,
   markupPercentOverride,
   shopMarkupPercent,
+  discountPercent,
   currency,
   onBaseChange,
   onMarkupChange,
+  onDiscountChange,
 }: {
   basePriceCents: number | null;
   markupPercentOverride: number | null;
   shopMarkupPercent: number;
+  discountPercent: number | null;
   currency: string;
   onBaseChange: (cents: number | null) => void;
   onMarkupChange: (markup: number | null) => void;
+  onDiscountChange: (percent: number | null) => void;
 }) {
   const { schedule } = useAutosave();
 
   const [baseStr, setBaseStr] = useState(
     basePriceCents == null ? "" : centsToPriceEur(basePriceCents),
-  );
-  const [markupOpen, setMarkupOpen] = useState(
-    markupPercentOverride !== null,
   );
   const [markupStr, setMarkupStr] = useState(
     markupPercentOverride == null ? "" : String(markupPercentOverride),
@@ -96,12 +97,29 @@ export function PriceField({
   });
   const activeMarkup = markupPercentOverride ?? shopMarkupPercent;
 
+  const discountOn = discountPercent != null && discountPercent > 0;
+  const activeDiscount = discountPercent ?? DEFAULT_DISCOUNT_PERCENT;
+  // Inflated (published) price when the discount is on, plus the price
+  // the buyer pays once the matching Etsy sale is applied on top.
+  const inflatedCents =
+    etsyCents !== null ? inflatedListCents(etsyCents, activeDiscount) : null;
+  const buyerPaysCents =
+    inflatedCents !== null
+      ? Math.round(inflatedCents * (1 - activeDiscount / 100))
+      : null;
+
+  const handleDiscountToggle = (next: boolean) => {
+    const value = next ? DEFAULT_DISCOUNT_PERCENT : null;
+    onDiscountChange(value);
+    schedule({ discountPercent: value });
+  };
+
   return (
     <div className="space-y-2">
       <Label htmlFor="base-price" className="text-caplet" required>
         {m.products.form.basePrice}
       </Label>
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-wrap items-start gap-2">
         <div className="space-y-1">
           <Input
             id="base-price"
@@ -119,69 +137,57 @@ export function PriceField({
             <p className="text-xs text-brand-terracotta">{baseError}</p>
           )}
         </div>
-        <div className="flex-1 self-center text-sm text-muted-foreground">
-          {etsyCents !== null ? (
-            <span>
-              {m.products.form.etsyHintPrefix}{" "}
-              <span className="font-medium text-foreground">
-                {formatCents(etsyCents, currency)}
-              </span>{" "}
-              <span className="text-xs">
-                {m.products.form.etsyHintMarkup(activeMarkup)}
-              </span>
-            </span>
-          ) : (
-            <span className="text-xs">{m.products.form.etsyHintEmpty}</span>
-          )}
+        <div className="flex items-center gap-2">
+          <Input
+            id="markup-override"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={500}
+            placeholder={String(shopMarkupPercent)}
+            value={markupStr}
+            onChange={(e) => setMarkupStr(e.target.value)}
+            onBlur={(e) => commitMarkup(e.target.value)}
+            className="w-24"
+          />
+          <span className="text-sm text-muted-foreground">%</span>
         </div>
       </div>
-
-      <div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setMarkupOpen((o) => !o)}
-          className="text-caplet text-muted-foreground hover:text-foreground"
-        >
-          <Pencil className="size-3" />
-          {markupOpen
-            ? m.products.form.markupHide
-            : m.products.form.markupShow(shopMarkupPercent)}
-        </Button>
-        {markupOpen && (
-          <div className="mt-2 flex items-center gap-2">
-            <Label htmlFor="markup-override" className="text-sm">
-              {m.products.form.markupLabel}
-            </Label>
-            <Input
-              id="markup-override"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={500}
-              placeholder={String(shopMarkupPercent)}
-              value={markupStr}
-              onChange={(e) => setMarkupStr(e.target.value)}
-              onBlur={(e) => commitMarkup(e.target.value)}
-              className="w-24"
-            />
-            <span className="text-sm text-muted-foreground">%</span>
-            {markupPercentOverride !== null && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setMarkupStr("");
-                  commitMarkup("");
-                }}
-              >
-                {m.products.form.markupReset(DEFAULT_MARKUP_PERCENT)}
-              </Button>
-            )}
-          </div>
+      <div className="flex-1 self-center text-sm text-muted-foreground">
+        {etsyCents !== null ? (
+          <span>
+            {m.products.form.etsyHintPrefix}{" "}
+            <span className="font-medium text-foreground">
+              {formatCents(etsyCents, currency)}
+            </span>{" "}
+            <span className="text-xs">
+              {m.products.form.etsyHintMarkup(activeMarkup)}
+            </span>
+          </span>
+        ) : (
+          <span className="text-xs">{m.products.form.etsyHintEmpty}</span>
         )}
+      </div>
+
+      <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3">
+        <div className="space-y-0.5">
+          <Label htmlFor="discount-toggle">
+            {m.products.form.discount(activeDiscount)}
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            {discountOn && inflatedCents !== null && buyerPaysCents !== null
+              ? m.products.form.discountHintActive({
+                  inflated: formatCents(inflatedCents, currency),
+                  buyerPays: formatCents(buyerPaysCents, currency),
+                })
+              : m.products.form.discountHint}
+          </p>
+        </div>
+        <Switch
+          id="discount-toggle"
+          checked={discountOn}
+          onCheckedChange={handleDiscountToggle}
+        />
       </div>
     </div>
   );

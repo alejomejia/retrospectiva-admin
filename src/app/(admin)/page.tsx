@@ -23,7 +23,7 @@ export default async function Dashboard() {
   const session = await requireSession();
 
   return (
-    <div className="space-y-8">
+    <>
       <PageHeader>
         <PageHeader.Column className="flex-col">
           <PageHeader.Eyebrow number="01" label={m.dashboard.kicker} />
@@ -37,41 +37,43 @@ export default async function Dashboard() {
         </PageHeader.Column>
       </PageHeader>
 
-      <section className="grid gap-6 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="size-5" />
-              {m.dashboard.productsCard.title}
-            </CardTitle>
-            <CardDescription>
-              {m.dashboard.productsCard.description}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            {m.dashboard.productsCard.body}
-          </CardContent>
-          <CardFooter>
-            <Button asChild>
-              <Link href="/products">{m.dashboard.productsCard.cta}</Link>
-            </Button>
-          </CardFooter>
-        </Card>
+      <main className="p-6">
+        <section className="grid gap-6 sm:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="size-5" />
+                {m.dashboard.productsCard.title}
+              </CardTitle>
+              <CardDescription>
+                {m.dashboard.productsCard.description}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              {m.dashboard.productsCard.body}
+            </CardContent>
+            <CardFooter>
+              <Button asChild>
+                <Link href="/products">{m.dashboard.productsCard.cta}</Link>
+              </Button>
+            </CardFooter>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{m.dashboard.nextCard.title}</CardTitle>
-            <CardDescription>{m.dashboard.nextCard.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            <ul className="list-inside list-disc space-y-1.5">
-              {m.dashboard.nextCard.items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </section>
-    </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>{m.dashboard.nextCard.title}</CardTitle>
+              <CardDescription>{m.dashboard.nextCard.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              <ul className="list-inside list-disc space-y-1.5">
+                {m.dashboard.nextCard.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </section>
+      </main>
+    </>
   );
 }

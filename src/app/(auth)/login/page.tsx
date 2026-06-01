@@ -1,6 +1,7 @@
-import { Badge } from "@/components/ui/badge";
 import { Suspense } from "react";
-import { LoginForm } from "./login-form";
+
+import { Badge } from "@/components/ui/badge";
+import { LoginForm } from "@/components/forms/login-form";
 import { Logo } from "@/components/ui/logo";
 
 /**
@@ -13,7 +14,7 @@ import { Logo } from "@/components/ui/logo";
 export default function LoginPage() {
   return (
     <div className="flex flex-col items-center gap-8">
-      <header className="flex items-end justify-between gap-6 border-b border-border pb-6">
+      <header className="flex items-end justify-between gap-6">
         <div className="space-y-3 text-center">
           <div className="max-w-64 mx-auto">
             <Logo />

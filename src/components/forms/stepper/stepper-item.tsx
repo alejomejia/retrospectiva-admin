@@ -32,7 +32,7 @@ export function StepperItem({ index, label, isLast, className }: Props) {
           {
             "border-primary bg-primary text-primary-foreground": completed,
             "border-primary bg-card text-primary": active,
-            "border-border bg-muted text-muted-foreground": !completed && !active,
+            "border-border bg-muted text-muted-foreground/50": !completed && !active,
           },
         )}
         aria-hidden
@@ -56,7 +56,7 @@ export function StepperItem({ index, label, isLast, className }: Props) {
           aria-hidden
           className={cn(
             "mx-1 h-px w-8",
-            completed ? "bg-primary" : "bg-brand-rule",
+            completed ? "bg-accent-foreground" : "bg-accent-foreground/25",
           )}
         />
       )}

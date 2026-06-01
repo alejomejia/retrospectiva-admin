@@ -8,128 +8,181 @@ historical record. **This file is the bookmark.**
 
 ---
 
-## Current state (2026-05-19)
+## Current state (2026-05-30)
 
-**Phase 6 (product form + AI enrichment) is feature-complete.** The
-in-flight bucket finished as agreed: translation primitive,
-scheduled-publish queueing, tests + smoke checklist. Then the "new
-bucket" landed too: **Model Studio shipped** (`/models` admin
-section, gpt-image-2 generation, gutter-detect cropping + retry-crop).
-Several smaller fixes piled on top (idempotent enrich + Regenerar,
-auto-derived Etsy taxonomy, prompt tightening, R2 run-id versioning
-for cache-busting, cost estimator fix for image models).
+**Phases 0–6, 6.5, 4c, and Task 11 are all done.** Etsy app is
+approved; OAuth + first publish smoke confirmed. Etsy publish runs
+the real `createDraftListing → upload images/video → inline
+runTranslation → state="active"` flow. Per-product on-model image
+generation (Task 11) shipped end-to-end, mounted in step 1. Outbound
+webhook to `retrospectiva-website` ships with HMAC + bilingual
+payload. `/settings/ai` shop-wide defaults page shipped (was a
+deferred follow-up).
 
-**Test suite: 289/289. Typecheck clean. Lint 0 errors. `pnpm build` green.**
+**Test suite green. Typecheck clean. `pnpm build` green.**
 
-**The next active task is Task 11 — Per-product on-model image gen**,
-plan finalized with the user, **not yet started**. Full plan is in
-[per-product-image-gen.md](./per-product-image-gen.md). Read that
-before writing code.
+### Next active work
+
+**Phase 7 — close the sale loop (inbound Etsy receipts polling).**
+Outbound webhook to the website is already done; what's missing is
+the receipt-polling side that flips a product to `archived` when it
+sells. No code exists for this yet — `getShopReceipts` is not wired,
+no receipts queue, no cron.
+
+After that: **Phase 8 (Dashboard)** then **Phase 9 (QoL drip)**.
 
 ### Resume prompt
 
 Paste into a new Claude Code session in this repo:
 
-> Read `docs/handoff.md` first, then `docs/per-product-image-gen.md`
-> for the locked Task 11 plan. That's the immediate next work. Don't
-> re-litigate the design — it's signed off. Start with the schema
-> migration.
+> Read `docs/handoff.md` first, then `docs/roadmap.md` for context.
+> Next active work is Phase 7 inbound Etsy receipts polling — sale
+> detection that flips products to `archived`. Outbound webhook is
+> done; this is the inbound side.
 
-That's all the next session needs. `AGENTS.md` auto-loads. The
-roadmap doc has the broader context if needed.
+`AGENTS.md` auto-loads.
 
 ---
 
-## What just shipped (recap of the most recent work)
+## Shipped since the last handoff (2026-05-19 → 2026-05-30)
 
-### Task 7 — Translation primitive (at-publish boundary)
+### Phase 4c — Etsy publish processor (real)
 
-- `runTranslation(productId, field)` in `src/lib/integrations/openai/translate.ts` — `gpt-4o-mini`, structured JSON output, array length-drift rejection, empty-source clear.
-- **NOT** triggered on autosave or after enrich. Called inline by the Phase 4c publish processor (which is the Task 9 stub today; real one lands later).
-- Admin UI is Spanish-only. No EN collapsibles, no per-field badges. The shop owner doesn't read English and can't validate the output, so we trust the model 1:1.
-- Rolled back an earlier per-keystroke implementation. The reasons + design rule are stored in `~/.claude/projects/.../memory/feedback_translate-at-publish-boundary.md`.
+- `publish.ts` runs the real flow: `createDraftListing` →
+  `uploadListingImage` per image → `uploadListingVideo` → inline
+  `runTranslation` per translatable field → `updateListing({ state:
+  "active" })`. Race-safety status guard preserved from the Task 9
+  stub.
+- Listing-mapper covers Etsy colors, sizes, shipping weight class,
+  preparation time, featured rank.
+- OAuth + first publish smoke run confirmed against the live Etsy
+  app (approval done).
+- E2E Playwright spec still TODO (no `e2e/` dir yet).
 
-### Task 9 — Scheduled-publish queueing
+### Etsy update flow
 
-- `etsyPublishQueue` declared. `scheduleProduct` enqueues a delayed job with `delay = target - now`, `jobId = productId`, remove-then-add for re-scheduling.
-- `cancelSchedule` removes the delayed job; swallows "job is active" for the cancel-while-firing race.
-- Worker (`src/lib/integrations/etsy/publish-worker.ts`) is a **stub** — re-reads the row, flips `status='published'` if still scheduled (race-safety check trumps a late-arriving cancel). Real Etsy push lands in Phase 4c and replaces only the `runScheduledPublish` function in `publish.ts`, not the worker glue.
+- `etsyUpdateQueue` + `update.ts` + `update-worker.ts`. Re-translates
+  ES → EN, pushes full payload via `updateListing`, re-syncs images +
+  video against the existing listing. `jobId = "update:${productId}"`
+  so back-to-back clicks coalesce.
 
-### Task 10 — Tests + smoke + verifiers
+### Phase 7 outbound webhook
 
-- `runScheduledPublish` extracted from the worker into `publish.ts` so the race-safety logic is unit-testable.
-- `docs/smoke-test.md` — 20-minute manual checklist for Phase 6 shipment. Covers boot, auth, list view, stepper happy path with idempotency check, scheduled publish (incl. the cancel race), edit form, known out-of-scope items.
+- `src/lib/integrations/website/`: `payload-mapper.ts`, `sign.ts`
+  (HMAC), `client.ts`, `webhook-worker.ts`. Bilingual `*_es` + `*_en`
+  payload to `retrospectiva-website`.
+- Inbound side (Etsy receipts polling) still pending — see next-work
+  section above.
 
-### Task 8 — Model Studio
+### Task 11 — per-product on-model image gen
 
-- `/models` admin section (sibling of `/products`). Gallery with active/draft/archived tabs.
-- Generation form mirrors ChatGPT's 4-section IA: **Identidad (Base)** active, **Prenda / Pose / Entorno** scaffolded as visible-but-disabled placeholders.
-- Worker: `gpt-image-2` at `quality='high'`, `size='1536x1024'`. Contact sheet uploaded to R2; gutter-detect cropping carves 6 panels with graceful fallback (sheet-only when detection fails).
-- **Crop algorithm hybrid**: horizontal middle gutter detected by projection (works); vertical splits use equal-thirds + a "split line is mostly white" sanity check (column-projection detection was retired — too fragile for narrow standing-pose figures). See `src/lib/integrations/openai/grid-crop.ts` docblock.
-- Lifecycle: `draft → active → archived`. Discard hard-deletes (DB row + R2 prefix). Archive keeps the row for provenance.
-- Polling endpoint + hook (`useModelGenerationStatus`) drives the detail page state machine.
+- `image-placement-prompts.ts` (7-module assembly + garment-type
+  behavior mapping + fit-override append + env overrides).
+- `image-placement.ts` worker function consuming `ai_models` rows.
+- `image-placement-worker.ts` BullMQ glue.
+- `aiImagePlacementQueue` registered in `queues.ts`.
+- Server actions in `src/lib/products/image-placement-actions.ts`.
+- Polling route `/api/products/[id]/ai-image-status`.
+- UI mounted at bottom of step 1 (`ai-image-section.tsx` +
+  `use-image-placement-status.ts`). Edit-form mount is a follow-up.
+- Schema: 6 `products.ai*` columns, `ai_reference` image role,
+  legacy `ai_run_kind` values dropped.
 
-### Task 12 — Idempotent enrich + Regenerar
+### `/settings/ai` shop-wide defaults
 
-- `enqueueEnrichJob(id, { force? })` skips when the latest `ai_runs` row of `kind='enrich'` is `succeeded`. Step 1 → step 2 navigation no longer re-runs enrich every time.
-- Regenerar button in `AiContentSection` (shared by step 2 + edit form). Step 2 uses a unified `kick` (retry-after-failure and regenerate-after-success both call `enqueueEnrichJob({ force: true })`). Edit form has on-click polling + `window.confirm` warning before regenerating live content.
-- `runEnrichment` now bumps `products.updatedAt` so the `AiContentSection` key remounts after regenerate.
+- Page shipped. Per-product columns inherit when null (the
+  `shop_settings` deferred follow-up).
 
-### Task 13 — Auto-derive Etsy taxonomy
+### Other shipped
 
-- The taxonomy picker was removed from step 2 / `AiContentSection`. Each `clothing_type` carries an `etsyTaxonomyKey` in the registry (`src/lib/products/clothing-types.ts`).
-- `updateProductDraftField` derives `etsyTaxonomyId` server-side whenever `clothingType` is in the patch. The user never picks a taxonomy.
-- AI enrichment schema dropped `etsyTaxonomyKey` (one less field for the model to fill).
-- Step 3 (summary) lost the redundant raw-id taxonomy cell; section header renamed from "Categoría Etsy" to "Detalles de Etsy".
+- `/settings/products`, `/settings/integrations` pages.
+- 16 new migrations (0005 → 0020) covering Etsy colors, sizes,
+  shipping weight class, featured rank, etc.
 
-### Post-Task-8 fixes (the long tail)
+---
 
-- **R2 path versioning** — `assets/models/{model_id}/{run_id}/...` instead of `assets/models/{model_id}/...`. Each regeneration writes to a fresh path so browser + Cloudflare cache can't serve old bytes when the same key is overwritten. Old prefixes become orphans (cheap; future sweep job).
-- **Skeleton-on-Regenerar** — Detail view uses a `kickedAt` timestamp state to flip immediately to skeleton when the user clicks Regenerar, before polling has a chance to see the new run row. Same pattern as `step-2-ai-review.tsx`.
-- **Retry-crop button** — `retryCropModel(id)` action. Downloads the existing sheet from R2, re-runs `cropPanelsFromSheet`, uploads panels under the same run-id prefix. Useful for old `cropsAvailable=false` rows after a crop-algorithm tweak. Button shows only when `model.contactSheetKey && !model.cropsAvailable`.
-- **Prompt tightening (Phase 1 base model)** — Added "figures occupy full vertical height" + "40px gutters" to the prompt. Empirically improved gutter cleanliness in `gpt-image-2` output.
-- **Cost estimator** — image models are flat-rate per call, not token-based. New `estimateImageCostUsd({ model, size, quality })` in `responses-helpers.ts`; the old `estimateCostUsd` (token-based) was off by ~10× for image gen. Backfilled the 7 existing `model_generation` rows from $0.017 → $0.167 each so `ai_runs.cost_usd` now matches the OpenAI dashboard.
+## What's left
 
-### Locked design rules (carry-forward)
+### ⏳ Phase 7 — inbound (sale loop)
 
-- **Spanish-only admin.** Translations run at the Etsy-publish boundary. No EN UI anywhere except future "manage translations" admin (not in scope yet). Memory: `feedback_translate-at-publish-boundary`.
-- **All code in English.** Identifiers, URL params, registry keys, in-code labels — never Spanish. Spanish lives only in `messages.es.ts`. Memory: `feedback_code-english-only`.
-- **Worker can't load `server-only` modules.** Sanctioned exceptions in `docs/project-conventions.md` §1 (db/client, queue/redis, openai/client, openai/prompts, r2/client, r2/upload — these read `process.env` directly, skipping `config`). When adding new worker-reachable code, follow the same pattern.
-- **R2 keys carry the `{run_id}` segment** for the Model Studio. Each generation has its own prefix. Cropper uploads to the same prefix as the sheet it came from.
-- **Regenerate UX**: always a `kickedAt` local state so the UI flips to skeleton/loading before polling round-trip, then settles when polling reflects a run with `finishedAt > kickedAt`.
+- [ ] `getShopReceipts` polling (cron / interval job)
+- [ ] Sale handler: flip `status='archived'`, emit `events` row
+- [ ] Optional Etsy push webhook receiver (beta — not required if
+      polling is reliable)
+- [ ] Verify republish-on-edit UI: "Sincronizar con Etsy" button is
+      mounted in edit form and feeds `etsyUpdateQueue` (queue +
+      worker exist; confirm UI side)
 
-### Open follow-ups (tracked, not blocking)
+### ⏳ Phase 4c — final polish
 
-- Shop-wide AI defaults page (`/settings/ai`). Per-product columns documented in [per-product-image-gen.md](./per-product-image-gen.md) §schema; the settings UI / `shop_settings` table is deferred but in the plan.
-- Per-product image-gen mounting in the edit form (for already-published products). Component will be built reusable; second mount is a follow-up.
-- Etsy publish processor (Phase 4c) — replace the Task 9 stub with the real `createDraftListing → upload media → inline runTranslation → state="active"` flow.
-- Webhook out to public website (Phase 7) — bilingual payload.
-- Dashboard (Phase 8) — Tremor charts on `ai_runs` cost data (now accurate!).
-- `BRAND_VOICE_PROMPT` env value still empty — affects enrichment tone. User-supplied asset.
+- [ ] E2E Playwright spec in `e2e/`: login → create → publish → sale
 
-### State of the world right now
+### ⏳ Phase 8 — Dashboard
 
-```
-src/lib/db/migrations/  → 0000…0004 applied
-ai_models table         → exists, 4 active rows (per latest local DB)
-ai_runs                 → 11 rows total (7 model_generation + 4 enrich)
-queues registered       → ai-enrich, etsy-publish (stub), ai-model-generate
-queues NOT registered   → ai-translate (inline, no queue), ai-image-placement (Task 11)
-routes                  → /, /login, /products, /products/[id], /products/new, /products/[id]/ai-status, /models, /models/[id], /models/[id]/generation-status, /models/new, /settings/etsy, plus the /api/* routes
-```
+Root `(admin)/page.tsx` still the Phase 2 minimal landing.
+
+- [ ] Date-range picker (global filter)
+- [ ] KPIs: revenue & sales, listings-by-status, recent activity feed
+- [ ] Tremor `<AreaChart>` sparkline + main chart
+- [ ] Cost view reading `ai_runs.cost_usd`
+
+### ⏳ Phase 9 — QoL drip
+
+- [ ] Audit log UI (reads `events`)
+- [ ] Bulk CSV import
+- [ ] Product duplicator
+- [ ] Pending-sync badge
+- [ ] Telegram notifier on sale (depends on Phase 7 inbound)
+- [ ] Image manager
+- [ ] Cost tracker UI
+- [ ] Keyboard shortcuts on /products
+- [ ] Bulk operations (multi-select archive/schedule)
+- [ ] Column-header sorting on /products
+- [ ] Orphan draft cleanup ("Sin título" drafts > 7d with no media)
+
+### 🧹 Deferred follow-ups (tracked, not blocking)
+
+- [ ] Per-product image-gen mount in **edit form** (step 1 only
+      today)
+- [ ] R2 orphan sweep job (Model Studio leaves orphan prefixes on
+      regenerate)
+- [ ] `markupPercent` migration from `etsy_oauth` → `shop_settings`
+- [ ] `shop_settings` table proper (per-product NULL-means-inherit)
+- [ ] Server-action integration tests with test DB
+
+### 🔌 External / asset blockers
+
+- [ ] `BRAND_VOICE_PROMPT` env value (user-supplied) — affects
+      enrichment tone
+
+---
+
+## Locked design rules (carry-forward)
+
+- **Spanish-only admin.** Translations run at the Etsy-publish
+  boundary. No EN UI anywhere. Memory:
+  `feedback_translate-at-publish-boundary`.
+- **All code in English.** Identifiers, URL params, registry keys.
+  Spanish lives only in `messages.es.ts`. Memory:
+  `feedback_code-english-only`.
+- **Worker can't load `server-only` modules.** Sanctioned exceptions
+  in `docs/project-conventions.md` §1.
+- **R2 keys carry the `{run_id}` segment** for Model Studio. Cropper
+  uploads to the same prefix as the sheet.
+- **Regenerate UX**: always a `kickedAt` local state so UI flips to
+  skeleton/loading before polling round-trip.
+- **Component pattern mandatory** for non-trivial components — see
+  `.agents/skills/project-conventions/component-pattern.md`.
 
 ---
 
 ## Maintenance norm
 
 Update this file when:
-- Mid-task scope changes (e.g. after answering one of the three
-  questions, narrow it to the chosen path).
-- A session is ending with non-trivial state to carry forward.
-- A task moves from `in_progress` to `completed` (clear the
-  in-progress notes here; roadmap.md absorbs the history).
+- Mid-task scope changes.
+- A session ends with non-trivial state to carry forward.
+- A task moves from `in_progress` to `completed`.
 
-When everything's between tasks and there's no live scope decision,
-this file can be just a one-liner ("Task 11 next. Plan locked.") or
-even empty. **Don't let it bloat** — `roadmap.md` is the historical
-record; this is the bookmark.
+When everything's between tasks, this file can be a one-liner.
+**Don't let it bloat** — `roadmap.md` is the historical record;
+this is the bookmark.

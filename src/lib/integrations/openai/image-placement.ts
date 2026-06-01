@@ -44,10 +44,11 @@ import {
 
 const dev = devGroup("openai.image-placement");
 
-/** Portrait, largest gpt-image-2 portrait. Etsy wants ≥2000px on the
- *  long edge; the worker will eventually post-upscale via sharp (see
- *  Phase 2 §13). Tracked alongside the doc. */
-const IMAGE_SIZE = "1024x1536";
+/** Square 1:1. Etsy listing thumbs are rendered as squares — using
+ *  a portrait output meant the listing thumbnail cropped the model's
+ *  head/feet. 1024×1024 is the largest square gpt-image-2 size; the
+ *  worker post-upscales via sharp if needed (Phase 2 §13). */
+const IMAGE_SIZE = "1024x1024";
 /** Fallback for legacy rows whose `ai_image_quality` text doesn't
  *  match the validated enum (shouldn't happen given the column
  *  default, but defensive). The operator's per-product pick on the

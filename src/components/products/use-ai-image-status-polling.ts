@@ -20,11 +20,13 @@ const DEFAULT_INTERVAL_MS = 2500;
  */
 export function useAiImageStatusPolling(
   productId: string,
-  intervalMs: number = DEFAULT_INTERVAL_MS,
+  options: { intervalMs?: number; enabled?: boolean } = {},
 ): AiImageStatusResponse | null {
+  const { intervalMs = DEFAULT_INTERVAL_MS, enabled = true } = options;
   const [status, setStatus] = useState<AiImageStatusResponse | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
 
     const tick = async () => {
@@ -50,7 +52,7 @@ export function useAiImageStatusPolling(
       cancelled = true;
       clearInterval(id);
     };
-  }, [productId, intervalMs]);
+  }, [productId, intervalMs, enabled]);
 
   return status;
 }

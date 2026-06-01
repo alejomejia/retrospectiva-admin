@@ -12,7 +12,7 @@ import {
   MONEY_STRING_RE,
 } from "@/lib/utils/money";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
 /**
  * Per-product buy price (cost). Default value is snapshotted from

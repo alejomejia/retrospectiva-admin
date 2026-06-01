@@ -23,11 +23,13 @@ const DEFAULT_INTERVAL_MS = 2500;
  */
 export function useAiStatusPolling(
   productId: string,
-  intervalMs: number = DEFAULT_INTERVAL_MS,
+  options: { intervalMs?: number; enabled?: boolean } = {},
 ): AiStatusResponse | null {
+  const { intervalMs = DEFAULT_INTERVAL_MS, enabled = true } = options;
   const [status, setStatus] = useState<AiStatusResponse | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
 
     const tick = async () => {
@@ -53,7 +55,7 @@ export function useAiStatusPolling(
       cancelled = true;
       clearInterval(id);
     };
-  }, [productId, intervalMs]);
+  }, [productId, intervalMs, enabled]);
 
   return status;
 }

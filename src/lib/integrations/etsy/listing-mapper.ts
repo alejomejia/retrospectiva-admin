@@ -1,8 +1,11 @@
 import {
   DEFAULT_MARKUP_PERCENT,
   effectiveListCents,
+  inflatedListCents,
 } from "@/lib/products/pricing";
 import type { Product } from "@/lib/db/schema";
+
+import { isEtsyColor } from "./etsy-colors";
 
 import type {
   CreateDraftListingPayload,
@@ -48,8 +51,8 @@ const MAX_TITLE_LEN = 140;
 
 export type ShopPublishConfig = {
   shopId: number;
-  shippingProfileId: number | null;
   returnPolicyId: number | null;
+  readinessStateId: number | null;
   markupPercent: number;
 };
 
@@ -113,7 +116,14 @@ export function mapProductToCreateDraftPayload({
   if (listCents === null) {
     throw new ListingMapperError("missing basePriceCents");
   }
-  const price = +(listCents / 100).toFixed(2);
+  // Charm-price the value at the Etsy boundary so every published
+  // listing ends in `.99`. When the product carries a discount the
+  // price is also inflated so a matching `%` sale (run in Shop Manager)
+  // lands the buyer near `listCents`. The canonical `basePriceCents`
+  // stays exact upstream — only the listing payload sees the bump.
+  const price = +(
+    inflatedListCents(listCents, product.discountPercent) / 100
+  ).toFixed(2);
 
   const tags = sanitizeStringList(
     product.etsyTagsEn ?? [],
@@ -140,14 +150,35 @@ export function mapProductToCreateDraftPayload({
     is_taxable: true,
     should_auto_renew: true,
   };
-  if (shop.shippingProfileId !== null) {
-    payload.shipping_profile_id = shop.shippingProfileId;
+  if (product.shippingProfileId !== null) {
+    payload.shipping_profile_id = product.shippingProfileId;
   }
   if (shop.returnPolicyId !== null) {
     payload.return_policy_id = shop.returnPolicyId;
   }
+  if (shop.readinessStateId === null) {
+    // Etsy v3 requires `readiness_state_id` on physical listings.
+    // Fail at the mapper boundary with a precise reason so the
+    // operator gets pointed at /settings/integrations instead of a
+    // 400 from Etsy.
+    throw new ListingMapperError("missing readinessStateId");
+  }
+  payload.readiness_state_id = shop.readinessStateId;
   if (tags.length > 0) payload.tags = tags;
   if (materials.length > 0) payload.materials = materials;
+
+  if (isEtsyColor(product.etsyPrimaryColor)) {
+    payload.primary_color = product.etsyPrimaryColor;
+  }
+  if (isEtsyColor(product.etsySecondaryColor)) {
+    payload.secondary_color = product.etsySecondaryColor;
+  }
+  if (product.isFeatured) {
+    // Etsy treats any positive `featured_rank` as "featured"; the
+    // exact value only controls the display order among featured
+    // listings (max 4 shop-wide).
+    payload.featured_rank = 1;
+  }
 
   return payload;
 }

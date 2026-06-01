@@ -1,8 +1,10 @@
 import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
-import { productImages, products } from "@/lib/db/schema";
+import { type Product, productImages, products } from "@/lib/db/schema";
 import { devGroup } from "@/lib/utils/dev";
+
+import { ETSY_COLORS } from "@/lib/integrations/etsy/etsy-colors";
 
 import { completeRun, failRun, startRun } from "./ai-runs-log";
 import { MODELS, openai } from "./client";
@@ -13,6 +15,85 @@ import {
   logCacheUsage,
 } from "./responses-helpers";
 import { EnrichmentOutput } from "./schemas";
+
+/**
+ * Compact input context the model uses to ground its output. Shared
+ * between the full enrichment pass and per-field regeneration so both
+ * calls describe the same product to the model. Persisted on the
+ * `ai_runs.inputJson` audit row, which the per-field path replays
+ * instead of rebuilding from the (potentially user-edited) product row.
+ */
+export type EnrichInputContext = {
+  clothingType?: string | null;
+  condition?: string | null;
+  size?: string | null;
+  measurements?: Record<string, unknown>;
+  comments?: string | null;
+};
+
+/**
+ * Build the compact context object the enrichment prompt uses. Strips
+ * nulls + empty objects so `{ riseCm: null, legCm: null, … }` doesn't
+ * burn tokens for garments where those measurements are absent.
+ */
+export function buildEnrichInputContext(
+  product: Pick<
+    Product,
+    | "clothingType"
+    | "condition"
+    | "size"
+    | "shoulderCm"
+    | "chestCm"
+    | "waistCm"
+    | "hipCm"
+    | "riseCm"
+    | "legCm"
+    | "lengthCm"
+    | "braSize"
+    | "comments"
+  >,
+): EnrichInputContext {
+  return compact({
+    clothingType: product.clothingType,
+    condition: product.condition,
+    size: product.size,
+    measurements: compact({
+      shoulderCm: product.shoulderCm,
+      chestCm: product.chestCm,
+      waistCm: product.waistCm,
+      hipCm: product.hipCm,
+      riseCm: product.riseCm,
+      legCm: product.legCm,
+      lengthCm: product.lengthCm,
+      braSize: product.braSize,
+    }),
+    comments: product.comments?.trim() || null,
+  }) as EnrichInputContext;
+}
+
+/**
+ * URL of the product's primary `original` image (lowest order). The
+ * enrichment + per-field regen calls both attach this as `input_image`
+ * so the model can ground its output in what's actually visible.
+ */
+export async function primaryImageUrl(
+  productId: string,
+): Promise<string | null> {
+  const [primaryImage] = await db
+    .select({ r2Key: productImages.r2Key })
+    .from(productImages)
+    .where(
+      and(
+        eq(productImages.productId, productId),
+        eq(productImages.role, "original"),
+      ),
+    )
+    .orderBy(productImages.order)
+    .limit(1);
+  return primaryImage
+    ? `${R2_PUBLIC_BASE_URL}/${primaryImage.r2Key}`
+    : null;
+}
 
 const dev = devGroup("openai.enrich");
 
@@ -54,47 +135,13 @@ export async function runEnrichment(productId: string): Promise<void> {
     throw new Error(`runEnrichment: product ${productId} not found`);
   }
 
-  // First original image (lowest order). The model needs vision input
-  // to ground the title/description in what's actually visible;
-  // without it the LLM hallucinates from text alone.
-  const [primaryImage] = await db
-    .select({ r2Key: productImages.r2Key })
-    .from(productImages)
-    .where(
-      and(
-        eq(productImages.productId, productId),
-        eq(productImages.role, "original"),
-      ),
-    )
-    .orderBy(productImages.order)
-    .limit(1);
-  const imageUrl = primaryImage
-    ? `${R2_PUBLIC_BASE_URL}/${primaryImage.r2Key}`
-    : null;
+  const imageUrl = await primaryImageUrl(productId);
   if (!imageUrl) {
     dev.warn(
       `enrichment running text-only — no original image for ${productId}`,
     );
   }
-
-  // Trim the inputContext to what the model actually needs. Taxonomy
-  // options live in the JSON Schema enum (no need to repeat); price /
-  // currency don't influence text output; null measurements are noise.
-  const inputContext = compact({
-    clothingType: product.clothingType,
-    condition: product.condition,
-    sizes: product.sizes && product.sizes.length > 0 ? product.sizes : null,
-    measurements: compact({
-      shoulderCm: product.shoulderCm,
-      chestCm: product.chestCm,
-      waistCm: product.waistCm,
-      hipCm: product.hipCm,
-      riseCm: product.riseCm,
-      legCm: product.legCm,
-      lengthCm: product.lengthCm,
-      braSize: product.braSize,
-    }),
-  });
+  const inputContext = buildEnrichInputContext(product);
 
   const runId = await startRun({
     productId,
@@ -173,6 +220,8 @@ export async function runEnrichment(productId: string): Promise<void> {
         etsyTagsEs: enrichment.etsyTagsEs,
         etsyMaterialsEs: enrichment.etsyMaterialsEs,
         etsyWhenMade: enrichment.etsyWhenMade,
+        etsyPrimaryColor: enrichment.etsyPrimaryColor,
+        etsySecondaryColor: enrichment.etsySecondaryColor,
         // Bump so consumers keyed on `updatedAt` (e.g. AiContentSection
         // via `key={product.updatedAt.getTime()}`) remount with fresh
         // initial values after a regenerate. Without this the row
@@ -231,6 +280,14 @@ const ENRICHMENT_JSON_SCHEMA = {
       type: "string",
       enum: ["1990s", "1980s", "1970s", "1960s", "1950s", "before_1950"],
     },
+    etsyPrimaryColor: {
+      type: "string",
+      enum: ETSY_COLORS,
+    },
+    etsySecondaryColor: {
+      type: ["string", "null"],
+      enum: [...ETSY_COLORS, null],
+    },
   },
   required: [
     "titleEs",
@@ -238,6 +295,8 @@ const ENRICHMENT_JSON_SCHEMA = {
     "etsyTagsEs",
     "etsyMaterialsEs",
     "etsyWhenMade",
+    "etsyPrimaryColor",
+    "etsySecondaryColor",
   ],
 } as const;
 

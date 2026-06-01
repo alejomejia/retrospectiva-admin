@@ -1,57 +1,53 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { m } from "@/lib/i18n/messages.es";
-import { cn } from "@/lib/utils/helpers";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SIZE_VALUES, type SizeValue } from "@/lib/products/draft-schema";
+import { m } from "@/lib/i18n/messages.es";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
-export function SizesField({
+/**
+ * Single-value size picker. Etsy's "Women's Clothing (US Letter)"
+ * attribute accepts exactly one size per listing, so the form
+ * mirrors that constraint instead of the legacy multi-select.
+ */
+export function SizeField({
   value,
   onChange,
 }: {
-  value: SizeValue[];
-  onChange: (next: SizeValue[]) => void;
+  value: SizeValue | null;
+  onChange: (next: SizeValue | null) => void;
 }) {
   const { schedule } = useAutosave();
-  const toggle = (size: SizeValue) => {
-    const next = value.includes(size)
-      ? value.filter((s) => s !== size)
-      : [...value, size];
-    onChange(next);
-    schedule({ sizes: next });
+
+  const onValueChange = (next: string) => {
+    const v = (next as SizeValue) || null;
+    onChange(v);
+    schedule({ size: v });
   };
+  
   return (
     <div className="space-y-2">
-      <span className="text-caplet block">{m.products.form.sizes}</span>
-      <div role="group" aria-label={m.products.form.sizes} className="flex flex-wrap gap-2">
-        {SIZE_VALUES.map((size) => {
-          const active = value.includes(size);
-          const id = `size-${size}`;
-          return (
-            <Label
-              key={size}
-              htmlFor={id}
-              className={cn(
-                "inline-flex cursor-pointer items-center justify-center rounded-full border px-3 py-1 text-sm font-medium transition-colors",
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card text-foreground hover:bg-muted",
-              )}
-            >
-              <input
-                id={id}
-                type="checkbox"
-                checked={active}
-                onChange={() => toggle(size)}
-                className="sr-only"
-              />
+      <Label htmlFor="size">{m.products.form.size}</Label>
+      <Select value={value ?? ""} onValueChange={onValueChange}>
+        <SelectTrigger id="size">
+          <SelectValue placeholder={m.products.form.sizePlaceholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {SIZE_VALUES.map((size) => (
+            <SelectItem key={size} value={size}>
               {m.products.sizes[size]}
-            </Label>
-          );
-        })}
-      </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

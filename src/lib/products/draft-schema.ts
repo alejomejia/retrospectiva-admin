@@ -2,6 +2,8 @@ import { z } from "zod";
 
 import { IMAGE_QUALITY_VALUES } from "@/lib/ai-models/variables";
 import { clothingType, productCondition } from "@/lib/db/schema";
+import { ETSY_COLORS } from "@/lib/integrations/etsy/etsy-colors";
+import { ETSY_SIZES } from "@/lib/integrations/etsy/etsy-sizes";
 import { PANEL_ORDER } from "@/lib/integrations/openai/panel-keys";
 
 /**
@@ -15,15 +17,12 @@ import { PANEL_ORDER } from "@/lib/integrations/openai/panel-keys";
  * user is ready to ship it.
  */
 
-export const SIZE_VALUES = [
-  "xs",
-  "s",
-  "m",
-  "l",
-  "xl",
-  "xxl",
-  "one_size",
-] as const;
+/**
+ * Allowed size values for the product form. Mirrors Etsy's "Women's
+ * Clothing (US Letter)" attribute scale so a row's `size` column can
+ * be sent verbatim on the listing publish.
+ */
+export const SIZE_VALUES = ETSY_SIZES;
 export type SizeValue = (typeof SIZE_VALUES)[number];
 
 export const ETSY_ERA_VALUES = [
@@ -94,6 +93,9 @@ export const ProductDraftPatchSchema = z.object({
   descriptionEs: longString(2000),
   descriptionEn: longString(2000),
 
+  // User notes sent to the AI enrichment prompt
+  comments: longString(1000),
+
   // Pricing
   basePriceCents: z.number().int().nonnegative().nullable().optional(),
   markupPercentOverride: z
@@ -110,14 +112,18 @@ export const ProductDraftPatchSchema = z.object({
     .nullable()
     .optional(),
   buyPriceCents: z.number().int().nonnegative().nullable().optional(),
+  // Per-product sale percentage. null = no discount. The form's toggle
+  // writes `DEFAULT_DISCOUNT_PERCENT`; the column accepts any 1–99.
+  discountPercent: z.number().int().min(0).max(99).nullable().optional(),
 
   // Garment attributes
   clothingType: z.enum(clothingType.enumValues).nullable().optional(),
   condition: z.enum(productCondition.enumValues).nullable().optional(),
-  sizes: z
-    .array(z.enum(SIZE_VALUES))
-    .max(SIZE_VALUES.length)
-    .optional(),
+  size: z.enum(SIZE_VALUES).nullable().optional(),
+
+  // Shop-curated highlight. Maps to Etsy `featured_rank` on publish
+  // (Etsy caps featured listings at 4 per shop).
+  isFeatured: z.boolean().optional(),
 
   // Measurements
   shoulderCm: intCm.nullable().optional(),
@@ -136,6 +142,14 @@ export const ProductDraftPatchSchema = z.object({
   etsyMaterialsEn: stringArray(13, 45),
   etsyWhenMade: z.enum(ETSY_ERA_VALUES).nullable().optional(),
   etsyTaxonomyId: z.number().int().positive().nullable().optional(),
+  etsyPrimaryColor: z.enum(ETSY_COLORS).nullable().optional(),
+  etsySecondaryColor: z.enum(ETSY_COLORS).nullable().optional(),
+
+  // Etsy shipping profile id. Auto-derived from the shop-wide
+  // weight-class mapping on each clothing-type change (see
+  // `updateProductDraftField`), but the user can override on the
+  // step-1 form.
+  shippingProfileId: z.number().int().positive().nullable().optional(),
 
   // Per-product override for the shop-wide AI image generation
   // toggle. null = inherit shop default.
@@ -173,4 +187,5 @@ export const STEP_1_REQUIRED: Array<keyof ProductDraftPatch> = [
   "basePriceCents",
   "clothingType",
   "condition",
+  "shippingProfileId",
 ];

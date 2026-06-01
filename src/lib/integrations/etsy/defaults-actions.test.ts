@@ -7,8 +7,11 @@ vi.mock("@/lib/auth/require-session", () => ({
 }));
 
 type Captured = {
-  defaultShippingProfileId?: number | null;
+  shippingProfileLightId?: number | null;
+  shippingProfileMediumId?: number | null;
+  shippingProfileHeavyId?: number | null;
   defaultReturnPolicyId?: number | null;
+  defaultReadinessStateId?: number | null;
   markupPercent?: number;
 };
 
@@ -35,36 +38,46 @@ vi.mock("@/lib/db/client", () => {
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-const { saveEtsyDefaults, saveShopMarkup } = await import("./defaults-actions");
+const {
+  saveShippingMapping,
+  saveReturnPolicy,
+  saveReadinessState,
+  saveShopMarkup,
+} = await import("./defaults-actions");
 
-describe("saveEtsyDefaults", () => {
+describe("saveShippingMapping", () => {
   it("coerces numeric strings to numbers and persists them", async () => {
     dbState.updateCalls.length = 0;
-    const res = await saveEtsyDefaults({
-      shippingProfileId: "5001",
-      returnPolicyId: "7001",
+    const res = await saveShippingMapping({
+      shippingProfileLightId: "5001",
+      shippingProfileMediumId: "5002",
+      shippingProfileHeavyId: "5003",
     });
     expect(res).toEqual({ ok: true });
-    expect(dbState.updateCalls[0]?.defaultShippingProfileId).toBe(5001);
-    expect(dbState.updateCalls[0]?.defaultReturnPolicyId).toBe(7001);
+    expect(dbState.updateCalls[0]?.shippingProfileLightId).toBe(5001);
+    expect(dbState.updateCalls[0]?.shippingProfileMediumId).toBe(5002);
+    expect(dbState.updateCalls[0]?.shippingProfileHeavyId).toBe(5003);
   });
 
   it("treats empty Etsy IDs as null", async () => {
     dbState.updateCalls.length = 0;
-    const res = await saveEtsyDefaults({
-      shippingProfileId: "",
-      returnPolicyId: "",
+    const res = await saveShippingMapping({
+      shippingProfileLightId: "",
+      shippingProfileMediumId: "",
+      shippingProfileHeavyId: "",
     });
     expect(res).toEqual({ ok: true });
-    expect(dbState.updateCalls[0]?.defaultShippingProfileId).toBeNull();
-    expect(dbState.updateCalls[0]?.defaultReturnPolicyId).toBeNull();
+    expect(dbState.updateCalls[0]?.shippingProfileLightId).toBeNull();
+    expect(dbState.updateCalls[0]?.shippingProfileMediumId).toBeNull();
+    expect(dbState.updateCalls[0]?.shippingProfileHeavyId).toBeNull();
   });
 
   it("rejects non-numeric input", async () => {
     dbState.updateCalls.length = 0;
-    const res = await saveEtsyDefaults({
-      shippingProfileId: "not-a-number",
-      returnPolicyId: "7001",
+    const res = await saveShippingMapping({
+      shippingProfileLightId: "not-a-number",
+      shippingProfileMediumId: "5002",
+      shippingProfileHeavyId: "5003",
     });
     expect(res.ok).toBe(false);
     expect(dbState.updateCalls).toHaveLength(0);
@@ -73,13 +86,46 @@ describe("saveEtsyDefaults", () => {
   it("returns an error when there's no etsy_oauth row", async () => {
     dbState.rows = [];
     dbState.updateCalls.length = 0;
-    const res = await saveEtsyDefaults({
-      shippingProfileId: "5001",
-      returnPolicyId: "7001",
+    const res = await saveShippingMapping({
+      shippingProfileLightId: "5001",
+      shippingProfileMediumId: "5002",
+      shippingProfileHeavyId: "5003",
     });
     expect(res.ok).toBe(false);
     expect(dbState.updateCalls).toHaveLength(0);
     dbState.rows = [{ id: "row-1" }];
+  });
+});
+
+describe("saveReturnPolicy", () => {
+  it("persists a numeric return policy id", async () => {
+    dbState.updateCalls.length = 0;
+    const res = await saveReturnPolicy({ returnPolicyId: "7001" });
+    expect(res).toEqual({ ok: true });
+    expect(dbState.updateCalls[0]?.defaultReturnPolicyId).toBe(7001);
+  });
+
+  it("treats empty as null", async () => {
+    dbState.updateCalls.length = 0;
+    const res = await saveReturnPolicy({ returnPolicyId: "" });
+    expect(res).toEqual({ ok: true });
+    expect(dbState.updateCalls[0]?.defaultReturnPolicyId).toBeNull();
+  });
+});
+
+describe("saveReadinessState", () => {
+  it("persists a numeric readiness state id", async () => {
+    dbState.updateCalls.length = 0;
+    const res = await saveReadinessState({ readinessStateId: "4242" });
+    expect(res).toEqual({ ok: true });
+    expect(dbState.updateCalls[0]?.defaultReadinessStateId).toBe(4242);
+  });
+
+  it("treats empty as null", async () => {
+    dbState.updateCalls.length = 0;
+    const res = await saveReadinessState({ readinessStateId: "" });
+    expect(res).toEqual({ ok: true });
+    expect(dbState.updateCalls[0]?.defaultReadinessStateId).toBeNull();
   });
 });
 

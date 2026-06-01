@@ -201,15 +201,30 @@ export const m = {
       clothingTypePlaceholder: "Elige un tipo",
       condition: "Estado",
       conditionPlaceholder: "Elige el estado",
-      sizes: "Tallas estimadas",
+      size: "Talla",
+      sizePlaceholder: "Elige una talla",
+      featured: "Destacar en Etsy",
+      featuredHint:
+        "Etsy permite hasta 4 productos destacados por tienda. Úsalo para piezas estrella.",
+      primaryColor: "Color principal",
+      secondaryColor: "Color secundario",
+      colorPlaceholder: "Elige un color",
+      colorEmpty: "Sin color secundario",
       basePrice: "Precio",
       etsyHintPrefix: "En Etsy:",
       etsyHintMarkup: (percent: number) => `(+${percent}% de margen)`,
       etsyHintEmpty: "Introduce un precio para ver el cálculo de Etsy.",
-      markupShow: (current: number) => `Ajustar margen (${current}%)`,
-      markupHide: "Ocultar margen",
-      markupLabel: "Margen para este producto",
-      markupReset: (def: number) => `Volver al ${def}%`,
+      discount: (percent: number) => `Aplicar ${percent}% de descuento`,
+      discountHint:
+        "Sube el precio de Etsy para que, al aplicar la rebaja en Etsy, el cliente pague el precio con margen.",
+      discountHintActive: ({
+        inflated,
+        buyerPays,
+      }: {
+        inflated: string;
+        buyerPays: string;
+      }) =>
+        `Precio publicado: ${inflated}. Con la rebaja activa en Etsy, el cliente paga ≈ ${buyerPays}.`,
       buyPrice: "Precio de compra (coste)",
       buyPriceHint:
         "Lo que pagaste por la prenda. Se usa para calcular la ganancia.",
@@ -244,13 +259,16 @@ export const m = {
       good: "Buen estado",
     },
     sizes: {
-      xs: "XS",
-      s: "S",
-      m: "M",
-      l: "L",
-      xl: "XL",
-      xxl: "XXL",
-      one_size: "Talla única",
+      XXS: "XXS",
+      XS: "XS",
+      S: "S",
+      M: "M",
+      L: "L",
+      XL: "XL",
+      XXL: "XXL",
+      "1X": "1X",
+      "2X": "2X",
+      "3X": "3X",
     },
     etsyEras: {
       "1990s": "Años 90",
@@ -301,6 +319,9 @@ export const m = {
           "¿Regenerar el contenido IA? Se perderán los ajustes manuales en estos campos.",
         regenerateFailed: "No se pudo regenerar el contenido.",
         regenerateStartedToast: "Regenerando contenido…",
+        regenerateField: (label: string) => `Regenerar ${label.toLowerCase()}`,
+        regenerateFieldFailed: (label: string) =>
+          `No se pudo regenerar ${label.toLowerCase()}.`,
       },
       aiImage: {
         title: "Generación de imágenes IA",
@@ -334,6 +355,11 @@ export const m = {
         restoredToast: "Producto restaurado como borrador",
         publishNow: "Publicar ahora",
         publishNowEnqueuedToast: "Publicación en cola",
+        publishNowRunningToast: "Publicando en Etsy…",
+        publishNowCompletedToast: "Producto publicado en Etsy",
+        publishNowFailedToast: "Falló la publicación en Etsy",
+        publishNowTimedOutToast:
+          "La publicación está tardando más de lo esperado. Revisa el estado en /products.",
         publishNowConfirm:
           "¿Publicar ahora en Etsy? La traducción y la subida a Etsy se ejecutarán en segundo plano.",
       },
@@ -344,8 +370,6 @@ export const m = {
       steps: {
         inputs: "Datos",
         aiReview: "Revisión IA",
-        summary: "Vista previa",
-        publish: "Publicación",
       },
       autosave: {
         saving: "Guardando…",
@@ -361,15 +385,31 @@ export const m = {
         title: "Datos del producto",
         description:
           "Rellena los campos manuales. La IA generará título, descripción y resto en el siguiente paso.",
-        measurementsTitle: "Medidas (cm)",
+        commentsLabel: "Comentarios",
+        commentsPlaceholder:
+          "Marca, tejido, detalles especiales, cómo combinar, defectos… Todo lo que quieras que la IA incluya en la descripción.",
         mediaTitle: "Fotos y videos",
         mediaDescription:
           "La primera foto se usará como portada en Etsy y como base para la imagen generada por IA.",
         imageRequired: "Al menos una foto",
+        measurementsRequired: "Medidas",
         aiReferenceRequired: "Imagen de referencia IA",
         aiModelRequired: "Modelo IA",
         aiSourcePanelRequired: "Panel del modelo",
+        shippingRequired: "Perfil de envío",
         nextDisabledReason: (missing: string) => `Falta: ${missing}`,
+        shippingSection: {
+          title: "Envío",
+          description:
+            "Perfil de envío de Etsy para este producto. Se selecciona automáticamente según el tipo de prenda; puedes cambiarlo manualmente.",
+          label: "Perfil de envío",
+          placeholder: "Elige un perfil",
+          emptyTitle: "Sin perfiles de envío en Etsy",
+          emptyBody:
+            "Crea perfiles en Etsy Shop Manager → Settings → Shipping settings y asigna uno a cada categoría de peso en Ajustes → Integraciones.",
+          mappingMissing:
+            "No hay perfil configurado para esta categoría de peso en Ajustes → Integraciones.",
+        },
         aiImageSection: {
           title: "Imagen IA",
           description:
@@ -471,42 +511,11 @@ export const m = {
           retry: "Reintentar",
         },
       },
-      summary: {
-        title: "Vista previa",
-        description:
-          "Así se verá el producto antes de publicarlo en Etsy. Si algo no encaja, vuelve a los pasos anteriores.",
-        photos: "Fotos",
-        aiImage: "Imagen IA",
-        photoCount: (n: number) => `${n} foto${n === 1 ? "" : "s"}`,
-        videoCount: (n: number) => `${n} video${n === 1 ? "" : "s"}`,
-        noPhotos: "Sin fotos",
-        titleField: "Título",
-        descriptionField: "Descripción",
-        pricing: "Precio",
-        priceListed: "Precio en Etsy",
-        priceBase: "Precio base",
-        priceBuy: "Precio de compra",
-        priceEarnings: "Ganancia estimada",
-        priceMarkup: (percent: number) => `Margen aplicado: ${percent}%`,
-        tags: "Etiquetas",
-        materials: "Materiales",
-        etsyDetails: "Detalles de Etsy",
-        whenMade: "Época (when_made)",
-        condition: "Estado",
-        sizes: "Tallas",
-        clothingType: "Tipo de prenda",
-        measurementsBoundary: "Medidas (contorno · lo que verá Etsy)",
-        noMeasurements: "Sin medidas registradas.",
-        emptyAiField: "Pendiente — generar en el paso de IA",
-        emptyValue: "Sin valor",
-      },
       publish: {
         title: "Publicar el producto",
         description:
           "Tres opciones: guardar como borrador, programar la publicación, o publicar ahora.",
         saveDraft: "Guardar borrador",
-        saveDraftHelp:
-          "Mantén el producto como borrador. Podrás retomarlo desde el listado.",
         scheduleButton: "Programar",
         scheduleHelp:
           "Elige fecha y hora (Europe/Madrid). La publicación se enviará a Etsy automáticamente cuando llegue el momento.",
@@ -522,10 +531,24 @@ export const m = {
           `No puede ser más de ${months} meses en el futuro.`,
         scheduledToast: "Programación guardada",
         publishNow: "Publicar ahora",
-        publishNowHelp:
-          "Envía el producto a Etsy inmediatamente.",
         publishNotYet:
           "El procesador de publicación en Etsy todavía no está implementado (Fase 4c).",
+        policiesMissing:
+          "Configura el perfil de envío y la política de devolución en Ajustes → Integraciones antes de publicar o programar.",
+        policiesMissingLink: "Ir a Ajustes",
+      },
+      update: {
+        title: "Actualizar en Etsy",
+        description:
+          "Sincroniza los cambios actuales con el anuncio publicado: textos, precio, traducciones y multimedia.",
+        updateNow: "Actualizar ahora",
+        confirm:
+          "Esto sobrescribirá el anuncio en Etsy con los datos actuales (incluye fotos y vídeo). ¿Continuar?",
+        runningToast: "Actualizando en Etsy…",
+        completedToast: "Anuncio actualizado en Etsy",
+        failedToast: "Falló la actualización en Etsy",
+        timedOutToast:
+          "La actualización tarda más de lo habitual. Revisa en unos minutos.",
       },
     },
   },
@@ -546,8 +569,7 @@ export const m = {
   imageList: {
     empty: "Aún no hay fotos. Suelta algunas arriba para empezar.",
     primary: "Principal",
-    moveUp: "Subir",
-    moveDown: "Bajar",
+    dragHandle: "Arrastrar para reordenar",
     setPrimary: "Establecer como principal",
     delete: "Eliminar",
     confirmDelete: "¿Eliminar esta foto? No se puede deshacer.",
@@ -656,13 +678,19 @@ export const m = {
           "No se pudo intercambiar el código con Etsy. Vuelve a intentarlo.",
       },
       defaults: {
-        title: "Valores por defecto",
-        description:
-          "Perfiles de envío y políticas de devolución que se aplican a cada listado publicado en Etsy.",
-        shippingProfileLabel: "Perfil de envío",
+        shippingMappingTitle: "Perfiles de envío por categoría",
+        shippingMappingDescription:
+          "Asigna un perfil de envío de Etsy a cada categoría de peso. Al crear un producto, el perfil se elige automáticamente según el tipo de prenda.",
+        shippingProfileLightLabel: "Prenda ligera",
+        shippingProfileMediumLabel: "Prenda media",
+        shippingProfileHeavyLabel: "Prenda pesada",
         shippingProfilePlaceholder: "Elige un perfil",
         shippingProfileEmpty:
           "Aún no tienes perfiles de envío en Etsy. Créalos en Shop Manager → Settings → Shipping settings.",
+        shippingMappingSaved: "Perfiles de envío guardados",
+        returnPolicyTitle: "Política de devoluciones",
+        returnPolicyDescription:
+          "Política aplicada a cada listado publicado en Etsy.",
         returnPolicyLabel: "Política de devoluciones",
         returnPolicyPlaceholder: "Elige una política",
         returnPolicyEmpty:
@@ -670,9 +698,21 @@ export const m = {
         returnPolicyAccepts: (days: number) =>
           `Acepta devoluciones en ${days} días`,
         returnPolicyNoReturns: "Sin devoluciones",
-        save: "Guardar valores",
+        returnPolicySaved: "Política guardada",
+        readinessStateTitle: "Tiempo de preparación",
+        readinessStateDescription:
+          "Perfil de tiempos de preparación aplicado a cada listado. Etsy lo exige en todos los productos físicos.",
+        readinessStateLabel: "Perfil de preparación",
+        readinessStatePlaceholder: "Elige un perfil",
+        readinessStateEmpty:
+          "Aún no tienes perfiles de preparación en Etsy. Créalos en Shop Manager → Settings → Production settings.",
+        readinessStateOption: (min: number, max: number, unit: string) =>
+          `${min}–${max} ${unit}`,
+        readinessStateUnitBusinessDays: "días hábiles",
+        readinessStateUnitWeeks: "semanas",
+        readinessStateSaved: "Perfil de preparación guardado",
+        save: "Guardar",
         saving: "Guardando…",
-        saved: "Valores guardados",
         unavailableTitle: "Valores por defecto no disponibles",
         unavailableBody:
           "Etsy no respondió a la petición. Si la app está pendiente de aprobación, vuelve aquí cuando esté activa.",

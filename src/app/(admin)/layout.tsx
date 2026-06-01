@@ -36,9 +36,9 @@ export default async function AdminLayout({
         </div>
         <Logout />
       </aside>
-      <main className="flex flex-col gap-6 w-full ml-56 p-6">
+      <div className="w-full ml-56">
         {children}
-      </main>
+      </div>
     </div>
   );
 }

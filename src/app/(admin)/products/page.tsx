@@ -143,27 +143,29 @@ export default async function ProductsPage({
         </PageHeader.Column>
       </PageHeader>
 
-      <div className="space-y-4">
-        <div className="flex gap-4">
-          <StatusTabs current={params.tab} searchParams={searchParamsObj} />
-          <div className="flex-1">
-            <FilterBar />
+      <main className="p-6">
+        <div className="space-y-4">
+          <div className="flex gap-4">
+            <StatusTabs current={params.tab} searchParams={searchParamsObj} />
+            <div className="flex-1">
+              <FilterBar />
+            </div>
           </div>
-        </div>
 
-        {totalCount === 0 ? (
-          <EmptyState />
-        ) : (
-          <>
-            <ProductListShell rows={rows} totalLabel={totalLabel} />
-            <Pagination
-              page={params.page}
-              pageSize={params.pageSize}
-              totalCount={totalCount}
-            />
-          </>
-        )}
-      </div>
+          {totalCount === 0 ? (
+            <EmptyState />
+          ) : (
+            <>
+              <ProductListShell rows={rows} totalLabel={totalLabel} />
+              <Pagination
+                page={params.page}
+                pageSize={params.pageSize}
+                totalCount={totalCount}
+              />
+            </>
+          )}
+        </div>
+      </main>
     </>
   );
 }

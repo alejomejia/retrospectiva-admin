@@ -77,8 +77,19 @@ vi.mock("@/lib/db/client", () => {
   // We use a real Promise as the `.where()` result and attach
   // `.returning()` to it so both call shapes work without a custom
   // thenable (which fights TypeScript's PromiseLike generics).
-  const select = (_cols: unknown) => ({
+  const select = (_cols?: unknown) => ({
     from: (_table: unknown) => ({
+      // Support both `select().from().where().limit()` (the autosave
+      // path looking up an existing product) and `select().from().limit()`
+      // (the etsy-oauth lookup for the shipping-mapping auto-pick).
+      limit: async () => [
+        {
+          buyPriceCents: null,
+          shippingProfileLightId: null,
+          shippingProfileMediumId: null,
+          shippingProfileHeavyId: null,
+        },
+      ],
       where: (_cond: unknown) => ({
         limit: async () => [{ buyPriceCents: null }],
       }),
@@ -212,15 +223,14 @@ describe("updateProductDraftField", () => {
   });
 
   it("auto-sets etsyTaxonomyId when clothingType is in the patch", async () => {
-    // ETSY_TAXONOMIES currently ship with placeholder id=0 across the
-    // board, so the resolver maps every clothing type to null until
-    // the real Etsy taxonomy IDs are imported. The point of this test
-    // is the *behavior* (the key is present and derived), not the id.
+    // The garment selection in step 1 IS the taxonomy choice: the
+    // resolver maps `clothingType` to its live Etsy taxonomy id
+    // ("dress" -> womens_dresses -> 505).
     const res = await updateProductDraftField("p1", { clothingType: "dress" });
     expect(res.ok).toBe(true);
     const values = dbState.updateCalls[0]?.values;
     expect(values).toHaveProperty("etsyTaxonomyId");
-    expect(values?.etsyTaxonomyId).toBeNull();
+    expect(values?.etsyTaxonomyId).toBe(505);
     expect(values?.clothingType).toBe("dress");
   });
 

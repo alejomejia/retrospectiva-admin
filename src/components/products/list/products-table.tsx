@@ -92,7 +92,7 @@ function Cell({
           <Link
             href={`/products/${row.id}`}
             aria-label={row.titleEs ?? m.products.detail.untitled}
-            className="block size-12 overflow-hidden rounded-sm border border-border bg-muted"
+            className="block size-32 overflow-hidden rounded-sm border border-border bg-muted"
           >
             {row.thumbnailUrl ? (
               <Image

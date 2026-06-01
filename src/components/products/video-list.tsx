@@ -39,13 +39,14 @@ export function VideoList({ videos }: { videos: VideoListItem[] }) {
   }
 
   return (
-    <ul className="space-y-4">
+    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
       {videos.map((video, idx) => (
         <VideoTile
           key={video.id}
           video={video}
           isFirst={idx === 0}
           isLast={idx === videos.length - 1}
+          enableDrag={Boolean(videos.length - 1)}
         />
       ))}
     </ul>
@@ -56,10 +57,12 @@ function VideoTile({
   video,
   isFirst,
   isLast,
+  enableDrag,
 }: {
   video: VideoListItem;
   isFirst: boolean;
   isLast: boolean;
+  enableDrag: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -73,11 +76,11 @@ function VideoTile({
   return (
     <li
       className={cn(
-        "flex flex-col gap-3 overflow-hidden rounded-md border border-border bg-card sm:flex-row",
+        "flex flex-col overflow-hidden rounded-md border border-border bg-card",
         pending && "opacity-60",
       )}
     >
-      <div className="aspect-video w-full bg-brand-paper sm:w-72">
+      <div className="w-full bg-brand-paper">
         <video
           src={video.url}
           poster={video.posterUrl ?? undefined}
@@ -101,28 +104,33 @@ function VideoTile({
           </p>
         </div>
         <div className="flex shrink-0 gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            disabled={isFirst || pending}
-            onClick={() => run(() => moveProductVideo(video.id, "up"))}
-            aria-label={m.videoList.moveUp}
-          >
-            <ArrowUp className="size-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            disabled={isLast || pending}
-            onClick={() => run(() => moveProductVideo(video.id, "down"))}
-            aria-label={m.videoList.moveDown}
-          >
-            <ArrowDown className="size-3.5" />
-          </Button>
+          {enableDrag && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                disabled={isFirst || pending}
+                onClick={() => run(() => moveProductVideo(video.id, "up"))}
+                aria-label={m.videoList.moveUp}
+              >
+                <ArrowUp className="size-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                disabled={isLast || pending}
+                onClick={() => run(() => moveProductVideo(video.id, "down"))}
+                aria-label={m.videoList.moveDown}
+              >
+                <ArrowDown className="size-3.5" />
+              </Button>
+            </>
+          )}
+          
           <Button
             type="button"
             variant="ghost"

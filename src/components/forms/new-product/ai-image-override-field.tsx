@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { m } from "@/lib/i18n/messages.es";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
 /**
  * Binary toggle for the per-product AI image generation override.

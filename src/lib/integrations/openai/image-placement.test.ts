@@ -282,14 +282,14 @@ beforeEach(() => {
 // ---- Tests --------------------------------------------------------
 
 describe("runImagePlacement", () => {
-  it("calls openai.images.edit with both attachments + default panel + portrait size", async () => {
+  it("calls openai.images.edit with both attachments + default panel + square size", async () => {
     mockSuccessfulOpenAI();
     await runImagePlacement("p1");
 
     expect(imagesEditMock).toHaveBeenCalledTimes(1);
     const call = imagesEditMock.mock.calls[0]![0];
     expect(call.model).toBe("gpt-image-2");
-    expect(call.size).toBe("1024x1536");
+    expect(call.size).toBe("1024x1024");
     // Defaults to `low` — the row was created with that.
     expect(call.quality).toBe("low");
     expect(call.n).toBe(1);

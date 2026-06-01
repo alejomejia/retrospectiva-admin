@@ -5,8 +5,8 @@ the admin. Covers three surfaces:
 
 1. `/products` — the catalog list (filters, tabs, search, pagination,
    column selector).
-2. `/products/new` → `/products/[id]` — the **4-step stepper** for a
-   fresh draft.
+2. `/products/new` → `/products/[id]` — the **2-step stepper** for a
+   fresh draft (publish actions live in the always-visible right rail).
 3. `/products/[id]` for non-fresh-draft products — the **flat edit
    form**.
 
@@ -88,7 +88,7 @@ Ships with: price (number-range), creation date (date-range).
 
 ---
 
-## 2 · The 4-step stepper (new product flow)
+## 2 · The 2-step stepper (new product flow)
 
 `/products/new` (a `route.ts`) auto-creates a `status='draft'` row and
 redirects to `/products/[id]`. If the product is a fresh draft with no
@@ -114,7 +114,7 @@ All fields the user enters directly. AI is not invoked here.
 | --- | --- | --- |
 | Base price | `base_price_cents` | What the user wants to earn. Live hint next to the input: `Etsy: €XX,XX` (base × markup). |
 | Markup override | `markup_percent_override` (smallint, nullable) | Collapsed "ajustar margen" toggle. Falls back to shop-wide `etsy_oauth.markup_percent` (default 30). |
-| List-price override | `list_price_cents_override` (int, nullable) | Step 4 surfaces this; step 1 only shows the live computed hint. |
+| List-price override | `list_price_cents_override` (int, nullable) | Editable inline; step 1 also shows the live computed hint. |
 | Clothing type | `clothing_type` (enum) | Combobox grouped by category (Upper / Lower / Complete / Special). |
 | Condition | `condition` (enum) | `perfect | very_good | good`. |
 | Sizes | `sizes text[]` | Multi-select chips: `XS S M L XL XXL`. |
@@ -161,22 +161,14 @@ renders with the fields **empty and editable**. A top-of-page banner
 explains in Spanish and offers a "Reintentar todo" button. Publishing
 is never blocked by an AI failure — every field can be filled by hand.
 
-### Step 3 — Summary preview
+There is no separate "summary preview" step: step 2 is already the
+final review surface. The user edits or regenerates any field
+in-place and then fires the publish action from the right rail.
 
-Read-only "this is how Etsy will see it" view. Renders thumbnails,
-bilingual title/description (ES inline, EN in collapsibles), the
-Etsy list price + markup breakdown, tag and material chips, era,
-taxonomy, condition, sizes, and the doubled (boundary-view)
-measurements. AI-generated fields that aren't filled yet show a
-"Pendiente — generar en el paso de IA" placeholder so the layout
-stays right from day one.
+### Publish sidebar (always visible)
 
-Only two buttons: **Atrás** (back to AI review) and **Siguiente**
-(continue to publish). All edits happen on the prior steps.
-
-### Step 4 — Publish action
-
-Three terminal actions:
+The right rail of the stepper, visible on every step. Three terminal
+actions:
 
 | Action | Effect |
 | --- | --- |
@@ -187,8 +179,9 @@ Three terminal actions:
 Both publish buttons are disabled until the **required Etsy fields**
 are non-empty: `title_en`, `description_en`, `etsy_taxonomy_id`,
 `etsy_when_made`. Tags and materials are optional. The list-price
-override input is surfaced here so the user can nudge the Etsy price right
-before going live.
+override input lives next to the price field on step 1, so the user
+can nudge the Etsy price right before going live without leaving the
+current step.
 
 ---
 

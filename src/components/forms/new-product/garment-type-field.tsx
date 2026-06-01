@@ -20,7 +20,7 @@ import {
 } from "@/lib/products/clothing-types";
 import type { ClothingType } from "@/lib/db/schema";
 
-import { useAutosave } from "./autosave-context";
+import { useAutosave } from "./autosave";
 
 const CATEGORY_ORDER: GarmentCategory[] = [
   "upper",

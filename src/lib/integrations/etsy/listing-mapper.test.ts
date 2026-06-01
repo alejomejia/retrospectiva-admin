@@ -11,8 +11,8 @@ import {
 
 const SHOP: ShopPublishConfig = {
   shopId: 12345,
-  shippingProfileId: 5001,
   returnPolicyId: 9001,
+  readinessStateId: 4242,
   markupPercent: 30,
 };
 
@@ -30,7 +30,10 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     buyPriceCents: null,
     clothingType: "dress",
     condition: "perfect",
-    sizes: ["M"],
+    size: "M",
+    isFeatured: false,
+    etsyPrimaryColor: null,
+    etsySecondaryColor: null,
     shoulderCm: null,
     chestCm: null,
     waistCm: null,
@@ -45,6 +48,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     etsyMaterialsEn: ["cotton"],
     etsyWhenMade: "1990s",
     etsyTaxonomyId: 11074,
+    shippingProfileId: 5001,
     aiImageEnabled: null,
     aiModelId: null,
     aiSourcePanel: null,
@@ -74,13 +78,14 @@ describe("mapProductToCreateDraftPayload", () => {
       quantity: 1,
       title: "Vintage blue dress",
       description: "Beautiful dress.",
-      // 100.00 EUR * 1.30 = 130.00
-      price: 130,
+      // 100.00 EUR * 1.30 = 130.00 → charm-priced to 130.99
+      price: 130.99,
       who_made: "someone_else",
       when_made: "1990s",
       taxonomy_id: 11074,
       shipping_profile_id: 5001,
       return_policy_id: 9001,
+      readiness_state_id: 4242,
       tags: ["blue", "dress"],
       materials: ["cotton"],
       type: "physical",
@@ -96,15 +101,32 @@ describe("mapProductToCreateDraftPayload", () => {
       product: makeProduct({ markupPercentOverride: 50 }),
       shop: SHOP,
     });
-    expect(payload.price).toBe(150);
+    expect(payload.price).toBe(150.99);
   });
 
-  it("honors absolute list-price override over markup math", () => {
+  it("honors absolute list-price override over markup math (then charm-rounds)", () => {
     const payload = mapProductToCreateDraftPayload({
       product: makeProduct({ listPriceCentsOverride: 8888 }),
       shop: SHOP,
     });
-    expect(payload.price).toBe(88.88);
+    expect(payload.price).toBe(88.99);
+  });
+
+  it("inflates the price when a discount is set", () => {
+    // 100.00 * 1.30 = 130.00 → 130 / 0.75 = 173.33 → charm 173.99
+    const payload = mapProductToCreateDraftPayload({
+      product: makeProduct({ discountPercent: 25 }),
+      shop: SHOP,
+    });
+    expect(payload.price).toBe(173.99);
+  });
+
+  it("ignores a zero discount (plain charm price)", () => {
+    const payload = mapProductToCreateDraftPayload({
+      product: makeProduct({ discountPercent: 0 }),
+      shop: SHOP,
+    });
+    expect(payload.price).toBe(130.99);
   });
 
   it("rejects missing titleEn", () => {
@@ -187,10 +209,19 @@ describe("mapProductToCreateDraftPayload", () => {
 
   it("omits shipping/return when not configured", () => {
     const payload = mapProductToCreateDraftPayload({
-      product: makeProduct(),
-      shop: { ...SHOP, shippingProfileId: null, returnPolicyId: null },
+      product: makeProduct({ shippingProfileId: null }),
+      shop: { ...SHOP, returnPolicyId: null },
     });
     expect(payload.shipping_profile_id).toBeUndefined();
     expect(payload.return_policy_id).toBeUndefined();
+  });
+
+  it("rejects missing readinessStateId", () => {
+    expect(() =>
+      mapProductToCreateDraftPayload({
+        product: makeProduct(),
+        shop: { ...SHOP, readinessStateId: null },
+      }),
+    ).toThrow(/readinessStateId/);
   });
 });

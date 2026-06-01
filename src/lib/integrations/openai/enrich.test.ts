@@ -18,7 +18,7 @@ type DbProductRow = {
   id: string;
   clothingType: string | null;
   condition: string | null;
-  sizes: string[];
+  size: string | null;
   basePriceCents: number | null;
   shoulderCm: number | null;
   chestCm: number | null;
@@ -115,7 +115,7 @@ const baseRow: DbProductRow = {
   id: "p1",
   clothingType: "dress",
   condition: "very_good",
-  sizes: ["m"],
+  size: "M",
   basePriceCents: 4500,
   shoulderCm: 40,
   chestCm: 46,
@@ -134,6 +134,8 @@ const validOutput = {
   etsyTagsEs: ["vestido", "vintage"],
   etsyMaterialsEs: ["algodon"],
   etsyWhenMade: "1980s",
+  etsyPrimaryColor: "blue",
+  etsySecondaryColor: null,
 };
 
 beforeEach(() => {

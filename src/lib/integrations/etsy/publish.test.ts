@@ -187,8 +187,11 @@ function baseProduct(): ProductRow {
 function baseOauth(): Record<string, unknown> {
   return {
     shopId: 777,
-    defaultShippingProfileId: 100,
+    shippingProfileLightId: 101,
+    shippingProfileMediumId: 102,
+    shippingProfileHeavyId: 103,
     defaultReturnPolicyId: 200,
+    defaultReadinessStateId: 300,
     markupPercent: 30,
   };
 }

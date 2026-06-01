@@ -10,7 +10,7 @@ import { m } from "@/lib/i18n/messages.es";
  */
 export function Logout() {
   return (
-    <header className="flex flex-col items-center justify-center gap-2 p-3 border-t border-border/50 bg-background ">
+    <header className="flex flex-col items-center justify-center gap-2 h-16 p-3 border-t border-border/50">
       <form className="w-full" action="/api/auth/logout" method="post">
         <Button type="submit" variant="ghost" size="sm" className="w-full gap-2">
           <LogOut className="size-4" />

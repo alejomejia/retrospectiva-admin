@@ -4,6 +4,7 @@ import {
   DEFAULT_MARKUP_PERCENT,
   effectiveListCents,
   effectiveMarkupPercent,
+  inflatedListCents,
 } from "./pricing";
 
 describe("effectiveListCents", () => {
@@ -61,6 +62,32 @@ describe("effectiveListCents", () => {
     expect(
       effectiveListCents({ basePriceCents: 10_000, shopMarkupPercent: 0 }),
     ).toBe(10_000);
+  });
+});
+
+describe("inflatedListCents", () => {
+  it("just charm-rounds when discount is null", () => {
+    expect(inflatedListCents(13_000, null)).toBe(13_099);
+  });
+
+  it("just charm-rounds when discount is 0", () => {
+    expect(inflatedListCents(13_000, 0)).toBe(13_099);
+  });
+
+  it("inflates so a matching sale lands near the list price (25% on €130)", () => {
+    // 13000 / 0.75 = 17333.3 → charm 17399. 25% off ≈ 13049.
+    const inflated = inflatedListCents(13_000, 25);
+    expect(inflated).toBe(17_399);
+    expect(Math.round(inflated * 0.75)).toBe(13_049);
+  });
+
+  it("matches the original 20% worked example (€130 → €162.99)", () => {
+    // 13000 / 0.8 = 16250 → charm 16299.
+    expect(inflatedListCents(13_000, 20)).toBe(16_299);
+  });
+
+  it("ignores out-of-range discounts (>=100)", () => {
+    expect(inflatedListCents(13_000, 100)).toBe(13_099);
   });
 });
 

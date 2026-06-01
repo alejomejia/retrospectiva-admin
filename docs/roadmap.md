@@ -11,15 +11,17 @@ shaped each phase.
 | 1 — Auth | ✅ Done | bcrypt + jose JWT cookie, sliding 7d, in-memory rate limit, `proxy.ts` gate, login + logout. |
 | 2 — Product form (MVP) + edit | ✅ Done | Name + price form (RHF + zod), shared schema, server actions, edit-toggle on detail page. |
 | 3 — Media (images + videos) on R2 | ✅ Done | Browser-side JPEG compression + HEIC decode, video upload with poster extraction, merged dropzone, date-partitioned R2 layout, `media-limits.ts` as the single source of truth for caps. |
-| 4a — Etsy OAuth | ✅ Code shipped, blocked on Etsy app approval for smoke test | PKCE flow, settings page, shop lookup. |
+| 4a — Etsy OAuth | ✅ Done | PKCE flow, settings page, shop lookup. Etsy app approved; smoke confirmed. |
 | 4b — Etsy shop config | ✅ Done | Shipping profile + return policy defaults in `etsy_oauth`. |
-| 4c — Etsy publish | ⏳ Pending | Listing-mapper + draft→images→video→inline translations→activate. The `etsy-publish` queue + a **stub processor** (flips `status='published'` locally, no Etsy traffic) ship as part of Task 9 so the scheduling round-trip is verifiable end-to-end; Phase 4c replaces the stub. |
-| 5 — BullMQ infrastructure | ✅ Done (idle) | Worker boots, queues empty. Each downstream phase adds its processor by side-effect import. |
-| 6 — Product form rebuild + AI enrichment | 🚧 In progress | List view (filters/tabs/search/pagination/column selector), 4-step new-product stepper (inputs → AI → preview → publish), flat edit form, OpenAI Responses API for title/description/tags/materials/era/taxonomy. Admin UI edits Spanish only; the `runTranslation(productId, field)` primitive ships but is invoked **inline by the Phase 4c Etsy-publish processor**, not on the autosave path. Per-product gpt-image-2 work is **split out** into its own task that consumes the Model Studio library (see Phase 6.5). See [product-form.md](./product-form.md) + [ai-enrichment.md](./ai-enrichment.md). |
-| 6.5 — Model Studio | ✅ Done (lib v1) | Top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + 7 select-driven variables; saves models to R2 `assets/models/{id}/` (contact sheet + 6 cropped panels via gutter detection with graceful fallback) and the new `ai_models` table. Lifecycle: draft → active → archived. Per-product image generation (the original gpt-image-2 placement task) consumes this library in Task 11. See [model-generation/](./model-generation/README.md). |
-| 7 — Webhooks (in/out, HMAC) | ⏳ Pending | Outbound to `retrospectiva-website` (bilingual payload), inbound Etsy receipts (poll-based, optional push). |
-| 8 — Dashboard | ⏳ Pending | Date-range picker, revenue/sales KPIs, listings-by-status, activity feed, Tremor sales chart. |
-| 9 — QoL extras | ⏳ Pending | Audit log, CSV import, product duplicator, pending-sync badge, Telegram notifier, image manager, cost tracker, keyboard shortcuts, orphan-draft cleanup. |
+| 4c — Etsy publish | ✅ Done (E2E spec pending) | Real `createDraftListing → upload images/video → inline runTranslation → state="active"` flow. Etsy update flow (`etsyUpdateQueue` + `update.ts` + `update-worker.ts`) also shipped. First publish smoke confirmed. Playwright E2E spec still TODO. |
+| 5 — BullMQ infrastructure | ✅ Done | Worker boots, queues registered (`ai-enrich`, `etsy-publish`, `etsy-update`, `ai-model-generate`, `ai-image-placement`, `website-webhook`). |
+| 6 — Product form rebuild + AI enrichment | ✅ Done | List view (filters/tabs/search/pagination/column selector), 2-step new-product stepper, flat edit form, OpenAI Responses API for all enriched fields incl. primary/secondary colors. Admin Spanish-only; `runTranslation` invoked inline by Phase 4c publish processor. See [product-form.md](./product-form.md) + [ai-enrichment.md](./ai-enrichment.md). |
+| 6.5 — Model Studio | ✅ Done | Top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + 7 select-driven variables; saves to R2 with `{run_id}` versioning. Lifecycle: draft → active → archived. See [model-generation/](./model-generation/README.md). |
+| 7 — Webhooks (out) | ✅ Done | Outbound to `retrospectiva-website` with HMAC + bilingual payload (`website/payload-mapper.ts`, `sign.ts`, `webhook-worker.ts`). |
+| 7 — Webhooks (in / sale loop) | ⏳ Pending | Etsy receipts polling (`getShopReceipts` every ~5 min) → sale handler flips `status='archived'`. Optional Etsy push receiver as safety net. |
+| 8 — Dashboard | ⏳ Pending | Date-range picker, revenue/sales KPIs, listings-by-status, activity feed, Tremor sales chart, cost view on `ai_runs.cost_usd`. Root `(admin)/page.tsx` still the Phase 2 minimal landing. |
+| 9 — QoL extras | ⏳ Pending | Audit log, CSV import, product duplicator, pending-sync badge, Telegram notifier, image manager, cost tracker, keyboard shortcuts, bulk ops, column sort, orphan-draft cleanup. |
+| Task 11 — Per-product on-model image gen | ✅ Done (step-1 mount; edit-form mount deferred) | Prompts, worker, queue, server actions, polling route, step-1 UI. Schema added 6 `products.ai*` columns + `ai_reference` image role. |
 
 ## Decisions log (chronological)
 
@@ -193,10 +195,12 @@ publish). See [product-form.md](./product-form.md) +
   is shareable + refresh-safe. Column visibility/order is the only
   thing in `localStorage` (URL bloat for shareable links).
 - **Page-based pagination, default 20**, sizes `[10, 20, 50]`.
-- **Custom 4-step stepper for new product creation**: ① user inputs
-  · ② AI review (per-field editable + regenerate) · ③ Etsy summary
-  preview (read-only) · ④ publish action. Flat edit form (no
-  stepper) for existing products.
+- **Custom 2-step stepper for new product creation**: ① user inputs
+  · ② AI review (per-field editable + regenerate). The publish
+  sidebar (save draft / schedule / publish now) is the always-visible
+  right rail, so there is no separate preview or publish step — step
+  2 is already the final review surface. Flat edit form (no stepper)
+  for existing products.
 - **Per-field autosave, debounced 500 ms** writes to the DB row.
   No localStorage shadow state.
 - **Store-flat measurements; double at the boundary** for

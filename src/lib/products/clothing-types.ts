@@ -22,6 +22,13 @@ import type { PanelKey } from "@/lib/integrations/openai/panel-keys";
 export type GarmentCategory = "upper" | "lower" | "complete" | "special";
 
 /**
+ * Three-tier shipping weight class used to auto-pick an Etsy shipping
+ * profile at step-1. Maps to the shop-wide mapping configured in
+ * `etsy_oauth.shipping_profile_{light,medium,heavy}_id`.
+ */
+export type ShippingWeightClass = "light" | "medium" | "heavy";
+
+/**
  * Body-region measurements + bra size. Each maps 1:1 to a column on
  * `products`: `shoulder` → `shoulderCm`, `braSize` → `braSize`.
  */
@@ -69,6 +76,12 @@ export type ClothingTypeEntry = {
    * preview can render the same panel that the worker would pick.
    */
   defaultAiSourcePanel: PanelKey;
+  /**
+   * Default shipping weight class for this garment. Step-1 uses it to
+   * auto-pick an Etsy shipping profile from the shop-wide mapping.
+   * The user can override the picked profile on the product form.
+   */
+  shippingWeightClass: ShippingWeightClass;
 };
 
 export const CLOTHING_TYPES: ClothingTypeEntry[] = [
@@ -81,6 +94,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_tops_and_tees",
     englishLabel: "shirt",
     defaultAiSourcePanel: "front_full",
+    shippingWeightClass: "light",
   },
   {
     value: "vest",
@@ -90,6 +104,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_tops_and_tees",
     englishLabel: "vest",
     defaultAiSourcePanel: "front_full",
+    shippingWeightClass: "light",
   },
   {
     value: "top",
@@ -99,6 +114,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_tops_and_tees",
     englishLabel: "top",
     defaultAiSourcePanel: "front_full",
+    shippingWeightClass: "light",
   },
   {
     value: "sweater",
@@ -108,6 +124,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_sweaters",
     englishLabel: "sweater",
     defaultAiSourcePanel: "front_full",
+    shippingWeightClass: "medium",
   },
   {
     value: "jacket",
@@ -117,6 +134,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_jackets_and_coats",
     englishLabel: "jacket",
     defaultAiSourcePanel: "front_full",
+    shippingWeightClass: "heavy",
   },
   {
     value: "trench_coat",
@@ -126,6 +144,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_outerwear_trench",
     englishLabel: "trench coat",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "heavy",
   },
 
   // Special upper body.
@@ -137,6 +156,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_intimates_corsets",
     englishLabel: "corset",
     defaultAiSourcePanel: "front_full",
+    shippingWeightClass: "medium",
   },
 
   // Lower body.
@@ -148,6 +168,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_jeans",
     englishLabel: "jean",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "medium",
   },
   {
     value: "pant",
@@ -157,6 +178,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_pants",
     englishLabel: "pant",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "medium",
   },
   {
     value: "skirt",
@@ -166,6 +188,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_skirts",
     englishLabel: "skirt",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "light",
   },
   {
     value: "short",
@@ -175,6 +198,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_shorts",
     englishLabel: "short",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "light",
   },
 
   // Complete garments.
@@ -186,6 +210,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_clothing_sets",
     englishLabel: "two-piece set",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "medium",
   },
   {
     value: "overall",
@@ -195,6 +220,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_jumpsuits_and_rompers",
     englishLabel: "overall",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "medium",
   },
   {
     value: "dress",
@@ -204,6 +230,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_dresses",
     englishLabel: "dress",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "light",
   },
   {
     value: "bodysuit",
@@ -213,6 +240,7 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
     etsyTaxonomyKey: "womens_bodysuits",
     englishLabel: "bodysuit",
     defaultAiSourcePanel: "threequarter_full",
+    shippingWeightClass: "medium",
   },
 ];
 
@@ -255,6 +283,17 @@ export function getClothingTypeEnglishLabel(value: ClothingType): string {
  */
 export function getDefaultAiSourcePanel(value: ClothingType): PanelKey {
   return BY_VALUE.get(value)?.defaultAiSourcePanel ?? "front_full";
+}
+
+/**
+ * Shipping weight class for the given clothing type, used to look up
+ * the Etsy shipping profile from the shop-wide mapping. Falls back to
+ * `"medium"` if the type isn't registered.
+ */
+export function getShippingWeightClass(
+  value: ClothingType,
+): ShippingWeightClass {
+  return BY_VALUE.get(value)?.shippingWeightClass ?? "medium";
 }
 
 /** Measurements rendered for the given clothing type, or `[]`. */

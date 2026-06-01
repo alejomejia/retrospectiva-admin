@@ -19,7 +19,7 @@ export default async function AiSettingsPage() {
   ]);
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader>
         <PageHeader.Column className="flex-1 flex-col">
           <PageHeader.Eyebrow number="05" label={m.settings.ai.kicker} />
@@ -30,33 +30,35 @@ export default async function AiSettingsPage() {
         </PageHeader.Column>
       </PageHeader>
 
-      <div className="flex gap-4">
-        <div className="w-96">
-          <SidebarSettings />
+      <main className="p-6">
+        <div className="flex gap-4">
+          <div className="w-96">
+            <SidebarSettings />
+          </div>
+          <div className="w-full space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{m.settings.ai.cardTitle}</CardTitle>
+                <CardDescription>{m.settings.ai.cardDescription}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AiDefaultsForm
+                  initial={{
+                    aiDefaultModelId: settings.aiDefaultModelId,
+                    aiDefaultSourcePanel: settings.aiDefaultSourcePanel,
+                    aiDefaultPosePreset: settings.aiDefaultPosePreset,
+                    aiDefaultFramingPreset: settings.aiDefaultFramingPreset,
+                    aiDefaultEnvironmentPreset:
+                      settings.aiDefaultEnvironmentPreset,
+                    aiDefaultImageQuality: settings.aiDefaultImageQuality,
+                  }}
+                  models={models}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        <div className="w-full space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{m.settings.ai.cardTitle}</CardTitle>
-              <CardDescription>{m.settings.ai.cardDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AiDefaultsForm
-                initial={{
-                  aiDefaultModelId: settings.aiDefaultModelId,
-                  aiDefaultSourcePanel: settings.aiDefaultSourcePanel,
-                  aiDefaultPosePreset: settings.aiDefaultPosePreset,
-                  aiDefaultFramingPreset: settings.aiDefaultFramingPreset,
-                  aiDefaultEnvironmentPreset:
-                    settings.aiDefaultEnvironmentPreset,
-                  aiDefaultImageQuality: settings.aiDefaultImageQuality,
-                }}
-                models={models}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }

@@ -73,26 +73,28 @@ export default async function ModelsPage({
         </PageHeader.Column>
       </PageHeader>
 
-      <ModelsTabs currentTab={tab} />
+      <main className="p-6 space-y-4">
+        <ModelsTabs currentTab={tab} />
 
-      {rows.length === 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{m.models.emptyState.title}</CardTitle>
-            <CardDescription>{m.models.emptyState.body}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/models/new" className="gap-1.5">
-                <Plus className="size-4" />
-                {m.models.emptyState.cta}
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <ModelsTable rows={rows} />
-      )}
+        {rows.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{m.models.emptyState.title}</CardTitle>
+              <CardDescription>{m.models.emptyState.body}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild>
+                <Link href="/models/new" className="gap-1.5">
+                  <Plus className="size-4" />
+                  {m.models.emptyState.cta}
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <ModelsTable rows={rows} />
+        )}
+      </main>
     </>
   );
 }

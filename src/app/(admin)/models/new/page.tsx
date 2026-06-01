@@ -25,7 +25,9 @@ export default async function NewModelPage() {
         </PageHeader.Column>
       </PageHeader>
 
-      <NewModelForm />
+      <main className="p-6">
+        <NewModelForm />
+      </main>
     </>
   );
 }

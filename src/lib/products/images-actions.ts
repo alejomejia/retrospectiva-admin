@@ -259,6 +259,35 @@ export async function moveProductImage(
 }
 
 /**
+ * Batch-reorder images by setting `order` to match the position in the
+ * provided `imageIds` array. All IDs must belong to the same product
+ * and role.
+ */
+export async function reorderProductImages(
+  imageIds: string[],
+): Promise<ImageMutationResult> {
+  await requireSession();
+  if (imageIds.length === 0) return { ok: true };
+
+  const [first] = await db
+    .select()
+    .from(productImages)
+    .where(eq(productImages.id, imageIds[0]))
+    .limit(1);
+  if (!first) return { ok: false, error: m.errors.imageNotFound };
+
+  for (let i = 0; i < imageIds.length; i++) {
+    await db
+      .update(productImages)
+      .set({ order: i })
+      .where(eq(productImages.id, imageIds[i]));
+  }
+
+  revalidatePath(`/products/${first.productId}`);
+  return { ok: true };
+}
+
+/**
  * Returns the most-recent `ai_model`-role image for a product (the
  * output of the Phase-2 image-placement worker), or `null` if none
  * has been generated yet. The worker hard-deletes prior rows before

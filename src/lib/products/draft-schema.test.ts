@@ -93,22 +93,22 @@ describe("ProductDraftPatchSchema", () => {
     });
   });
 
-  describe("sizes", () => {
-    it("accepts an empty array", () => {
-      const r = ProductDraftPatchSchema.safeParse({ sizes: [] });
+  describe("size", () => {
+    it("accepts null (cleared)", () => {
+      const r = ProductDraftPatchSchema.safeParse({ size: null });
       expect(r.success).toBe(true);
     });
 
-    it("accepts all known sizes including one_size", () => {
-      const r = ProductDraftPatchSchema.safeParse({
-        sizes: [...SIZE_VALUES],
-      });
-      expect(r.success).toBe(true);
+    it("accepts every Etsy size value", () => {
+      for (const size of SIZE_VALUES) {
+        const r = ProductDraftPatchSchema.safeParse({ size });
+        expect(r.success).toBe(true);
+      }
     });
 
     it("rejects unknown size codes", () => {
       const r = ProductDraftPatchSchema.safeParse({
-        sizes: ["xs", "huge" as never],
+        size: "huge" as never,
       });
       expect(r.success).toBe(false);
     });

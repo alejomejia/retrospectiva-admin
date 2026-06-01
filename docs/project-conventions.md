@@ -40,6 +40,10 @@ explaining why):
 | `src/lib/integrations/openai/prompts.ts` | `BRAND_VOICE_PROMPT`, `*_PROMPT`, `LOCATION_POOL` | Used from the worker; prompts are env-overridable so they need direct `process.env` access. |
 | `src/lib/integrations/r2/client.ts` | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL`, `NODE_ENV` | The BullMQ worker uploads model contact sheets + cropped panels to R2 via `model-generate.ts` → `r2/upload.ts` → `r2/client.ts`. Reads env directly so the chain doesn't load `config` (whose `server-only` throws under raw `tsx`). Client-bundle protection comes from `@aws-sdk/client-s3` itself being Node-only. |
 | `src/lib/integrations/r2/upload.ts` | — | Same chain: imported from the model-generation worker. Stays Node-only via its dependency on the SDK and `r2/client.ts`. |
+| `src/lib/integrations/etsy/oauth.ts` | `ETSY_CLIENT_ID`, `ETSY_REDIRECT_URI` | Imported by `etsy/client.ts` → `publish.ts` → the publish worker. The OAuth callback handler also hits it from the server. Reads env directly so the worker chain stays `server-only`-free. |
+| `src/lib/integrations/etsy/client.ts` | `ETSY_CLIENT_ID`, `ETSY_CLIENT_SECRET` | Same chain — `publish.ts` imports it for the `x-api-key` header. Direct reads keep the worker importable under raw `tsx`. |
+| `src/lib/integrations/website/payload-mapper.ts` | `R2_PUBLIC_BASE_URL` | Imported by the website-webhook worker; reads R2 base directly for the same `server-only`-from-tsx reason. |
+| `src/lib/integrations/website/client.ts` | `WEBSITE_WEBHOOK_URL`, `WEBSITE_WEBHOOK_SECRET` | Same chain — the webhook worker calls `sendWebsiteWebhook`. |
 
 Anything outside this list reading `process.env` is a bug.
 
@@ -54,7 +58,11 @@ grep -rn "process\.env" src/ scripts/ --include='*.ts' --include='*.tsx' \
   | grep -v "src/lib/queue/env-bootstrap.ts" \
   | grep -v "src/lib/integrations/openai/client.ts" \
   | grep -v "src/lib/integrations/openai/prompts.ts" \
-  | grep -v "src/lib/integrations/r2/client.ts"
+  | grep -v "src/lib/integrations/r2/client.ts" \
+  | grep -v "src/lib/integrations/etsy/oauth.ts" \
+  | grep -v "src/lib/integrations/etsy/client.ts" \
+  | grep -v "src/lib/integrations/website/payload-mapper.ts" \
+  | grep -v "src/lib/integrations/website/client.ts"
 # should return zero lines
 ```
 

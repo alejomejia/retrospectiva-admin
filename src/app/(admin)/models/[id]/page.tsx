@@ -34,7 +34,7 @@ export default async function ModelDetailPage({
   const urls = buildImageUrls(model);
 
   return (
-    <div className="space-y-6">
+    <>
       <PageHeader>
         <PageHeader.Column className="flex-1 flex-col">
           <PageHeader.Back href="/models" label={m.models.detail.backToList} />
@@ -49,8 +49,10 @@ export default async function ModelDetailPage({
           </PageHeader.Description>
         </PageHeader.Column>
       </PageHeader>
-      <ModelDetailView model={model} urls={urls} />
-    </div>
+      <main className="p-6">
+        <ModelDetailView model={model} urls={urls} />
+      </main>
+    </>
   );
 }
 

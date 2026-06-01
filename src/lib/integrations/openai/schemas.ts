@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { ETSY_COLORS } from "@/lib/integrations/etsy/etsy-colors";
 import { ETSY_ERA_VALUES } from "@/lib/products/draft-schema";
 
 /**
@@ -31,6 +32,8 @@ export const EnrichmentOutput = z.object({
     .array(z.string().trim().min(1).max(45))
     .max(13),
   etsyWhenMade: z.enum(ETSY_ERA_VALUES),
+  etsyPrimaryColor: z.enum(ETSY_COLORS),
+  etsySecondaryColor: z.enum(ETSY_COLORS).nullable(),
 });
 
 export type EnrichmentOutput = z.infer<typeof EnrichmentOutput>;

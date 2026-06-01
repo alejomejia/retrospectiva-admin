@@ -51,18 +51,36 @@ const MarkupPercent = z
     ]),
   );
 
-const EtsyDefaultsSchema = z.object({
-  shippingProfileId: EtsyIdOrNull,
+const ShippingMappingSchema = z.object({
+  shippingProfileLightId: EtsyIdOrNull,
+  shippingProfileMediumId: EtsyIdOrNull,
+  shippingProfileHeavyId: EtsyIdOrNull,
+});
+
+const ReturnPolicySchema = z.object({
   returnPolicyId: EtsyIdOrNull,
+});
+
+const ReadinessStateSchema = z.object({
+  readinessStateId: EtsyIdOrNull,
 });
 
 const MarkupSchema = z.object({
   markupPercent: MarkupPercent,
 });
 
-export type SaveEtsyDefaultsInput = {
-  shippingProfileId: string;
+export type SaveShippingMappingInput = {
+  shippingProfileLightId: string;
+  shippingProfileMediumId: string;
+  shippingProfileHeavyId: string;
+};
+
+export type SaveReturnPolicyInput = {
   returnPolicyId: string;
+};
+
+export type SaveReadinessStateInput = {
+  readinessStateId: string;
 };
 
 export type SaveShopMarkupInput = {
@@ -72,25 +90,26 @@ export type SaveShopMarkupInput = {
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
 /**
- * Persist Etsy-specific publish defaults (shipping profile + return
- * policy) onto the single `etsy_oauth` row.
+ * Persist the shop-wide shipping weight-class mapping (light / medium
+ * / heavy → Etsy shipping profile id) onto the single `etsy_oauth`
+ * row. Step-1 of the new-product flow picks one of these based on the
+ * garment's registered `shippingWeightClass`.
  *
  * - Single-shop admin: we use the only row in `etsy_oauth`.
- * - Either value can be cleared by passing an empty string.
- * - Returns a typed result instead of throwing so the form can render
- *   the error inline.
+ * - Any value can be cleared by passing an empty string.
  */
-export async function saveEtsyDefaults(
-  input: SaveEtsyDefaultsInput,
+export async function saveShippingMapping(
+  input: SaveShippingMappingInput,
 ): Promise<SaveResult> {
   await requireSession();
 
-  const parsed = EtsyDefaultsSchema.safeParse(input);
+  const parsed = ShippingMappingSchema.safeParse(input);
   if (!parsed.success) {
-    dev.warn("invalid etsy defaults input:", parsed.error.issues);
+    dev.warn("invalid shipping mapping input:", parsed.error.issues);
     return { ok: false, error: m.errors.invalidForm };
   }
-  const { shippingProfileId, returnPolicyId } = parsed.data;
+  const { shippingProfileLightId, shippingProfileMediumId, shippingProfileHeavyId } =
+    parsed.data;
 
   const [row] = await db.select().from(etsyOauth).limit(1);
   if (!row) {
@@ -100,13 +119,89 @@ export async function saveEtsyDefaults(
   await db
     .update(etsyOauth)
     .set({
-      defaultShippingProfileId: shippingProfileId,
+      shippingProfileLightId,
+      shippingProfileMediumId,
+      shippingProfileHeavyId,
+      updatedAt: new Date(),
+    })
+    .where(eq(etsyOauth.id, row.id));
+
+  dev.log("saved shipping mapping", {
+    shippingProfileLightId,
+    shippingProfileMediumId,
+    shippingProfileHeavyId,
+  });
+  revalidatePath("/settings/integrations");
+  return { ok: true };
+}
+
+/**
+ * Persist the shop-wide Etsy return policy default onto the single
+ * `etsy_oauth` row. Listings publish with this policy unless a future
+ * per-product override is introduced.
+ */
+export async function saveReturnPolicy(
+  input: SaveReturnPolicyInput,
+): Promise<SaveResult> {
+  await requireSession();
+
+  const parsed = ReturnPolicySchema.safeParse(input);
+  if (!parsed.success) {
+    dev.warn("invalid return policy input:", parsed.error.issues);
+    return { ok: false, error: m.errors.invalidForm };
+  }
+  const { returnPolicyId } = parsed.data;
+
+  const [row] = await db.select().from(etsyOauth).limit(1);
+  if (!row) {
+    return { ok: false, error: m.settings.etsy.defaults.notConnectedError };
+  }
+
+  await db
+    .update(etsyOauth)
+    .set({
       defaultReturnPolicyId: returnPolicyId,
       updatedAt: new Date(),
     })
     .where(eq(etsyOauth.id, row.id));
 
-  dev.log("saved etsy defaults", { shippingProfileId, returnPolicyId });
+  dev.log("saved return policy", { returnPolicyId });
+  revalidatePath("/settings/integrations");
+  return { ok: true };
+}
+
+/**
+ * Persist the shop-wide Etsy readiness state (processing profile)
+ * onto the single `etsy_oauth` row. Etsy v3 requires this id on every
+ * physical listing's `createDraftListing` payload — without it,
+ * `runScheduledPublish` fails the mapper.
+ */
+export async function saveReadinessState(
+  input: SaveReadinessStateInput,
+): Promise<SaveResult> {
+  await requireSession();
+
+  const parsed = ReadinessStateSchema.safeParse(input);
+  if (!parsed.success) {
+    dev.warn("invalid readiness state input:", parsed.error.issues);
+    return { ok: false, error: m.errors.invalidForm };
+  }
+  const { readinessStateId } = parsed.data;
+
+  const [row] = await db.select().from(etsyOauth).limit(1);
+  if (!row) {
+    return { ok: false, error: m.settings.etsy.defaults.notConnectedError };
+  }
+
+  await db
+    .update(etsyOauth)
+    .set({
+      defaultReadinessStateId: readinessStateId,
+      updatedAt: new Date(),
+    })
+    .where(eq(etsyOauth.id, row.id));
+
+  dev.log("saved readiness state", { readinessStateId });
   revalidatePath("/settings/integrations");
   return { ok: true };
 }

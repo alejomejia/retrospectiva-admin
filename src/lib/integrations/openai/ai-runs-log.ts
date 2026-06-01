@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { aiRuns, type AiRun } from "@/lib/db/schema";
@@ -93,6 +93,32 @@ export async function failRun(input: FailRunInput): Promise<void> {
       finishedAt: sql`now()`,
     })
     .where(eq(aiRuns.id, input.id));
+}
+
+/**
+ * Most recent `succeeded` enrich `inputJson` for `productId`, or
+ * `null` when no successful enrich exists yet. Per-field regeneration
+ * replays this cached context so the model sees the exact same
+ * product description that produced the original output — no rebuild
+ * from the (potentially user-edited) `products` row, no extra DB
+ * traversal of measurements / images.
+ */
+export async function latestSucceededEnrichInput(
+  productId: string,
+): Promise<Record<string, unknown> | null> {
+  const [row] = await db
+    .select({ inputJson: aiRuns.inputJson })
+    .from(aiRuns)
+    .where(
+      and(
+        eq(aiRuns.productId, productId),
+        eq(aiRuns.kind, "enrich"),
+        eq(aiRuns.status, "succeeded"),
+      ),
+    )
+    .orderBy(sql`${aiRuns.createdAt} DESC`)
+    .limit(1);
+  return (row?.inputJson as Record<string, unknown> | null) ?? null;
 }
 
 /**

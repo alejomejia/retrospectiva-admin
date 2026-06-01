@@ -1,9 +1,16 @@
-import "server-only";
-
 import { createHash, randomBytes } from "node:crypto";
 
-import { config } from "@/lib/utils/config";
 import { devError, devLog } from "@/lib/utils/dev";
+
+// NOTE: this module is on the worker's import chain (via
+// `etsy/client.ts` → `refreshAccessToken`), so it can't depend on
+// `@/lib/utils/config` (`server-only` blocks tsx). Read env directly;
+// see `docs/project-conventions.md` §1.
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} is not set`);
+  return v;
+}
 
 /**
  * Etsy Open API v3 OAuth 2.0 + PKCE flow.
@@ -147,8 +154,8 @@ export function buildAuthorizeUrl({
 }): string {
   const params = new URLSearchParams({
     response_type: "code",
-    client_id: config.etsyClientId,
-    redirect_uri: config.etsyRedirectUri,
+    client_id: requireEnv("ETSY_CLIENT_ID"),
+    redirect_uri: requireEnv("ETSY_REDIRECT_URI"),
     scope: ETSY_SCOPES.join(" "),
     state,
     code_challenge: codeChallenge,
@@ -183,8 +190,8 @@ export async function exchangeCodeForToken({
 }): Promise<EtsyTokenResponse> {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
-    client_id: config.etsyClientId,
-    redirect_uri: config.etsyRedirectUri,
+    client_id: requireEnv("ETSY_CLIENT_ID"),
+    redirect_uri: requireEnv("ETSY_REDIRECT_URI"),
     code,
     code_verifier: codeVerifier,
   });
@@ -230,7 +237,7 @@ export async function refreshAccessToken(
 ): Promise<EtsyTokenResponse> {
   const body = new URLSearchParams({
     grant_type: "refresh_token",
-    client_id: config.etsyClientId,
+    client_id: requireEnv("ETSY_CLIENT_ID"),
     refresh_token: refreshToken,
   });
 

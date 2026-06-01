@@ -8,7 +8,7 @@ import { PageHeaderColumn } from "./page-header-column";
 
 function PageHeaderRoot({ className, ...props }: ComponentProps<"header">) {
   return (
-    <header className="flex gap-4" {...props} />
+    <header className="flex gap-4 p-6 border-b border-border" {...props} />
   );
 }
 

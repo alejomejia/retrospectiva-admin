@@ -2,8 +2,6 @@
 
 import { useMemo, type ReactNode } from "react";
 
-import { cn } from "@/lib/utils/helpers";
-
 import { StepperContext } from "./stepper.context";
 import { StepperItem } from "./stepper-item";
 import { StepperList } from "./stepper-list";
@@ -40,7 +38,7 @@ function StepperRoot({
   const value = useMemo(() => ({ currentStepIndex }), [currentStepIndex]);
   return (
     <StepperContext.Provider value={value}>
-      <div className={cn("space-y-8", className)}>{children}</div>
+      <div className={className}>{children}</div>
     </StepperContext.Provider>
   );
 }

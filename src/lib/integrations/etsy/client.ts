@@ -1,16 +1,23 @@
-import "server-only";
-
 import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
-import { config } from "@/lib/utils/config";
 import { devError } from "@/lib/utils/dev";
 
 import {
   type EtsyTokenResponse,
   refreshAccessToken,
 } from "./oauth";
+
+// NOTE: this module is on the worker's import chain (via
+// `publish.ts` → `listings.ts`), so it can't depend on
+// `@/lib/utils/config` (`server-only` blocks tsx). Read env directly;
+// see `docs/project-conventions.md` §1.
+function requireEnv(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`${name} is not set`);
+  return v;
+}
 
 /**
  * Authenticated fetch wrapper for Etsy Open API v3.
@@ -146,7 +153,7 @@ export async function etsyFetch(
       Authorization: `Bearer ${accessToken}`,
       // NOTE: `x-api-key` is the colon-joined pair
       // `<keystring>:<shared_secret>`. See file-top docblock.
-      "x-api-key": `${config.etsyClientId}:${config.etsyClientSecret}`,
+      "x-api-key": `${requireEnv("ETSY_CLIENT_ID")}:${requireEnv("ETSY_CLIENT_SECRET")}`,
     },
   });
 
