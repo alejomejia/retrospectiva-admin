@@ -5,9 +5,10 @@ import {
   CalendarClock,
   Clock,
   FileText,
-  RefreshCw,
   RotateCcw,
   Send,
+  Settings,
+  Tag,
   XCircle,
 } from "lucide-react";
 
@@ -48,24 +49,28 @@ export function PublishSidebar({
       <aside className="sticky top-0">
         <header className="p-6 border-b border-border">
           <div className="flex items-center gap-2 mb-2">
-            <RefreshCw className="size-5 text-brand-terracotta" />
+            <Settings className="size-5 text-brand-terracotta" />
             <h2 className="font-semibold">
-              {m.products.stepper.update.title}
+              {m.products.stepper.actions.title}
             </h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            {m.products.stepper.update.description}
+            {m.products.stepper.actions.description}
           </p>
           <div className="flex flex-col gap-3">
-            <Button
-              type="button"
-              className="p-6"
-              disabled={vm.pending}
-              onClick={vm.onUpdate}
-            >
-              <RefreshCw className="size-4" />
-              {m.products.stepper.update.updateNow}
-            </Button>
+            {(product.status === "published" ||
+              product.status === "scheduled") && (
+              <Button
+                type="button"
+                className="p-6"
+                disabled={vm.pending}
+                onClick={vm.onMarkSold}
+              >
+                <Tag className="size-4" />
+                {m.products.editForm.etsy.markSold}
+              </Button>
+            )}
+
             {product.status === "scheduled" && (
               <Button
                 type="button"
@@ -78,35 +83,38 @@ export function PublishSidebar({
                 {m.products.editForm.etsy.cancelSchedule}
               </Button>
             )}
+
+            {(product.status === "published" ||
+              product.status === "scheduled" ||
+              product.status === "sold") && (
+              <Button
+                type="button"
+                variant="outline"
+                className="p-6"
+                disabled={vm.pending}
+                onClick={vm.onArchive}
+              >
+                <Archive className="size-4" />
+                {m.products.editForm.etsy.archive}
+              </Button>
+            )}
+
+            {(product.status === "archived" || 
+              product.status === "sold") && (
+              <Button
+                type="button"
+                variant="outline"
+                className="p-6"
+                disabled={vm.pending}
+                onClick={vm.onRestoreToDraft}
+              >
+                <RotateCcw className="size-4" />
+                {m.products.editForm.etsy.restoreToDraft}
+              </Button>
+            )}
+            
           </div>
         </header>
-
-        <div className="p-6 flex flex-col gap-3">
-          {(product.status === "published" ||
-            product.status === "scheduled" ||
-            product.status === "sold") && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={vm.pending}
-              onClick={vm.onArchive}
-            >
-              <Archive className="size-4" />
-              {m.products.editForm.etsy.archive}
-            </Button>
-          )}
-          {(product.status === "archived" || product.status === "sold") && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={vm.pending}
-              onClick={vm.onRestoreToDraft}
-            >
-              <RotateCcw className="size-4" />
-              {m.products.editForm.etsy.restoreToDraft}
-            </Button>
-          )}
-        </div>
       </aside>
     );
   }

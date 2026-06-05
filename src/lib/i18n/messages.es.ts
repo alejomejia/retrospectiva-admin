@@ -168,6 +168,9 @@ export const m = {
       delete: "Eliminar",
       confirmDelete: "¿Eliminar este producto? Se borrarán las fotos y videos asociados. No se puede deshacer.",
       deletedToast: "Producto eliminado",
+      markSold: "Marcar como vendido",
+      confirmMarkSold: "¿Marcar este producto como vendido? Seguirá visible en la web, marcado como vendido.",
+      soldToast: "Producto marcado como vendido",
     },
     detail: {
       backLink: "Productos",
@@ -368,6 +371,10 @@ export const m = {
         scheduledForLabel: "Publicación programada",
         cancelSchedule: "Cancelar programación",
         scheduleCancelledToast: "Programación cancelada",
+        markSold: "Marcar como vendido",
+        markSoldConfirm:
+          "¿Marcar este producto como vendido? Seguirá visible en la web, marcado como vendido.",
+        soldToast: "Producto marcado como vendido",
         archive: "Archivar",
         archivedToast: "Producto archivado",
         restoreToDraft: "Restaurar como borrador",
@@ -563,18 +570,10 @@ export const m = {
         featuredCapReached:
           "Etsy permite un máximo de 4 productos destacados y ya hay 4. Desactiva «destacado» en este producto (o quítalo de otro) y vuelve a publicar.",
       },
-      update: {
-        title: "Actualizar en Etsy",
+      actions: {
+        title: "Acciones",
         description:
-          "Sincroniza los cambios actuales con el anuncio publicado: textos, precio, traducciones y multimedia.",
-        updateNow: "Actualizar ahora",
-        confirm:
-          "Esto sobrescribirá el anuncio en Etsy con los datos actuales (incluye fotos y vídeo). ¿Continuar?",
-        runningToast: "Actualizando en Etsy…",
-        completedToast: "Anuncio actualizado en Etsy",
-        failedToast: "Falló la actualización en Etsy",
-        timedOutToast:
-          "La actualización tarda más de lo habitual. Revisa en unos minutos.",
+          "Los cambios se guardan solo en la tienda; ya no se sincronizan con el anuncio de Etsy.",
       },
     },
   },

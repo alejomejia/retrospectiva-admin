@@ -20,7 +20,7 @@ function makeRow(overrides: Partial<EtsyOAuthRow> = {}): EtsyOAuthRow {
     shopId: 123_456,
     accessToken: "at-current",
     refreshToken: "rt-current",
-    scopes: "listings_w listings_r transactions_r shops_r",
+    scopes: "listings_w listings_r shops_r",
     expiresAt: new Date(now.getTime() + 30 * 60 * 1000),
     shippingProfileLightId: null,
     shippingProfileMediumId: null,

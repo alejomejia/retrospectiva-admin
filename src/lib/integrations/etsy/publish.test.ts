@@ -287,12 +287,10 @@ describe("runScheduledPublish — happy path", () => {
     expect(state.updates.length).toBeGreaterThanOrEqual(2);
     expect(state.updates[0]).toMatchObject({
       etsyListingId: 9999,
-      etsyState: "draft",
     });
     const finalUpdate = state.updates.at(-1)!;
     expect(finalUpdate).toMatchObject({
       status: "published",
-      etsyState: "active",
     });
 
     expect(state.uploadedImages).toHaveLength(2);
@@ -311,7 +309,6 @@ describe("runScheduledPublish — happy path", () => {
     const finalUpdate = state.updates.at(-1)!;
     expect(finalUpdate).toMatchObject({
       status: "published",
-      etsyState: "draft",
     });
     expect(state.listingActivated).toBe(false);
   });

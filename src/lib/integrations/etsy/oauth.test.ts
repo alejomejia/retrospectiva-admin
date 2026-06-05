@@ -67,11 +67,10 @@ describe("buildAuthorizeUrl", () => {
     expect(p.get("code_challenge_method")).toBe("S256");
   });
 
-  it("requests the four scopes the admin needs", () => {
+  it("requests the scopes the admin needs", () => {
     expect([...ETSY_SCOPES]).toEqual([
       "listings_w",
       "listings_r",
-      "transactions_r",
       "shops_r",
     ]);
   });

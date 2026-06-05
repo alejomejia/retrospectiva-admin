@@ -100,7 +100,6 @@ export type WebsitePayload = {
   measurements: WebsiteMeasurements;
   etsy: {
     listingId: number | null;
-    state: string | null;
   };
   images: WebsiteImage[];
   video: WebsiteVideo | null;
@@ -299,7 +298,6 @@ export async function buildWebsitePayload(input: {
     measurements: buildMeasurements(row),
     etsy: {
       listingId: row.etsyListingId,
-      state: row.etsyState,
     },
     images: ordered,
     video,

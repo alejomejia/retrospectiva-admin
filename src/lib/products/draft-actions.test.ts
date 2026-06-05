@@ -18,10 +18,12 @@ const queueAddMock = vi.fn().mockResolvedValue({});
 const queueRemoveMock = vi.fn().mockResolvedValue(undefined);
 const publishAddMock = vi.fn().mockResolvedValue({});
 const publishRemoveMock = vi.fn().mockResolvedValue(undefined);
+const webhookAddMock = vi.fn().mockResolvedValue({});
 
 vi.mock("@/lib/queue/queues", () => ({
   aiEnrichQueue: { add: queueAddMock, remove: queueRemoveMock },
   etsyPublishQueue: { add: publishAddMock, remove: publishRemoveMock },
+  websiteWebhookQueue: { add: webhookAddMock },
 }));
 
 // Featured-cap pre-publish gate. Defaults to "slot available" so the
@@ -65,12 +67,17 @@ const dbState: {
   deleteCalls: DeleteCall[];
   fakeUpdatedAt: Date;
   shouldThrowOnUpdate: boolean;
+  // Extra fields merged into the row returned by
+  // `select().from().where().limit()` so status-guarded actions
+  // (markAsSold) can be driven per-test.
+  selectRow: Record<string, unknown>;
 } = {
   updateCalls: [],
   insertCalls: [],
   deleteCalls: [],
   fakeUpdatedAt: new Date("2026-06-01T12:00:00.000Z"),
   shouldThrowOnUpdate: false,
+  selectRow: {},
 };
 
 vi.mock("@/lib/db/client", () => {
@@ -98,7 +105,7 @@ vi.mock("@/lib/db/client", () => {
         },
       ],
       where: (_cond: unknown) => ({
-        limit: async () => [{ buyPriceCents: null }],
+        limit: async () => [{ buyPriceCents: null, ...dbState.selectRow }],
       }),
     }),
   });
@@ -150,6 +157,7 @@ const {
   archiveProduct,
   cancelSchedule,
   enqueueEnrichJob,
+  markAsSold,
   restoreToDraft,
   saveDraftAndExit,
   scheduleProduct,
@@ -161,6 +169,9 @@ beforeEach(() => {
   dbState.insertCalls = [];
   dbState.deleteCalls = [];
   dbState.shouldThrowOnUpdate = false;
+  dbState.selectRow = {};
+  webhookAddMock.mockClear();
+  webhookAddMock.mockResolvedValue({});
   queueAddMock.mockClear();
   queueAddMock.mockResolvedValue({});
   queueRemoveMock.mockClear();
@@ -293,12 +304,40 @@ describe("saveDraftAndExit", () => {
 });
 
 describe("archiveProduct", () => {
-  it("sets status to archived", async () => {
+  it("sets status to archived and notifies the website", async () => {
     const res = await archiveProduct("p1");
     expect(res.ok).toBe(true);
     expect(dbState.updateCalls[0]?.values).toMatchObject({
       status: "archived",
     });
+    expect(webhookAddMock).toHaveBeenCalledWith(
+      "archive",
+      { productId: "p1", kind: "archive" },
+      { jobId: "archive:p1" },
+    );
+  });
+});
+
+describe("markAsSold", () => {
+  it("sets status=sold + soldAt and fires the sold webhook from a sellable status", async () => {
+    dbState.selectRow = { status: "published" };
+    const res = await markAsSold("p1");
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values).toMatchObject({ status: "sold" });
+    expect(dbState.updateCalls[0]?.values.soldAt).toBeDefined();
+    expect(webhookAddMock).toHaveBeenCalledWith(
+      "sold",
+      { productId: "p1", kind: "sold" },
+      { jobId: "sold:p1" },
+    );
+  });
+
+  it("rejects a non-sellable status without writing or notifying", async () => {
+    dbState.selectRow = { status: "draft" };
+    const res = await markAsSold("p1");
+    expect(res.ok).toBe(false);
+    expect(dbState.updateCalls).toHaveLength(0);
+    expect(webhookAddMock).not.toHaveBeenCalled();
   });
 });
 

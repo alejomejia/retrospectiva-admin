@@ -60,7 +60,6 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     status: "draft",
     scheduledPublishAt: null,
     etsyListingId: null,
-    etsyState: null,
     soldAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),

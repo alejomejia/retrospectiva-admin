@@ -268,7 +268,6 @@ export async function runScheduledPublish(
     .update(products)
     .set({
       etsyListingId: draft.listing_id,
-      etsyState: draft.state ?? "draft",
       updatedAt: sql`now()`,
     })
     .where(eq(products.id, productId));
@@ -351,7 +350,6 @@ export async function runScheduledPublish(
     .update(products)
     .set({
       status: "published",
-      etsyState: finalEtsyState,
       updatedAt: sql`now()`,
     })
     .where(eq(products.id, productId));

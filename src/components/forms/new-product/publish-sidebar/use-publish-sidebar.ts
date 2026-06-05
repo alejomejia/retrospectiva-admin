@@ -9,11 +9,11 @@ import { m } from "@/lib/i18n/messages.es";
 import {
   archiveProduct,
   cancelSchedule,
+  markAsSold,
   publishNow,
   restoreToDraft,
   saveDraftAndExit,
   scheduleProduct,
-  updateEtsyListing,
 } from "@/lib/products/draft-actions";
 
 import { useAutosave } from "../autosave";
@@ -26,17 +26,12 @@ const POLL_INTERVAL_MS = 2000;
 const POLL_TIMEOUT_MS = 120_000;
 
 /**
- * Polls `/api/products/{id}/publish-status` until the worker emits
- * a terminal event for the requested `kind` or the deadline elapses.
- * `kind` switches between the publish and update event families so
- * the same polling helper works for both flows.
+ * Polls `/api/products/{id}/publish-status` until the worker emits a
+ * terminal `etsy-publish.*` event or the deadline elapses.
  */
 async function pollTerminalEvent(
   productId: string,
-  kind: "publish" | "update",
 ): Promise<TerminalOutcome> {
-  const completedType = `etsy-${kind}.completed`;
-  const failedType = `etsy-${kind}.failed`;
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
     try {
@@ -49,11 +44,9 @@ async function pollTerminalEvent(
           status: string;
           lastEventType: string | null;
         };
-        if (kind === "publish" && data.status === "published") {
-          return "completed";
-        }
-        if (data.lastEventType === completedType) return "completed";
-        if (data.lastEventType === failedType) return "failed";
+        if (data.status === "published") return "completed";
+        if (data.lastEventType === "etsy-publish.completed") return "completed";
+        if (data.lastEventType === "etsy-publish.failed") return "failed";
       }
     } catch {
       // Network blip — keep polling until the deadline.
@@ -135,7 +128,7 @@ export function usePublishSidebar({
       const toastId = toast.loading(
         m.products.editForm.etsy.publishNowRunningToast,
       );
-      const outcome = await pollTerminalEvent(product.id, "publish");
+      const outcome = await pollTerminalEvent(product.id);
       if (outcome === "completed") {
         toast.success(m.products.editForm.etsy.publishNowCompletedToast, {
           id: toastId,
@@ -153,40 +146,6 @@ export function usePublishSidebar({
     });
   };
 
-  const onUpdate = () => {
-    if (!window.confirm(m.products.stepper.update.confirm)) {
-      return;
-    }
-    startTransition(async () => {
-      const flushed = await flush();
-      if (!flushed) {
-        toast.error(m.errors.couldNotSaveChanges);
-        return;
-      }
-      const result = await updateEtsyListing(product.id);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      const toastId = toast.loading(m.products.stepper.update.runningToast);
-      const outcome = await pollTerminalEvent(product.id, "update");
-      if (outcome === "completed") {
-        toast.success(m.products.stepper.update.completedToast, {
-          id: toastId,
-        });
-        router.refresh();
-      } else if (outcome === "failed") {
-        toast.error(m.products.stepper.update.failedToast, {
-          id: toastId,
-        });
-      } else {
-        toast.warning(m.products.stepper.update.timedOutToast, {
-          id: toastId,
-        });
-      }
-    });
-  };
-
   const onCancelSchedule = () => {
     startTransition(async () => {
       const result = await cancelSchedule(product.id);
@@ -196,6 +155,21 @@ export function usePublishSidebar({
       }
       toast.success(m.products.editForm.etsy.scheduleCancelledToast);
       router.refresh();
+    });
+  };
+
+  const onMarkSold = () => {
+    if (!window.confirm(m.products.editForm.etsy.markSoldConfirm)) {
+      return;
+    }
+    startTransition(async () => {
+      const result = await markAsSold(product.id);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(m.products.editForm.etsy.soldToast);
+      router.push("/products");
     });
   };
 
@@ -231,8 +205,8 @@ export function usePublishSidebar({
     onSaveDraft,
     onSchedule,
     onPublishNow,
-    onUpdate,
     onCancelSchedule,
+    onMarkSold,
     onArchive,
     onRestoreToDraft,
   };

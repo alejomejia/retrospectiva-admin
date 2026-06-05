@@ -238,18 +238,10 @@ export const products = pgTable(
     scheduledPublishAt: timestamp("scheduled_publish_at", {
       withTimezone: true,
     }),
-    // Populated once a published product is created on Etsy.
+    // Populated once a published product is created on Etsy. The
+    // listing id alone is enough to deep-link the public store CTA
+    // (`https://www.etsy.com/listing/{id}`).
     etsyListingId: bigint("etsy_listing_id", { mode: "number" }),
-    etsyState: text("etsy_state"),
-    // Inbound-sync mirror of the live Etsy listing price, in cents.
-    // Populated by the 15-min inbound poll (`inbound.ts`) so the admin
-    // reflects price/discount edits made directly on Etsy. Display-only
-    // — never feeds the charm-priced outbound payload, to avoid a
-    // re-publish drift loop. See `etsyPriceToCents`.
-    etsyPriceCents: integer("etsy_price_cents"),
-    etsyPriceSyncedAt: timestamp("etsy_price_synced_at", {
-      withTimezone: true,
-    }),
     soldAt: timestamp("sold_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

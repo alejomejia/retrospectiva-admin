@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Tag, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { deleteProduct } from "@/lib/products/actions";
+import { markAsSold } from "@/lib/products/draft-actions";
 import { m } from "@/lib/i18n/messages.es";
 
 import type { ProductListItem } from "./types";
@@ -25,13 +26,22 @@ const DELETABLE: ReadonlySet<ProductListItem["status"]> = new Set([
   "archived",
 ]);
 
+/** Statuses a product can be manually marked sold from. Mirrors
+ *  `SELLABLE_STATUSES` in `markAsSold`. */
+const SELLABLE: ReadonlySet<ProductListItem["status"]> = new Set([
+  "published",
+  "scheduled",
+  "archived",
+]);
+
 export function RowActions({ row }: { row: ProductListItem }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
 
   const canDelete = DELETABLE.has(row.status);
-  if (!canDelete) return null;
+  const canMarkSold = SELLABLE.has(row.status);
+  if (!canDelete && !canMarkSold) return null;
 
   const onDelete = () => {
     if (!window.confirm(m.products.rowActions.confirmDelete)) return;
@@ -39,6 +49,20 @@ export function RowActions({ row }: { row: ProductListItem }) {
       const result = await deleteProduct(row.id);
       if (result.ok) {
         toast.success(m.products.rowActions.deletedToast);
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+      setOpen(false);
+    });
+  };
+
+  const onMarkSold = () => {
+    if (!window.confirm(m.products.rowActions.confirmMarkSold)) return;
+    startTransition(async () => {
+      const result = await markAsSold(row.id);
+      if (result.ok) {
+        toast.success(m.products.rowActions.soldToast);
         router.refresh();
       } else {
         toast.error(result.error);
@@ -60,17 +84,31 @@ export function RowActions({ row }: { row: ProductListItem }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          variant="destructive"
-          onSelect={(e) => {
-            e.preventDefault();
-            onDelete();
-          }}
-          disabled={isPending}
-        >
-          <Trash2 />
-          {m.products.rowActions.delete}
-        </DropdownMenuItem>
+        {canMarkSold && (
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              onMarkSold();
+            }}
+            disabled={isPending}
+          >
+            <Tag />
+            {m.products.rowActions.markSold}
+          </DropdownMenuItem>
+        )}
+        {canDelete && (
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={(e) => {
+              e.preventDefault();
+              onDelete();
+            }}
+            disabled={isPending}
+          >
+            <Trash2 />
+            {m.products.rowActions.delete}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

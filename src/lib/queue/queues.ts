@@ -47,37 +47,6 @@ export const etsyPublishQueue = new Queue("etsy-publish", {
 export type EtsyPublishJob = { productId: string };
 
 /**
- * Etsy listing update. Enqueued from the edit-mode "Actualizar"
- * sidebar action; the worker re-translates ES → EN, pushes the
- * full payload via `updateListing`, then re-syncs images + video
- * against the existing listing. jobId = `update:${productId}` so
- * back-to-back clicks coalesce on the same product.
- */
-export const etsyUpdateQueue = new Queue("etsy-update", {
-  connection: redis,
-  defaultJobOptions: DEFAULT_JOB_OPTIONS,
-});
-
-export type EtsyUpdateJob = { productId: string };
-
-/**
- * Inbound Etsy → admin sync. A single repeatable job (registered by
- * `etsy-inbound-worker.ts` via `upsertJobScheduler`, every 15 min)
- * polls each published listing's price + state and the shop's recent
- * paid receipts, then reconciles the narrow set of fields that flow
- * Etsy → admin (price mirror, listing state, sold transition). Etsy
- * has no push webhooks, so polling is the only option.
- *
- * The job carries no payload — it's shop-wide, not per-product.
- */
-export const etsyInboundSyncQueue = new Queue("etsy-inbound-sync", {
-  connection: redis,
-  defaultJobOptions: DEFAULT_JOB_OPTIONS,
-});
-
-export type EtsyInboundSyncJob = Record<string, never>;
-
-/**
  * Synthetic-model generation (Model Studio, Task 8). One job per
  * `ai_models` row. Worker calls `gpt-image-2`, uploads contact
  * sheet + cropped panels to R2, populates the row's R2 keys.
@@ -110,11 +79,13 @@ export const aiImagePlacementQueue = new Queue("ai-image-placement", {
 export type AiImagePlacementJob = { productId: string };
 
 /**
- * Outbound webhook to the public `retrospectiva-website` repo
- * (Phase 7). Producer: the Etsy publish processor at the end of a
- * successful publish (and later, the archive-on-sale flow). The
- * website consumer revalidates its product cache and, for new
- * publishes, surfaces the listing on the store.
+ * Outbound webhook to the public `retrospectiva-website` repo. The
+ * website consumer revalidates its product cache and updates the
+ * store. Producers:
+ *   - `publish` — the Etsy publish processor surfaces a new listing.
+ *   - `sold`    — operator manually marks a product sold (still shown
+ *                 on the store, flagged sold).
+ *   - `archive` — operator pulls a product that wasn't sold.
  *
  * jobId = `${kind}:${productId}` so re-pushes of the same kind for
  * the same product coalesce — BullMQ ignores adds for an existing
@@ -126,7 +97,7 @@ export const websiteWebhookQueue = new Queue("website-webhook", {
   defaultJobOptions: DEFAULT_JOB_OPTIONS,
 });
 
-export type WebsiteWebhookKind = "publish" | "archive";
+export type WebsiteWebhookKind = "publish" | "archive" | "sold";
 
 export type WebsiteWebhookJob = {
   productId: string;

@@ -50,7 +50,7 @@ function fakePayload(): WebsitePayload {
       lengthCm: null,
       braSize: null,
     },
-    etsy: { listingId: 1, state: "active" },
+    etsy: { listingId: 1 },
     images: [],
     video: null,
     publishedAt: "2026-05-10T00:00:00.000Z",

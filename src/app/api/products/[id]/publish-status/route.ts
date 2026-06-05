@@ -25,7 +25,6 @@ export async function GET(
     .select({
       status: products.status,
       etsyListingId: products.etsyListingId,
-      etsyState: products.etsyState,
     })
     .from(products)
     .where(eq(products.id, id))
@@ -46,10 +45,6 @@ export async function GET(
           "etsy-publish.completed",
           "etsy-publish.skipped",
           "etsy-publish.failed",
-          "etsy-update.started",
-          "etsy-update.completed",
-          "etsy-update.skipped",
-          "etsy-update.failed",
         ]),
       ),
     )
@@ -59,7 +54,6 @@ export async function GET(
   return NextResponse.json({
     status: product.status,
     etsyListingId: product.etsyListingId,
-    etsyState: product.etsyState,
     lastEventType: lastEvent?.type ?? null,
     lastEventAt: lastEvent?.createdAt ?? null,
   });

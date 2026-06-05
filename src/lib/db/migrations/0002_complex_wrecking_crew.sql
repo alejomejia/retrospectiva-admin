@@ -1,0 +1,1 @@
+ALTER TABLE "products" DROP COLUMN "etsy_price_cents";

@@ -48,7 +48,6 @@ const ETSY_TOKEN_URL = "https://api.etsy.com/v3/public/oauth/token";
 export const ETSY_SCOPES = [
   "listings_w",
   "listings_r",
-  "transactions_r",
   "shops_r",
 ] as const;
 

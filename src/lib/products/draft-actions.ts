@@ -20,7 +20,8 @@ import {
 import {
   aiEnrichQueue,
   etsyPublishQueue,
-  etsyUpdateQueue,
+  websiteWebhookQueue,
+  type WebsiteWebhookKind,
 } from "@/lib/queue/queues";
 import { devGroup } from "@/lib/utils/dev";
 
@@ -185,13 +186,86 @@ export async function saveDraftAndExit(id: string): Promise<DraftActionResult> {
 
 /**
  * Lifecycle actions for non-draft products on the flat edit form.
- * The real Etsy-side delist / publish wiring lands in Task 9 / Phase
- * 4c; for now these only mutate local state. Each action is small
- * enough that a shared helper would obscure the intent.
+ * The app is one-way (admin → Etsy), so these only mutate local
+ * state — none of them touch the live Etsy listing. `sold` and
+ * `archive` additionally notify the public website so the store
+ * re-validates the product.
  */
 
+/** Statuses a product can be marked sold from — all imply it has (or
+ *  had) a live listing/store presence. A never-published draft can't
+ *  be "sold". */
+const SELLABLE_STATUSES: ReadonlySet<string> = new Set([
+  "published",
+  "scheduled",
+  "archived",
+]);
+
+/**
+ * Best-effort website revalidation. Mirrors the publish path: a Redis
+ * hiccup here must not fail the user's action, since the DB status is
+ * already committed. jobId scopes coalescing per-product per-kind.
+ */
+async function notifyWebsite(
+  productId: string,
+  kind: WebsiteWebhookKind,
+): Promise<void> {
+  try {
+    await websiteWebhookQueue.add(
+      kind,
+      { productId, kind },
+      { jobId: `${kind}:${productId}` },
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    dev.warn("website webhook enqueue failed (non-fatal)", productId, kind, msg);
+  }
+}
+
+/**
+ * Manually mark a product as sold. Distinct from archive: a sold
+ * garment stays visible on the store (flagged sold), an archived one
+ * is pulled. Sets `sold_at` and fires the `sold` website webhook.
+ * Allowed from `published` / `scheduled` / `archived`.
+ */
+export async function markAsSold(id: string): Promise<DraftActionResult> {
+  await requireSession();
+  try {
+    const [row] = await db
+      .select({ status: products.status })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!row) {
+      return { ok: false, error: m.errors.productNotFound };
+    }
+    if (!SELLABLE_STATUSES.has(row.status)) {
+      return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+
+    await db
+      .update(products)
+      .set({ status: "sold", soldAt: sql`now()`, updatedAt: sql`now()` })
+      .where(eq(products.id, id));
+    dev.log("status → sold", id);
+
+    await notifyWebsite(id, "sold");
+
+    revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
+    return { ok: true };
+  } catch (err) {
+    dev.error("markAsSold DB error:", err);
+    return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
+}
+
 export async function archiveProduct(id: string): Promise<DraftActionResult> {
-  return setStatus(id, "archived", "product.archived");
+  const result = await setStatus(id, "archived", "product.archived");
+  if (result.ok) {
+    await notifyWebsite(id, "archive");
+  }
+  return result;
 }
 
 export async function restoreToDraft(id: string): Promise<DraftActionResult> {
@@ -345,77 +419,6 @@ export async function publishNow(id: string): Promise<DraftActionResult> {
     return { ok: true };
   } catch (err) {
     dev.error("publishNow error", err);
-    return { ok: false, error: m.errors.couldNotSaveChanges };
-  }
-}
-
-/**
- * Edit-mode "Actualizar" — pushes the current product state to its
- * existing Etsy listing. Allowed from `published` and `scheduled`
- * (both have an `etsy_listing_id`). Enqueues a job on the
- * `etsy-update` queue; the worker handles translation + listing
- * sync + media re-upload. The client polls
- * `/api/products/{id}/publish-status` for the terminal event
- * (`etsy-update.completed` / `.failed`).
- */
-export async function updateEtsyListing(
-  id: string,
-): Promise<DraftActionResult> {
-  await requireSession();
-  try {
-    const [row] = await db
-      .select({
-        status: products.status,
-        etsyListingId: products.etsyListingId,
-        isFeatured: products.isFeatured,
-      })
-      .from(products)
-      .where(eq(products.id, id))
-      .limit(1);
-    if (!row) {
-      return { ok: false, error: m.errors.productNotFound };
-    }
-    if (row.status !== "published" && row.status !== "scheduled") {
-      return { ok: false, error: m.errors.couldNotSaveChanges };
-    }
-    if (row.etsyListingId == null) {
-      return { ok: false, error: m.errors.couldNotSaveChanges };
-    }
-    // Pre-update featured-cap gate. Exclude this listing so re-pushing
-    // an already-featured one keeps its slot; block only when 4 other
-    // listings already hold them.
-    if (
-      await featuredSlotFullForProduct(
-        row.isFeatured,
-        Number(row.etsyListingId),
-      )
-    ) {
-      return {
-        ok: false,
-        error: m.products.stepper.publish.featuredCapReached,
-      };
-    }
-
-    await db
-      .update(products)
-      .set({ updatedAt: sql`now()` })
-      .where(eq(products.id, id));
-
-    const jobId = `update:${id}`;
-    await etsyUpdateQueue.remove(jobId).catch(() => {
-      /* no prior or already active — both fine */
-    });
-    await etsyUpdateQueue.add(
-      "update",
-      { productId: id },
-      { jobId },
-    );
-    dev.log("etsy-update enqueued", id);
-
-    revalidatePath(`/products/${id}`);
-    return { ok: true };
-  } catch (err) {
-    dev.error("updateEtsyListing error", err);
     return { ok: false, error: m.errors.couldNotSaveChanges };
   }
 }
