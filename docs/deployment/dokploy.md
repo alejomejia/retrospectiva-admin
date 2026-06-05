@@ -6,7 +6,7 @@ Traefik gives you automatic HTTPS (Let's Encrypt) and domain routing, so you
 don't run your own Caddy/Nginx.
 
 This repo already ships a four-service `docker-compose.yml`
-(`app`, `worker`, `postgres`, `redis`) — see [deployment.md](./deployment.md)
+(`app`, `worker`, `postgres`, `redis`) — see [deployment.md](./overview.md)
 for the architecture. The cleanest Dokploy mapping is the **Compose**
 service type: Dokploy just runs a production compose file straight from git.
 [Option B](#option-b--managed-databases--two-applications) covers the more
@@ -168,7 +168,7 @@ Notes:
   and Redis stay on the internal `default` network, never exposed.
 - `DATABASE_URL`/`REDIS_URL` use the service names `postgres` / `redis` (the
   app runs inside the compose network) — the hostname gotcha from
-  [deployment.md](./deployment.md) does not bite here.
+  [deployment.md](./overview.md) does not bite here.
 - The Traefik router/service names (`retrospectiva-app`) must be unique across
   your whole Dokploy instance.
 - Instead of hand-writing the labels you can leave them off and use the
@@ -261,7 +261,7 @@ build`); later deploys reuse the layer cache.
 ## 7 · Run the database migration
 
 The schema isn't applied automatically — the app expects migrations run
-explicitly (see [database-setup.md](./database-setup.md)). After the first
+explicitly (see [database-setup.md](../setup/database.md)). After the first
 successful deploy, exec into the running `app` container:
 
 - Dokploy → Compose service → **Terminal** (or the container's shell), then:
@@ -307,7 +307,7 @@ running admin, go to the Etsy connect flow; the redirect must exactly match
 `ETSY_REDIRECT_URI`
 (`https://admin.retrospectiva.com/api/etsy/oauth/callback`) — register that
 same URI in the Etsy developer app. See
-[etsy-developer-app.md](./etsy-developer-app.md).
+[etsy-developer-app.md](../etsy/developer-app.md).
 
 ---
 
@@ -318,7 +318,7 @@ webhook on the Compose service so a git push triggers it). After deploys that
 include a new migration, redo step 7.
 
 The reverse-proxy / rate-limit `X-Forwarded-For` concern from
-[deployment.md](./deployment.md) is handled for you: Traefik sets the
+[deployment.md](./overview.md) is handled for you: Traefik sets the
 forwarded headers, so per-IP throttling works without extra config.
 
 ---
@@ -414,7 +414,7 @@ docker exec -t <postgres_container_id> pg_dump -U retrospectiva retrospectiva \
 ```
 
 R2 has its own durability; the Postgres volume is the irreplaceable part. The
-local-dev `down -v` warnings in [deployment.md](./deployment.md) apply here
+local-dev `down -v` warnings in [deployment.md](./overview.md) apply here
 too — never wipe the production data volume.
 
 ---

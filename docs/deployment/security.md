@@ -2,7 +2,7 @@
 
 How the admin keeps bots, crawlers, and strangers out. Layered: app-level
 guards live in this repo; network-level lockdown lives in front of the app and
-is documented in [dokploy-deployment.md §11](./dokploy-deployment.md).
+is documented in [dokploy-deployment.md §11](./dokploy.md).
 
 ## Threat model
 
@@ -67,7 +67,7 @@ injects inline hydration scripts — see "Future hardening" below.
 ## Network-level lockdown (in front of the app)
 
 The strongest layer. Pick one in
-[dokploy-deployment.md §11](./dokploy-deployment.md):
+[dokploy-deployment.md §11](./dokploy.md):
 
 - **Traefik IP allowlist** — only your known IPs reach the panel.
 - **Cloudflare Access / Zero Trust** — identity gate at the edge; origin

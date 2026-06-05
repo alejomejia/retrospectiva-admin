@@ -3,7 +3,7 @@
 How the admin uses OpenAI to fill in the Etsy-listing content from a
 product photo + users manual inputs. This is what the older
 roadmap called "Phase 6"; the implementation lands alongside the
-product form rebuild (see [product-form.md](./product-form.md)).
+product form rebuild (see [product-form.md](../product/form.md)).
 
 The UX side of this lives in step 2 of the new-product stepper. This
 doc focuses on the **pipeline**: prompts, queues, structured outputs,

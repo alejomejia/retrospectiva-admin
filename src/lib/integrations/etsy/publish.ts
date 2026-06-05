@@ -39,7 +39,7 @@ const dev = devGroup("etsy.publish");
  * env to `true` (or `1`) to activate listings as part of the
  * publish flow. NOTE: read directly from `process.env` because the
  * BullMQ worker can't import `@/lib/utils/config` — see
- * `docs/project-conventions.md` §1.
+ * `docs/overview/project-conventions.md` §1.
  */
 function shouldActivateListing(): boolean {
   const v = process.env.ETSY_ACTIVATE_ON_PUBLISH;

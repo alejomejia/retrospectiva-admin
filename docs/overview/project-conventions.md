@@ -85,7 +85,7 @@ toasts, action errors, or zod messages.
 (thrown deep in libs, only seen in server logs), and the brand mark
 "Retrospectiva Admin".
 
-See [localization.md](./localization.md).
+See [localization.md](../product/localization.md).
 
 ## 3. Dev-only logging via `@/lib/utils/dev`
 
@@ -188,7 +188,7 @@ What doesn't: server actions that hit the DB (no easy mock surface
 in our setup), UI components without complex state. The Playwright
 specs in Phase 8+ will cover end-to-end flows.
 
-See [testing.md](./testing.md) for the Vitest / Playwright config.
+See [testing.md](../testing/overview.md) for the Vitest / Playwright config.
 
 ## 9. File organization
 
@@ -242,7 +242,7 @@ repo. They're not "code rules" strictly, but they're load-bearing
 for the project.
 
 The canonical version lives in
-[`.agents/skills/project-conventions/collaboration-norms.md`](../.agents/skills/project-conventions/collaboration-norms.md)
+[`.agents/skills/project-conventions/collaboration-norms.md`](../../.agents/skills/project-conventions/collaboration-norms.md)
 — auto-loaded when Claude reads project skills. The summary:
 
 - **Rule 1: Don't add features the user didn't ask for.** Defensive

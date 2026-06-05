@@ -9,7 +9,7 @@ import type { WebsitePayload } from "./payload-mapper";
  *
  * Read env directly: this module is imported by the BullMQ worker,
  * which can't load `@/lib/utils/config` (`server-only`). See
- * `docs/project-conventions.md` §1.
+ * `docs/overview/project-conventions.md` §1.
  *
  * Throws on:
  *   - Missing `WEBSITE_WEBHOOK_URL` / `WEBSITE_WEBHOOK_SECRET`.

@@ -17,7 +17,7 @@ import { S3Client } from "@aws-sdk/client-s3";
  * worker via `model-generate.ts` → `r2/upload.ts` → this file.
  * Same sanctioned exception as `db/client.ts`, `openai/client.ts`,
  * and `queue/redis.ts`; tracked in
- * `docs/project-conventions.md` §1. Client-bundle protection is
+ * `docs/overview/project-conventions.md` §1. Client-bundle protection is
  * preserved because `@aws-sdk/client-s3` is a Node-only SDK that
  * fails to bundle into a client build anyway.
  */

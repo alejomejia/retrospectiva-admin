@@ -24,11 +24,11 @@ import { fromEnv } from "@/lib/utils/helpers";
  * variable of the matching name so prompt iteration doesn't need
  * a redeploy — same convention as `BASE_MODEL_GENERATION_PROMPT`.
  *
- * Prompts are in English per `docs/project-conventions.md` §2
+ * Prompts are in English per `docs/overview/project-conventions.md` §2
  * (admin UI is Spanish-only; outbound model calls are English).
  *
- * Reference: `docs/per-product-image-gen.md` "Prompt assembly" and
- * `docs/model-generation/phase-2-garment-application.md`.
+ * Reference: `docs/ai/per-product-image-gen.md` "Prompt assembly" and
+ * `docs/ai/model-generation/phase-2-garment-application.md`.
  *
  * NOTE: this file follows the `prompts.ts` policy of reading
  * `process.env` directly (no `import "server-only"`) so the BullMQ

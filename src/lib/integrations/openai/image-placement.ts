@@ -434,7 +434,7 @@ async function extractFirstImage(response: unknown): Promise<Buffer> {
 
 // ----- Stored-string coercion --------------------------------------
 //
-// DB columns are `text` (per `docs/per-product-image-gen.md` "Schema":
+// DB columns are `text` (per `docs/ai/per-product-image-gen.md` "Schema":
 // validation lives at the zod boundary so prompt iteration doesn't
 // require a migration). These helpers narrow to the typed enum here
 // at the worker boundary so the prompt builder gets concrete unions.

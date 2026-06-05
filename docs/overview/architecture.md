@@ -30,7 +30,7 @@ How the admin is shaped, from top-level stack down to file layout.
 | Object store | Cloudflare R2 (S3-compatible) |
 | SDK | `@aws-sdk/client-s3` with R2 endpoint |
 | Public access | Custom domain bound to bucket, base URL in `R2_PUBLIC_BASE_URL` |
-| Key layout | `products/{YYYY}/{MM}/{DD}/{productId}/{role}/{uuid}.{ext}` — see [media-handling.md](./media-handling.md) |
+| Key layout | `products/{YYYY}/{MM}/{DD}/{productId}/{role}/{uuid}.{ext}` — see [media-handling.md](../ai/media-handling.md) |
 
 ## Background jobs (Phase 5)
 
@@ -59,7 +59,7 @@ How the admin is shaped, from top-level stack down to file layout.
 | Rate limit | In-memory token bucket, 5 attempts / 15 min per IP+username |
 | Gate | `proxy.ts` matcher excludes `/login`, `/api/auth/*`, `/api/webhooks/*`, `/api/health`, statics |
 
-See [auth.md](./auth.md) for the full picture, including the dotenv
+See [auth.md](../setup/auth.md) for the full picture, including the dotenv
 interpolation gotcha that drove the base64-wrap choice.
 
 ## UI system
@@ -77,7 +77,7 @@ interpolation gotcha that drove the base64-wrap choice.
 
 The admin is **Spanish-only** for the primary user. All user-
 facing strings live in `src/lib/i18n/messages.es.ts`. See
-[localization.md](./localization.md) for the full direction including
+[localization.md](../product/localization.md) for the full direction including
 Etsy listing locales and AI translation flow.
 
 ## Folder layout
@@ -135,17 +135,17 @@ src/
 The same `Dockerfile` builds the app and the worker (multi-stage build,
 shared base + deps + builder + runner stages).
 
-See [deployment.md](./deployment.md) for the production workflow.
+See [deployment.md](../deployment/overview.md) for the production workflow.
 
 ## Things that aren't here yet
 
 | Phase | Status | Doc |
 | --- | --- | --- |
 | 0 — Foundations | ✅ Done | [roadmap.md](./roadmap.md) |
-| 1 — Auth | ✅ Done | [auth.md](./auth.md) |
+| 1 — Auth | ✅ Done | [auth.md](../setup/auth.md) |
 | 2 — Product form (MVP) | ✅ Done | — |
-| 3 — Media on R2 | ✅ Done | [media-handling.md](./media-handling.md) |
-| 4 — Etsy integration | ⏳ Pending | [etsy-listing-payload.md](./etsy-listing-payload.md) |
+| 3 — Media on R2 | ✅ Done | [media-handling.md](../ai/media-handling.md) |
+| 4 — Etsy integration | ⏳ Pending | [etsy-listing-payload.md](../etsy/listing-payload.md) |
 | 5 — Background jobs | ⏳ Pending | — |
 | 6 — AI enrichment | ⏳ Pending | — |
 | 7 — Webhooks | ⏳ Pending | — |

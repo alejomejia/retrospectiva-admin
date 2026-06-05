@@ -1,7 +1,7 @@
 # TODO
 
-Pending work, grouped by area. Live bookmark is `docs/handoff.md`;
-historical record is `docs/roadmap.md`. This file is the actionable
+Pending work, grouped by area. Live bookmark is `docs/overview/handoff.md`;
+historical record is `docs/overview/roadmap.md`. This file is the actionable
 checklist.
 
 ---
@@ -117,7 +117,7 @@ Root `(admin)/page.tsx` still the Phase 2 minimal landing.
 - All code in English. Spanish lives only in `messages.es.ts`.
   (`feedback_code-english-only`)
 - Worker can't load `server-only` modules. Sanctioned exceptions in
-  `docs/project-conventions.md` §1.
+  `docs/overview/project-conventions.md` §1.
 - R2 keys carry `{run_id}` segment for Model Studio. Cropper uploads
   under same prefix.
 - Regenerate UX: always `kickedAt` local state → UI flips to skeleton

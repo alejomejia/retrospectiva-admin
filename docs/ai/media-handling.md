@@ -64,7 +64,7 @@ This was a deliberate switch. Background:
 
 - WebP gives ~50% smaller files than JPEG at equivalent quality.
 - **But Etsy's listing-image upload endpoint doesn't accept WebP** —
-  see [etsy-listing-payload.md §4](./etsy-listing-payload.md). Sending
+  see [etsy-listing-payload.md §4](../etsy/listing-payload.md). Sending
   a WebP gets rejected at publish time.
 
 Two options:

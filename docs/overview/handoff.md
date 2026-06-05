@@ -35,7 +35,7 @@ After that: **Phase 8 (Dashboard)** then **Phase 9 (QoL drip)**.
 
 Paste into a new Claude Code session in this repo:
 
-> Read `docs/handoff.md` first, then `docs/roadmap.md` for context.
+> Read `docs/overview/handoff.md` first, then `docs/overview/roadmap.md` for context.
 > Next active work is Phase 7 inbound Etsy receipts polling — sale
 > detection that flips products to `archived`. Outbound webhook is
 > done; this is the inbound side.
@@ -166,7 +166,7 @@ Root `(admin)/page.tsx` still the Phase 2 minimal landing.
   Spanish lives only in `messages.es.ts`. Memory:
   `feedback_code-english-only`.
 - **Worker can't load `server-only` modules.** Sanctioned exceptions
-  in `docs/project-conventions.md` §1.
+  in `docs/overview/project-conventions.md` §1.
 - **R2 keys carry the `{run_id}` segment** for Model Studio. Cropper
   uploads to the same prefix as the sheet.
 - **Regenerate UX**: always a `kickedAt` local state so UI flips to

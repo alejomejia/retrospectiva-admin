@@ -9,7 +9,7 @@ import type { MetadataRoute } from "next";
  * Note: robots.txt is advisory — it only stops crawlers that choose to obey
  * it. The real access control is the auth gate in `proxy.ts` plus the
  * network-level lockdown (reverse-proxy IP allowlist / Cloudflare Access)
- * described in `docs/dokploy-deployment.md`.
+ * described in `docs/deployment/dokploy.md`.
  */
 
 // Named scrapers that ignore `User-Agent: *` or that we want on record.

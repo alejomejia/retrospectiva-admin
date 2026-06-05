@@ -8,7 +8,7 @@
  *
  * NOTE: no `import "server-only"` here, same reason as the rest of
  * this folder — these helpers run from both the Next runtime and
- * the raw-tsx BullMQ worker. See `docs/project-conventions.md` §1.
+ * the raw-tsx BullMQ worker. See `docs/overview/project-conventions.md` §1.
  */
 
 import { devGroup } from "@/lib/utils/dev";

@@ -7,7 +7,7 @@ import { getClothingType, type Measurement } from "./clothing-types";
  * webhook payload, display hints) call `doubledMeasurements` to get
  * the circumference values. Form layer reads/writes flat.
  *
- * See [docs/product-form.md](../../../docs/product-form.md) §3.
+ * See [docs/product/form.md](../../../docs/product/form.md) §3.
  */
 
 export type ProductMeasurements = {

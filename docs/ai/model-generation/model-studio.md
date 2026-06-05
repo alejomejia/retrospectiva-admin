@@ -178,7 +178,7 @@ retry, no autoplay.
 ## 5 · R2 layout
 
 Aligns with the existing `assets/models/` prefix
-([../ai-enrichment.md §6](../ai-enrichment.md)).
+([../ai-enrichment.md §6](../enrichment.md)).
 
 ```
 assets/

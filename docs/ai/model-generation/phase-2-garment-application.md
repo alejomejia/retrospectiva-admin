@@ -557,7 +557,7 @@ failure mode shows up in real outputs.
 - **Modular composition, fixed block order.** The runtime
   concatenates 8 named blocks; it does not reorder them.
 - **Prompts stay in English**, per
-  [../project-conventions.md](../project-conventions.md) §2.
+  [../project-conventions.md](../../overview/project-conventions.md) §2.
 - **Two image attachments per call** — identity reference (Phase
   1 panel) first, garment reference (`ai_reference` product image)
   second.

@@ -71,7 +71,7 @@ Two reasons:
 ### What about UI dates and numbers?
 
 - **Prices:** `formatCents` defaults to `en-IE` locale (`€49.99`).
-  See [media-handling.md](./media-handling.md) for the rationale on
+  See [media-handling.md](../ai/media-handling.md) for the rationale on
   why prices stay dot-decimal even though the admin is Spanish.
 - **Dates:** Used via `.toLocaleString("es-ES")` at the consumer
   level. The R2 date partition uses `Europe/Madrid` for the same

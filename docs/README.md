@@ -1,29 +1,84 @@
 # Retrospectiva Admin — Docs
 
-Reference material for the admin panel. Each file is self-contained;
-read whichever matches the question you've got.
+Reference material for the admin panel. Docs are grouped by topic into
+folders; each file is self-contained. New here? Read
+**[overview/handoff.md](./overview/handoff.md)** first.
 
-## Where do I find...?
+## Folder map
+
+```
+docs/
+  overview/     what the app is, where it's going, how to work in it
+  setup/        get it running locally (database, auth)
+  deployment/   ship it to the VPS + harden it
+  etsy/         Etsy Open API integration, listings, ads
+  ai/           OpenAI enrichment, media, on-model image generation
+  product/      product form UI + localization
+  testing/      automated tests + manual smoke checklist
+  policies/     customer-facing shop policies (returns, shipping)
+```
+
+## Overview — start here
 
 | Question | Document |
 | --- | --- |
-| **Where did the last session leave off? What's the immediate next move?** | **[handoff.md](./handoff.md)** ← start here when resuming |
-| What is this app and how does it fit together? | [architecture.md](./architecture.md) |
-| How is auth set up? What's that `ALLOW_USERS` env gotcha? | [auth.md](./auth.md) |
-| How do I get Postgres running locally? | [database-setup.md](./database-setup.md) |
-| How do I deploy to the VPS? | [deployment.md](./deployment.md) |
-| What can we send to Etsy when we publish? | [etsy-listing-payload.md](./etsy-listing-payload.md) |
-| How do I register the Etsy developer app + get the env vars? | [etsy-developer-app.md](./etsy-developer-app.md) |
-| Why is the admin in Spanish but Etsy listings in English? | [localization.md](./localization.md) |
-| How do image and video uploads work? What are the limits? | [media-handling.md](./media-handling.md) |
-| How does the products list / new-product stepper / edit form work? | [product-form.md](./product-form.md) |
-| How does AI enrichment work (prompts, queues, gpt-image-2)? | [ai-enrichment.md](./ai-enrichment.md) |
-| How are the AI model-generation prompts structured (phases 1-4)? | [model-generation/](./model-generation/README.md) |
-| What are the code conventions for this project? | [project-conventions.md](./project-conventions.md) |
-| What's been built, what's next, what was decided? | [roadmap.md](./roadmap.md) |
-| How are tests structured? Why does `session.test.ts` need `node`? | [testing.md](./testing.md) |
-| What should I manually verify before declaring Phase 6 shippable? | [smoke-test.md](./smoke-test.md) |
-| What's the plan for per-product on-model image generation (Task 11)? | [per-product-image-gen.md](./per-product-image-gen.md) |
+| **Where did the last session leave off? What's the immediate next move?** | **[handoff.md](./overview/handoff.md)** ← start here when resuming |
+| What is this app and how does it fit together? | [architecture.md](./overview/architecture.md) |
+| What's been built, what's next, what was decided? | [roadmap.md](./overview/roadmap.md) |
+| What are the code conventions for this project? | [project-conventions.md](./overview/project-conventions.md) |
+
+## Setup — run it locally
+
+| Question | Document |
+| --- | --- |
+| How do I get Postgres running locally? | [setup/database.md](./setup/database.md) |
+| How is auth set up? What's that `ALLOW_USERS` env gotcha? | [setup/auth.md](./setup/auth.md) |
+
+## Deployment — ship + harden
+
+| Question | Document |
+| --- | --- |
+| How do I deploy to the VPS? | [deployment/overview.md](./deployment/overview.md) |
+| How do I deploy via Dokploy? | [deployment/dokploy.md](./deployment/dokploy.md) |
+| How is the app kept out of search indexes / hardened? | [deployment/security.md](./deployment/security.md) |
+
+## Etsy — the sales channel
+
+| Question | Document |
+| --- | --- |
+| How do I register the Etsy developer app + get the env vars? | [etsy/developer-app.md](./etsy/developer-app.md) |
+| What can we send to Etsy when we publish? | [etsy/listing-payload.md](./etsy/listing-payload.md) |
+| How should we run Etsy ads for the shop? | [etsy/advertising.md](./etsy/advertising.md) |
+
+## AI — enrichment + image generation
+
+| Question | Document |
+| --- | --- |
+| How does AI enrichment work (prompts, queues, gpt-image-2)? | [ai/enrichment.md](./ai/enrichment.md) |
+| How do image and video uploads work? What are the limits? | [ai/media-handling.md](./ai/media-handling.md) |
+| What's the plan for per-product on-model image generation (Task 11)? | [ai/per-product-image-gen.md](./ai/per-product-image-gen.md) |
+| How are the AI model-generation prompts structured (phases 1-4)? | [ai/model-generation/](./ai/model-generation/README.md) |
+
+## Product — UI + i18n
+
+| Question | Document |
+| --- | --- |
+| How does the products list / new-product stepper / edit form work? | [product/form.md](./product/form.md) |
+| Why is the admin in Spanish but Etsy listings in English? | [product/localization.md](./product/localization.md) |
+
+## Testing — automated + manual
+
+| Question | Document |
+| --- | --- |
+| How are tests structured? Why does `session.test.ts` need `node`? | [testing/overview.md](./testing/overview.md) |
+| What should I manually verify before declaring Phase 6 shippable? | [testing/smoke-test.md](./testing/smoke-test.md) |
+
+## Policies — customer-facing
+
+| Question | Document |
+| --- | --- |
+| What's the returns policy? | [policies/returns-policy.md](./policies/returns-policy.md) |
+| What's the shipping policy? | [policies/shipping-policy.md](./policies/shipping-policy.md) |
 
 ## The 30-second pitch
 
@@ -67,5 +122,5 @@ For future Claude sessions and human collaborators:
 - **Don't add features that weren't requested.** Defensive code, dark
   modes, "future-proof" abstractions — all of these should be
   proposed, not silently added.
-- See [project-conventions.md](./project-conventions.md) for code-level
+- See [project-conventions.md](./overview/project-conventions.md) for code-level
   conventions (i18n, env, logging, file structure).

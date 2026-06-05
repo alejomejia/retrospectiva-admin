@@ -34,7 +34,7 @@ import type { WebsiteWebhookKind } from "@/lib/queue/queues";
  * The mapper is read-only — no `server-only` marker because the
  * BullMQ worker (which can't load `server-only` modules) imports
  * it. R2 base URL is read from `process.env` directly for the same
- * reason; see `docs/project-conventions.md` §1.
+ * reason; see `docs/overview/project-conventions.md` §1.
  */
 
 export class WebsitePayloadError extends Error {

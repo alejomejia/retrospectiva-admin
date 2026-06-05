@@ -5,7 +5,7 @@ The unit suite (`pnpm test`) covers the leaf logic; this is for the
 integrated flows that span the browser ↔ Postgres ↔ Redis ↔ OpenAI
 boundaries and aren't worth wiring up as automated E2E yet (full
 Playwright lands alongside Phase 4c, see
-[roadmap.md](./roadmap.md)).
+[roadmap.md](../overview/roadmap.md)).
 
 Time: ~20 minutes if everything works. Note anything that surprises
 you — the goal is to catch UX regressions and timing issues the
@@ -177,7 +177,7 @@ These are tracked but explicitly NOT covered by this smoke pass:
 ## 8 · If something is off
 
 - Compare against the recent decisions log in
-  [roadmap.md](./roadmap.md) — most non-obvious behavior is documented
+  [roadmap.md](../overview/roadmap.md) — most non-obvious behavior is documented
   there with the "why" attached.
 - For AI-flow issues, check `ai_runs` in Postgres. Each call inserts
   a row with `kind`, `status`, `input_json`, `output_json`,

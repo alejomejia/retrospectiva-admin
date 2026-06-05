@@ -100,7 +100,7 @@ DATABASE_URL=postgres://retrospectiva:retrospectiva@localhost:5432/retrospectiva
 ```
 
 This trip-up bit us during setup; see
-[database-setup.md](./database-setup.md) for the full diagnostic
+[database-setup.md](../setup/database.md) for the full diagnostic
 list.
 
 ## TLS / reverse proxy
@@ -224,7 +224,7 @@ The Postgres volume grows with product count + events log. For a
 
 `docker compose logs -f app worker` for live tail. `[dev:auth]`,
 `[dev:images]`, `[dev:videos]` prefixes mean dev-only diagnostic logs
-(see [project-conventions.md](./project-conventions.md) §3); in
+(see [project-conventions.md](../overview/project-conventions.md) §3); in
 production those branches dead-code-eliminate to no-ops and never run.
 
 Server-side errors propagate to:

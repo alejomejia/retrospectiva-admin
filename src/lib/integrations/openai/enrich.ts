@@ -108,7 +108,7 @@ const MAX_OUTPUT_TOKENS = 1500;
 
 /** Public base URL for R2 images. Read here (not via `config`) to
  *  keep this file usable from the BullMQ worker — see
- *  `docs/project-conventions.md` §1. */
+ *  `docs/overview/project-conventions.md` §1. */
 const R2_PUBLIC_BASE_URL =
   process.env.R2_PUBLIC_BASE_URL ?? "http://localhost:9000";
 

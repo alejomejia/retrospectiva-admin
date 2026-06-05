@@ -5,7 +5,7 @@ import { devError, devLog } from "@/lib/utils/dev";
 // NOTE: this module is on the worker's import chain (via
 // `etsy/client.ts` → `refreshAccessToken`), so it can't depend on
 // `@/lib/utils/config` (`server-only` blocks tsx). Read env directly;
-// see `docs/project-conventions.md` §1.
+// see `docs/overview/project-conventions.md` §1.
 function requireEnv(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`${name} is not set`);

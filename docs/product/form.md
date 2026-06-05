@@ -11,8 +11,8 @@ the admin. Covers three surfaces:
    form**.
 
 The AI side of step 2 lives in its own doc:
-[ai-enrichment.md](./ai-enrichment.md). The Etsy publish side lives in
-[etsy-listing-payload.md](./etsy-listing-payload.md). This file is the
+[ai-enrichment.md](../ai/enrichment.md). The Etsy publish side lives in
+[etsy-listing-payload.md](../etsy/listing-payload.md). This file is the
 form/UX source of truth.
 
 ---

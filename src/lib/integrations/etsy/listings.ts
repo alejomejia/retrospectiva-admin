@@ -3,7 +3,7 @@
 // has no React server-condition shim. Client-bundle protection
 // comes from this file being imported only by server actions /
 // route handlers / the worker; no client component pulls it.
-// See `docs/project-conventions.md` §1.
+// See `docs/overview/project-conventions.md` §1.
 
 import { etsyFetch, type TokenStore } from "./client";
 

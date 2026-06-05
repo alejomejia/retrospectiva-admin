@@ -15,8 +15,8 @@ shaped each phase.
 | 4b — Etsy shop config | ✅ Done | Shipping profile + return policy defaults in `etsy_oauth`. |
 | 4c — Etsy publish | ✅ Done (E2E spec pending) | Real `createDraftListing → upload images/video → inline runTranslation → state="active"` flow. Etsy update flow (`etsyUpdateQueue` + `update.ts` + `update-worker.ts`) also shipped. First publish smoke confirmed. Playwright E2E spec still TODO. |
 | 5 — BullMQ infrastructure | ✅ Done | Worker boots, queues registered (`ai-enrich`, `etsy-publish`, `etsy-update`, `ai-model-generate`, `ai-image-placement`, `website-webhook`). |
-| 6 — Product form rebuild + AI enrichment | ✅ Done | List view (filters/tabs/search/pagination/column selector), 2-step new-product stepper, flat edit form, OpenAI Responses API for all enriched fields incl. primary/secondary colors. Admin Spanish-only; `runTranslation` invoked inline by Phase 4c publish processor. See [product-form.md](./product-form.md) + [ai-enrichment.md](./ai-enrichment.md). |
-| 6.5 — Model Studio | ✅ Done | Top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + 7 select-driven variables; saves to R2 with `{run_id}` versioning. Lifecycle: draft → active → archived. See [model-generation/](./model-generation/README.md). |
+| 6 — Product form rebuild + AI enrichment | ✅ Done | List view (filters/tabs/search/pagination/column selector), 2-step new-product stepper, flat edit form, OpenAI Responses API for all enriched fields incl. primary/secondary colors. Admin Spanish-only; `runTranslation` invoked inline by Phase 4c publish processor. See [product-form.md](../product/form.md) + [ai-enrichment.md](../ai/enrichment.md). |
+| 6.5 — Model Studio | ✅ Done | Top-level `/models` admin section. Generates the shop's library of synthetic fashion models via the Phase 1 prompt + 7 select-driven variables; saves to R2 with `{run_id}` versioning. Lifecycle: draft → active → archived. See [model-generation/](../ai/model-generation/README.md). |
 | 7 — Webhooks (out) | ✅ Done | Outbound to `retrospectiva-website` with HMAC + bilingual payload (`website/payload-mapper.ts`, `sign.ts`, `webhook-worker.ts`). |
 | 7 — Webhooks (in / sale loop) | ⏳ Pending | Etsy receipts polling (`getShopReceipts` every ~5 min) → sale handler flips `status='archived'`. Optional Etsy push receiver as safety net. |
 | 8 — Dashboard | ⏳ Pending | Date-range picker, revenue/sales KPIs, listings-by-status, activity feed, Tremor sales chart, cost view on `ai_runs.cost_usd`. Root `(admin)/page.tsx` still the Phase 2 minimal landing. |
@@ -58,7 +58,7 @@ Each entry: what we picked, what we considered, why we picked it.
   contain `$`, which Next.js dotenv interpolates. Single-quote-
   wrapping doesn't help (dotenv strips quotes before expand). Earlier
   workaround was `\$` escaping — fragile. Base64-wrapping removes the
-  problem entirely. See [auth.md](./auth.md).
+  problem entirely. See [auth.md](../setup/auth.md).
 - **Defer parser to first call.** Originally `users.ts` parsed at
   module load. A bad env crashed every server action that imported
   it with a runtime error page. Now lazy + cached; `signIn` wraps in
@@ -179,8 +179,8 @@ Each entry: what we picked, what we considered, why we picked it.
 
 This round combines what the original roadmap split into Phase 6
 (AI) and parts of Phase 4 (richer product fields needed for Etsy
-publish). See [product-form.md](./product-form.md) +
-[ai-enrichment.md](./ai-enrichment.md) for the full picture.
+publish). See [product-form.md](../product/form.md) +
+[ai-enrichment.md](../ai/enrichment.md) for the full picture.
 
 - **Tabs replace the status filter** on /products. Tabs:
   `activos | publicados | borradores | programados | archivados`.
@@ -238,7 +238,7 @@ publish). See [product-form.md](./product-form.md) +
 `gpt-image-2` worker, gutter-detect cropping with graceful fallback,
 R2 storage (contact sheet + 6 cropped panels), `ai_models` table
 with `draft → active → archived` lifecycle. See
-[model-generation/model-studio.md](./model-generation/model-studio.md).
+[model-generation/model-studio.md](../ai/model-generation/model-studio.md).
 
 Decisions and fixes layered on top, post-Task-8:
 
@@ -351,7 +351,7 @@ Decisions and fixes layered on top, post-Task-8:
   synthetic models is a curated, slow-changing library built ahead
   of time at `/models`. Per-product image generation later picks
   from that library (manual select per product, default
-  `Aleatorio`). See [model-generation/model-studio.md](./model-generation/model-studio.md).
+  `Aleatorio`). See [model-generation/model-studio.md](../ai/model-generation/model-studio.md).
 - **Per-product on-model image gen blocked until Model Studio
   ships.** The original gpt-image-2 placement task is rebuilt to
   consume `ai_models` rows from the Studio rather than generating
@@ -363,7 +363,7 @@ Decisions and fixes layered on top, post-Task-8:
 - **Model-generation prompt structure follows ChatGPT's
   recommendation** (one model per call, 6-panel contact sheet,
   modular prompts per phase). Original recommendation preserved
-  verbatim at [model-generation/source-notes.md](./model-generation/source-notes.md).
+  verbatim at [model-generation/source-notes.md](../ai/model-generation/source-notes.md).
 - **`ai_models` table is new, not a reuse of `product_images`.**
   Different lifecycle (curated library vs per-product media),
   different consumers (model dropdown vs gallery), different
@@ -413,11 +413,11 @@ If you're picking up the project and don't know where to start:
 
 1. **Make sure Phase 0–3 still pass:** `pnpm test`, `pnpm typecheck`,
    `pnpm lint`, `pnpm build`. They should be green on a fresh clone.
-2. **Read [media-handling.md](./media-handling.md)** because it
+2. **Read [media-handling.md](../ai/media-handling.md)** because it
    summarizes the most recent / non-obvious design.
 3. **Phase 4 (Etsy)** is the next blocker — without it, products
    can be drafted + media-attached but not published. See
-   [etsy-listing-payload.md](./etsy-listing-payload.md) for the field
+   [etsy-listing-payload.md](../etsy/listing-payload.md) for the field
    reference, then build:
    - `src/lib/integrations/etsy/{client,oauth,publish,listing-mapper}.ts`
    - `src/app/(admin)/settings/etsy/page.tsx` for the one-time OAuth

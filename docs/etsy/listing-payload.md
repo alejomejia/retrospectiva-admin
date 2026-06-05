@@ -69,8 +69,8 @@ Practical sequence:
 
 ## 2 · Authentication
 
-Out of scope for this doc — see `docs/etsy-oauth-setup.md` (TODO,
-Phase 4) and `src/lib/integrations/etsy/oauth.ts`. Short version:
+Out of scope for this doc — see [developer-app.md](./developer-app.md)
+and `src/lib/integrations/etsy/oauth.ts`. Short version:
 
 - OAuth 2.0 with PKCE.
 - Scopes for a publishing app:

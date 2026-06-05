@@ -10,7 +10,7 @@ canonical reference for prompt-crafting intent.
 
 The original conversation was in Spanish; the meta-commentary below
 is translated to English for consistency with the rest of `docs/`,
-per [project-conventions.md](../project-conventions.md) §2. **The
+per [project-conventions.md](../../overview/project-conventions.md) §2. **The
 prompt content itself was provided in English by ChatGPT and is
 preserved verbatim.**
 

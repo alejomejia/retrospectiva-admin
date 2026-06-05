@@ -13,7 +13,7 @@ import OpenAI from "openai";
  * protection is preserved because `openai` is a Node-only SDK that
  * fails to bundle into a client build anyway. Tracked alongside
  * `db/client.ts` and `queue/redis.ts` in
- * `docs/project-conventions.md` §1.
+ * `docs/overview/project-conventions.md` §1.
  */
 
 const globalForOpenAI = globalThis as unknown as {

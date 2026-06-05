@@ -8,7 +8,7 @@ one of those saved models + user-uploaded reference imagery to
 produce an on-model image attached to the product.
 
 > Read [model-generation/](./model-generation/README.md) first for
-> the pipeline phases context, and [handoff.md](./handoff.md) for
+> the pipeline phases context, and [handoff.md](../overview/handoff.md) for
 > what just shipped.
 
 ---

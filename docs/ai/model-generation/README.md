@@ -5,8 +5,8 @@ pipeline used by the admin to produce on-model product imagery for
 Etsy listings and social content.
 
 This is the "Phase 7 / Task 7" image work referenced in
-[../roadmap.md](../roadmap.md) and
-[../ai-enrichment.md](../ai-enrichment.md) §6. Those docs describe
+[../roadmap.md](../../overview/roadmap.md) and
+[../ai-enrichment.md](../enrichment.md) §6. Those docs describe
 the queueing, R2 storage, and DB plumbing; **this folder is only
 about the prompts themselves** — what we send to `gpt-image-2`,
 what variables are interpolated, and what the model is expected to
@@ -122,7 +122,7 @@ revisiting once Phase 2-4 prompts are stable.
 - The image worker (`gpt-image-2`) lives in
   `src/lib/integrations/openai/image-placement-worker.ts` and the
   queue is `ai-image-placement`. See
-  [../ai-enrichment.md §6](../ai-enrichment.md).
+  [../ai-enrichment.md §6](../enrichment.md).
 - Base model images for the shop are uploaded to R2 under
   `assets/models/{model_id}/contact-sheet.jpg` (+ cropped derivatives)
   and reused across all products. **Phase 1 is what generates those
@@ -143,7 +143,7 @@ revisiting once Phase 2-4 prompts are stable.
 - Prompts stay in English. The admin UI is Spanish, but every
   prompt sent to OpenAI is English-only (better model performance,
   fewer translation quirks). See
-  [../project-conventions.md](../project-conventions.md) §2.
+  [../project-conventions.md](../../overview/project-conventions.md) §2.
 - Variables are documented per phase with explicit example values.
   The interpolation contract (e.g. `{AGE_RANGE}`) is the same as
   the existing prompts in `src/lib/integrations/openai/prompts.ts`.

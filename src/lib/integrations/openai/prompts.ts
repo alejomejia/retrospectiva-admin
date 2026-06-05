@@ -18,7 +18,7 @@
  * reads `process.env` directly. Same reason as `openai/client.ts` —
  * the BullMQ worker (`queue/worker.ts`) runs under raw `tsx` where
  * the `server-only` chain throws. Tracked in
- * `docs/project-conventions.md` §1.
+ * `docs/overview/project-conventions.md` §1.
  */
 
 import { fromEnv } from "@/lib/utils/helpers";
@@ -281,7 +281,7 @@ export const TRANSLATE_ES_EN = fromEnv(
 
 // ----- Base model generation (Task 8 · Model Studio) -----
 //
-// Verbatim from `docs/model-generation/phase-1-base-model.md` §3.
+// Verbatim from `docs/ai/model-generation/phase-1-base-model.md` §3.
 // The `{VAR}` placeholders are filled at call time by the worker.
 // Override the entire template via `BASE_MODEL_GENERATION_PROMPT`
 // when iterating on tone without redeploying.
