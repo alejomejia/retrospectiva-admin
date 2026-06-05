@@ -8,7 +8,9 @@ import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
 import { aiRuns, etsyOauth, products } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
+import { featuredSlotFullForProduct } from "@/lib/integrations/etsy/publish";
 import { latestRunForKind } from "@/lib/integrations/openai/ai-runs-log";
+import { translateText } from "@/lib/integrations/openai/translate";
 import {
   REGENERABLE_FIELDS,
   type RegenerableField,
@@ -241,6 +243,11 @@ export async function scheduleProduct(
     };
   }
 
+  // No featured-cap gate here on purpose: scheduling may be days out,
+  // and a slot can free up before the job fires. The publish worker
+  // checks at fire time and publishes unfeatured if the cap is still
+  // full (`runScheduledPublish`).
+
   try {
     await db
       .update(products)
@@ -294,7 +301,7 @@ export async function publishNow(id: string): Promise<DraftActionResult> {
   await requireSession();
   try {
     const [row] = await db
-      .select({ status: products.status })
+      .select({ status: products.status, isFeatured: products.isFeatured })
       .from(products)
       .where(eq(products.id, id))
       .limit(1);
@@ -303,6 +310,15 @@ export async function publishNow(id: string): Promise<DraftActionResult> {
     }
     if (row.status !== "draft" && row.status !== "scheduled") {
       return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+    // Pre-publish featured-cap gate: cancel before enqueuing so the
+    // operator gets an immediate, actionable error instead of a
+    // silently-failed background job.
+    if (await featuredSlotFullForProduct(row.isFeatured)) {
+      return {
+        ok: false,
+        error: m.products.stepper.publish.featuredCapReached,
+      };
     }
 
     await db
@@ -351,6 +367,7 @@ export async function updateEtsyListing(
       .select({
         status: products.status,
         etsyListingId: products.etsyListingId,
+        isFeatured: products.isFeatured,
       })
       .from(products)
       .where(eq(products.id, id))
@@ -363,6 +380,20 @@ export async function updateEtsyListing(
     }
     if (row.etsyListingId == null) {
       return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+    // Pre-update featured-cap gate. Exclude this listing so re-pushing
+    // an already-featured one keeps its slot; block only when 4 other
+    // listings already hold them.
+    if (
+      await featuredSlotFullForProduct(
+        row.isFeatured,
+        Number(row.etsyListingId),
+      )
+    ) {
+      return {
+        ok: false,
+        error: m.products.stepper.publish.featuredCapReached,
+      };
     }
 
     await db
@@ -536,6 +567,65 @@ export async function regenerateProductFieldAction(
       ok: false,
       error: m.errors.couldNotSaveChangesDetail(fullMessage),
     };
+  }
+}
+
+export type SaveFooterOverrideResult =
+  | { ok: true; footerEsOverride: string | null; footerEnOverride: string | null }
+  | { ok: false; error: string };
+
+/** Mirrors the settings footer ceiling. */
+const FOOTER_OVERRIDE_MAX_LEN = 2000;
+
+/**
+ * Persist a per-product listing-footer override. The operator types
+ * only Spanish; we machine-translate it to English once here and cache
+ * both columns, so the publish + website paths stay pure column reads
+ * (no per-publish OpenAI call). An empty ES value clears the override,
+ * reverting the product to the shop-wide footer (both columns → null).
+ *
+ * Translating on save (rather than at publish) keeps the rare override
+ * out of the hot publish path and matches the "EN columns are a cache"
+ * precedent used by the AI-enriched fields.
+ */
+export async function saveListingFooterOverride(
+  productId: string,
+  footerEs: string,
+): Promise<SaveFooterOverrideResult> {
+  await requireSession();
+
+  const trimmed = footerEs.trim();
+  if (trimmed.length > FOOTER_OVERRIDE_MAX_LEN) {
+    return { ok: false, error: m.errors.invalidForm };
+  }
+
+  try {
+    // Empty → clear the override (inherit the shop-wide footer).
+    const footerEn = trimmed ? await translateText(trimmed) : "";
+    const footerEsOverride = trimmed || null;
+    const footerEnOverride = trimmed ? footerEn : null;
+
+    const [row] = await db
+      .update(products)
+      .set({
+        listingFooterEsOverride: footerEsOverride,
+        listingFooterEnOverride: footerEnOverride,
+        updatedAt: sql`now()`,
+      })
+      .where(eq(products.id, productId))
+      .returning({ id: products.id });
+    if (!row) {
+      return { ok: false, error: m.errors.productNotFound };
+    }
+
+    dev.log("saved listing footer override", productId, {
+      cleared: !trimmed,
+    });
+    return { ok: true, footerEsOverride, footerEnOverride };
+  } catch (err) {
+    dev.error("saveListingFooterOverride error", productId, err);
+    const baseMessage = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: m.errors.couldNotSaveChangesDetail(baseMessage) };
   }
 }
 

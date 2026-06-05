@@ -70,11 +70,14 @@ export type AiEnvironmentPreset = (typeof AI_ENVIRONMENT_PRESETS)[number];
 export const AI_FIT_OVERRIDES = ["tight", "loose", "oversized"] as const;
 export type AiFitOverride = (typeof AI_FIT_OVERRIDES)[number];
 
-const intCm = z
+const cm = z
   .number()
-  .int({ message: "Debe ser un número entero" })
   .min(1, { message: "Debe ser mayor que 0" })
-  .max(500, { message: "Demasiado grande" });
+  .max(500, { message: "Demasiado grande" })
+  // Allow halves/tenths but no finer; mirrors the input's 0.5 step.
+  .refine((n) => Number.isInteger(n * 10), {
+    message: "Máximo un decimal",
+  });
 
 const trimmedShortString = (max: number) =>
   z.string().trim().max(max).nullable().optional();
@@ -126,13 +129,15 @@ export const ProductDraftPatchSchema = z.object({
   isFeatured: z.boolean().optional(),
 
   // Measurements
-  shoulderCm: intCm.nullable().optional(),
-  chestCm: intCm.nullable().optional(),
-  waistCm: intCm.nullable().optional(),
-  hipCm: intCm.nullable().optional(),
-  riseCm: intCm.nullable().optional(),
-  legCm: intCm.nullable().optional(),
-  lengthCm: intCm.nullable().optional(),
+  shoulderCm: cm.nullable().optional(),
+  sleeveWidthCm: cm.nullable().optional(),
+  sleeveLengthCm: cm.nullable().optional(),
+  chestCm: cm.nullable().optional(),
+  waistCm: cm.nullable().optional(),
+  hipCm: cm.nullable().optional(),
+  riseCm: cm.nullable().optional(),
+  legCm: cm.nullable().optional(),
+  lengthCm: cm.nullable().optional(),
   braSize: trimmedShortString(20),
 
   // Etsy-bound AI metadata

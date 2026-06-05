@@ -5,6 +5,8 @@ import {
 } from "@/lib/products/pricing";
 import type { Product } from "@/lib/db/schema";
 
+import { appendListingFooter } from "@/lib/products/listing-footer";
+
 import { isEtsyColor } from "./etsy-colors";
 
 import type {
@@ -59,6 +61,12 @@ export type ShopPublishConfig = {
 export type MapToCreateDraftInput = {
   product: Product;
   shop: ShopPublishConfig;
+  /**
+   * Resolved EN listing footer (care/legal boilerplate) appended to
+   * the description. Empty string appends nothing. Defaults to "" so
+   * existing callers/tests that don't pass a footer are unaffected.
+   */
+  footerEn?: string;
 };
 
 export class ListingMapperError extends Error {
@@ -82,6 +90,7 @@ export class ListingMapperError extends Error {
 export function mapProductToCreateDraftPayload({
   product,
   shop,
+  footerEn = "",
 }: MapToCreateDraftInput): CreateDraftListingPayload {
   const title = (product.titleEn ?? "").trim();
   if (!title) throw new ListingMapperError("missing titleEn");
@@ -91,8 +100,11 @@ export function mapProductToCreateDraftPayload({
     );
   }
 
-  const description = (product.descriptionEn ?? "").trim();
-  if (!description) throw new ListingMapperError("missing descriptionEn");
+  const descriptionBody = (product.descriptionEn ?? "").trim();
+  if (!descriptionBody) throw new ListingMapperError("missing descriptionEn");
+  // Footer appended at the payload boundary only — never stored in the
+  // description column (keeps it out of the AI + translation paths).
+  const description = appendListingFooter(descriptionBody, footerEn);
 
   if (!product.etsyTaxonomyId) {
     throw new ListingMapperError("missing etsyTaxonomyId");

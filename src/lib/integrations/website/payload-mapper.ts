@@ -14,7 +14,12 @@ import {
   getRequiredMeasurements,
 } from "@/lib/products/clothing-types";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
+import {
+  appendListingFooter,
+  resolveListingFooter,
+} from "@/lib/products/listing-footer";
 import { inflatedListCents } from "@/lib/products/pricing";
+import { getProductSettings } from "@/lib/products/settings";
 
 import type { WebsiteWebhookKind } from "@/lib/queue/queues";
 
@@ -56,6 +61,8 @@ export type WebsiteVideo = {
 /** Doubled cm where applicable; null if not stored or not required. */
 export type WebsiteMeasurements = {
   shoulderCm: number | null;
+  sleeveWidthCm: number | null;
+  sleeveLengthCm: number | null;
   chestCm: number | null;
   waistCm: number | null;
   hipCm: number | null;
@@ -116,6 +123,8 @@ function effectiveListPriceCents(row: Product): number | null {
 
 type CmKey =
   | "shoulderCm"
+  | "sleeveWidthCm"
+  | "sleeveLengthCm"
   | "chestCm"
   | "waistCm"
   | "hipCm"
@@ -125,6 +134,8 @@ type CmKey =
 
 const MEASUREMENT_COLUMN_MAP: Record<Exclude<Measurement, "braSize">, CmKey> = {
   shoulder: "shoulderCm",
+  sleeveWidth: "sleeveWidthCm",
+  sleeveLength: "sleeveLengthCm",
   chest: "chestCm",
   waist: "waistCm",
   hip: "hipCm",
@@ -136,6 +147,8 @@ const MEASUREMENT_COLUMN_MAP: Record<Exclude<Measurement, "braSize">, CmKey> = {
 function buildMeasurements(row: Product): WebsiteMeasurements {
   const out: WebsiteMeasurements = {
     shoulderCm: null,
+    sleeveWidthCm: null,
+    sleeveLengthCm: null,
     chestCm: null,
     waistCm: null,
     hipCm: null,
@@ -191,6 +204,13 @@ export async function buildWebsitePayload(input: {
       `product ${productId} has no etsy_listing_id (cannot deep-link)`,
     );
   }
+
+  // Append the resolved listing footer (per-product override, else
+  // shop-wide default) to both languages — mirrors the Etsy payload so
+  // the website body matches the live listing. Pre-translated; no AI.
+  const footer = resolveListingFooter(row, await getProductSettings());
+  const descriptionEsWithFooter = appendListingFooter(descriptionEs, footer.es);
+  const descriptionEnWithFooter = appendListingFooter(descriptionEn, footer.en);
 
   const imageRows = await db
     .select({
@@ -267,7 +287,7 @@ export async function buildWebsitePayload(input: {
       secondary: row.etsySecondaryColor,
     },
     title: { es: titleEs, en: titleEn },
-    description: { es: descriptionEs, en: descriptionEn },
+    description: { es: descriptionEsWithFooter, en: descriptionEnWithFooter },
     tags: { es: row.etsyTagsEs, en: row.etsyTagsEn },
     materials: { es: row.etsyMaterialsEs, en: row.etsyMaterialsEn },
     era: row.etsyWhenMade,

@@ -5,18 +5,26 @@ type Row = Record<string, unknown>;
 
 const state: {
   products: Row[];
+  settings: Row[];
   images: Row[];
   videos: Row[];
 } = {
   products: [],
+  settings: [],
   images: [],
   videos: [],
 };
 
 // Sequenced source-table picker. `buildWebsitePayload` reads in
-// order: (1) products, (2) product_images, (3) product_videos.
+// order: (1) products, (2) product_settings (footer), (3)
+// product_images, (4) product_videos.
 let selectSeq = 0;
-const SELECT_PLAN: Array<keyof typeof state> = ["products", "images", "videos"];
+const SELECT_PLAN: Array<keyof typeof state> = [
+  "products",
+  "settings",
+  "images",
+  "videos",
+];
 
 function nextRows(): unknown[] {
   const table = SELECT_PLAN[selectSeq++] ?? "products";
@@ -105,6 +113,7 @@ function baseProduct(overrides: Row = {}): Row {
 beforeEach(() => {
   selectSeq = 0;
   state.products = [];
+  state.settings = [];
   state.images = [];
   state.videos = [];
   process.env.R2_PUBLIC_BASE_URL = "https://cdn.example.com";

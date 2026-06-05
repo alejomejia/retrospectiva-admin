@@ -1,5 +1,6 @@
 import { AiImageToggleForm } from "@/components/forms/ai-image-toggle-form";
 import { BuyPriceDefaultsForm } from "@/components/forms/buy-price-defaults-form";
+import { ListingFooterForm } from "@/components/forms/listing-footer-form";
 import { ShopMarkupForm } from "@/components/forms/shop-markup-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { SidebarSettings } from "@/components/layout/sidebar-settings";
@@ -78,6 +79,21 @@ export default async function ProductSettingsPage() {
               </CardHeader>
               <CardContent>
                 <BuyPriceDefaultsForm defaults={buyPriceDefaults} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>{m.settings.products.footer.cardTitle}</CardTitle>
+                <CardDescription>
+                  {m.settings.products.footer.cardDescription}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ListingFooterForm
+                  currentFooterEs={settings.listingFooterEs}
+                  currentFooterEn={settings.listingFooterEn}
+                />
               </CardContent>
             </Card>
           </div>

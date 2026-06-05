@@ -89,18 +89,8 @@ export function Step1Inputs({
           </h2>
           <p>{m.products.stepper.step1.description}</p>
         </header>
-        <div className="flex gap-8">
-          <div className="grow">
-            <GarmentTypeField value={vm.clothingType} onChange={vm.handleClothingTypeChange} />
-          </div>
-          <div className="grow">
-            <ConditionField value={vm.condition} onChange={vm.setCondition} />
-          </div>
-          <div className="grow">
-            <SizeField value={vm.size} onChange={vm.setSize} />
-          </div>
-        </div>
-        <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3 max-w-md">
+        
+        <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3 max-w-md mb-4">
           <div className="space-y-0.5">
             <Label htmlFor="is-featured">{m.products.form.featured}</Label>
             <p className="text-sm text-muted-foreground">
@@ -113,28 +103,18 @@ export function Step1Inputs({
             onCheckedChange={vm.handleFeaturedChange}
           />
         </div>
-        <div className="flex gap-8">
-          <PriceField
-            basePriceCents={vm.basePriceCents}
-            markupPercentOverride={vm.markupOverride}
-            shopMarkupPercent={shopMarkupPercent}
-            discountPercent={vm.discountPercent}
-            currency={product.currency}
-            onBaseChange={vm.setBasePriceCents}
-            onMarkupChange={vm.setMarkupOverride}
-            onDiscountChange={vm.setDiscountPercent}
-          />
-          <BuyPriceField
-            // Remount on clothing-type-driven overwrites so the input
-            // reflects the new default; user blur sets state locally.
-            key={`buy-${vm.clothingType ?? "none"}`}
-            buyPriceCents={vm.buyPriceCents}
-            basePriceCents={vm.basePriceCents}
-            currency={product.currency}
-            onChange={vm.setBuyPriceCents}
-          />
-        </div>
 
+        <div className="flex gap-8">
+          <div className="grow">
+            <GarmentTypeField value={vm.clothingType} onChange={vm.handleClothingTypeChange} />
+          </div>
+          <div className="grow">
+            <ConditionField value={vm.condition} onChange={vm.setCondition} />
+          </div>
+          <div className="grow">
+            <SizeField value={vm.size} onChange={vm.setSize} />
+          </div>
+        </div>
         <MeasurementsField
           clothingType={vm.clothingType}
           values={vm.measurements}
@@ -157,11 +137,45 @@ export function Step1Inputs({
         </div>
       </div>
 
-      {/* Product assets */}
+      {/* Pricing */}
       <div className="flex flex-col gap-8 p-6 border-b border-border">
         <header className="flex flex-col gap-2">
           <h2 className="flex items-center gap-1">
             <span className="font-mono text-brand-terracotta">02</span>
+            <span className="uppercase text-foreground">
+              {m.products.stepper.step1.pricingSection.title}
+            </span>
+          </h2>
+          <p>{m.products.stepper.step1.pricingSection.description}</p>
+        </header>
+        <div className="flex gap-8">
+          <PriceField
+            basePriceCents={vm.basePriceCents}
+            markupPercentOverride={vm.markupOverride}
+            shopMarkupPercent={shopMarkupPercent}
+            discountPercent={vm.discountPercent}
+            currency={product.currency}
+            onBaseChange={vm.setBasePriceCents}
+            onMarkupChange={vm.setMarkupOverride}
+            onDiscountChange={vm.setDiscountPercent}
+          />
+          <BuyPriceField
+            // Remount on clothing-type-driven overwrites so the input
+            // reflects the new default; user blur sets state locally.
+            key={`buy-${vm.clothingType ?? "none"}`}
+            buyPriceCents={vm.buyPriceCents}
+            basePriceCents={vm.basePriceCents}
+            currency={product.currency}
+            onChange={vm.setBuyPriceCents}
+          />
+        </div>
+      </div>
+
+      {/* Product assets */}
+      <div className="flex flex-col gap-8 p-6 border-b border-border">
+        <header className="flex flex-col gap-2">
+          <h2 className="flex items-center gap-1">
+            <span className="font-mono text-brand-terracotta">03</span>
             <span className="uppercase text-foreground">{m.products.stepper.step1.mediaTitle}</span>
           </h2>
           <p>{m.products.stepper.step1.mediaDescription}</p>
@@ -188,7 +202,7 @@ export function Step1Inputs({
         <header className="flex gap-4 items-center justify-between">
           <div className="flex flex-col gap-2">
             <h2 className="flex items-center gap-1">
-              <span className="font-mono text-brand-terracotta">03</span>
+              <span className="font-mono text-brand-terracotta">04</span>
               <span className="uppercase text-foreground">{m.products.stepper.step1.aiImageSection.title}</span>
             </h2>
             <p>{m.products.stepper.step1.aiImageSection.description}</p>
@@ -219,7 +233,7 @@ export function Step1Inputs({
       <div className="flex flex-col gap-8 p-6 border-t border-border">
         <header className="flex flex-col gap-2">
           <h2 className="flex items-center gap-1">
-            <span className="font-mono text-brand-terracotta">04</span>
+            <span className="font-mono text-brand-terracotta">05</span>
             <span className="uppercase text-foreground">
               {m.products.stepper.step1.shippingSection.title}
             </span>

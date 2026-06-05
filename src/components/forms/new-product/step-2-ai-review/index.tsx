@@ -5,6 +5,7 @@ import type { Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 
 import type { GeneratedAiImage } from "../ai-image-section";
+import { ListingFooterField } from "./step-2-ai-review-footer";
 import { AiImagePlacementSection } from "./step-2-ai-review-image-placement";
 import { FailureBanner } from "./step-2-ai-review-failure-banner";
 import { RunningSkeleton } from "./step-2-ai-review-running-skeleton";
@@ -22,9 +23,11 @@ import { useStep2AiReview } from "./use-step-2-ai-review";
 export function Step2AiReview({
   product,
   initialAiImage,
+  shopListingFooterEs,
 }: {
   product: Product;
   initialAiImage: GeneratedAiImage;
+  shopListingFooterEs: string;
 }) {
   const { phase, error, kick, kickPending } = useStep2AiReview({ product });
 
@@ -55,6 +58,14 @@ export function Step2AiReview({
             product={product}
             onRegenerate={kick}
             regenerating={kickPending}
+          />
+        )}
+        {phase !== "running" && (
+          <ListingFooterField
+            key={`footer-${product.updatedAt.getTime()}`}
+            productId={product.id}
+            shopFooterDefaultEs={shopListingFooterEs}
+            initialOverrideEs={product.listingFooterEsOverride}
           />
         )}
       </div>

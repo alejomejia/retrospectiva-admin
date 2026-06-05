@@ -5,6 +5,7 @@ type ProductRow = Record<string, unknown> & { id: string; status: string };
 
 const state: {
   products: ProductRow[];
+  settings: Array<Record<string, unknown>>;
   videos: Array<Record<string, unknown>>;
   etsyOauth: Array<Record<string, unknown>>;
   imagesForPublish: Array<{ r2Key: string; role: string }>;
@@ -12,12 +13,16 @@ const state: {
   translationCalls: Array<{ field: string; throwsCount: number }>;
   translationFailsRemaining: Record<string, number>;
   listingCreated: number | null;
+  createdPayload: Record<string, unknown> | null;
+  featuredListings: Array<{ listing_id: number }>;
+  featuredQueried: boolean;
   uploadedImages: Array<{ rank?: number; filename: string }>;
   uploadedVideo: string | null;
   translationUpserted: string | null;
   listingActivated: boolean;
 } = {
   products: [],
+  settings: [],
   videos: [],
   etsyOauth: [],
   imagesForPublish: [],
@@ -25,6 +30,9 @@ const state: {
   translationCalls: [],
   translationFailsRemaining: {},
   listingCreated: null,
+  createdPayload: null,
+  featuredListings: [],
+  featuredQueried: false,
   uploadedImages: [],
   uploadedVideo: null,
   translationUpserted: null,
@@ -32,14 +40,16 @@ const state: {
 };
 
 // Sequenced source-table picker. The publish flow performs these
-// reads in order: (1) products status guard, (2) products re-read
-// after translation, (3) etsy_oauth singleton (no where()),
-// (4) product_videos.
+// reads in order: (1) products status guard, (2) etsy_oauth
+// singleton (shop config, read before the featured-cap gate),
+// (3) products re-read after translation, (4) product_settings
+// (listing footer), (5) product_videos.
 let selectSeq = 0;
 const SELECT_PLAN: Array<keyof typeof state> = [
   "products",
-  "products",
   "etsyOauth",
+  "products",
+  "settings",
   "videos",
 ];
 
@@ -121,9 +131,16 @@ vi.mock("@/lib/integrations/openai/translate", () => ({
 }));
 
 vi.mock("./listings", () => ({
-  createDraftListing: vi.fn(async (_shop: number, _payload: unknown) => {
-    state.listingCreated = 9999;
-    return { listing_id: 9999, state: "draft" };
+  createDraftListing: vi.fn(
+    async (_shop: number, payload: Record<string, unknown>) => {
+      state.listingCreated = 9999;
+      state.createdPayload = payload;
+      return { listing_id: 9999, state: "draft" };
+    },
+  ),
+  getFeaturedListings: vi.fn(async (_shop: number) => {
+    state.featuredQueried = true;
+    return state.featuredListings;
   }),
   updateListing: vi.fn(async (_shop: number, _id: number, patch: unknown) => {
     if ((patch as { state?: string }).state === "active") {
@@ -199,6 +216,7 @@ function baseOauth(): Record<string, unknown> {
 beforeEach(() => {
   selectSeq = 0;
   state.products = [];
+  state.settings = [];
   state.videos = [];
   state.etsyOauth = [baseOauth()];
   state.imagesForPublish = [
@@ -209,6 +227,9 @@ beforeEach(() => {
   state.translationCalls = [];
   state.translationFailsRemaining = {};
   state.listingCreated = null;
+  state.createdPayload = null;
+  state.featuredListings = [];
+  state.featuredQueried = false;
   state.uploadedImages = [];
   state.uploadedVideo = null;
   state.translationUpserted = null;
@@ -314,5 +335,41 @@ describe("runScheduledPublish — happy path", () => {
     ];
     const result = await runScheduledPublish("p1");
     expect(result).toMatchObject({ skipped: false });
+  });
+});
+
+describe("runScheduledPublish — featured-listing cap", () => {
+  it("publishes with featured_rank when shop is under the cap", async () => {
+    state.products = [
+      { ...baseProduct(), isFeatured: true },
+      { ...baseProduct(), isFeatured: true },
+    ];
+    state.featuredListings = [{ listing_id: 1 }, { listing_id: 2 }];
+    const result = await runScheduledPublish("p1");
+    expect(result).toMatchObject({ skipped: false, listingId: 9999 });
+    expect(state.createdPayload).toMatchObject({ featured_rank: 1 });
+  });
+
+  it("publishes unfeatured (strips featured_rank) when shop already has 4 featured", async () => {
+    state.products = [
+      { ...baseProduct(), isFeatured: true },
+      { ...baseProduct(), isFeatured: true },
+    ];
+    state.featuredListings = [
+      { listing_id: 1 },
+      { listing_id: 2 },
+      { listing_id: 3 },
+      { listing_id: 4 },
+    ];
+    const result = await runScheduledPublish("p1");
+    // Scheduled jobs publish anyway — just without the feature flag.
+    expect(result).toMatchObject({ skipped: false, listingId: 9999 });
+    expect(state.createdPayload).not.toHaveProperty("featured_rank");
+  });
+
+  it("does not query Etsy featured listings when the product is not featured", async () => {
+    state.products = [baseProduct(), baseProduct()];
+    await runScheduledPublish("p1");
+    expect(state.featuredQueried).toBe(false);
   });
 });

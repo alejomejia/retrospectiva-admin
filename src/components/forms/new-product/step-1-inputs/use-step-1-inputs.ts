@@ -115,6 +115,8 @@ export function useStep1Inputs({
   );
   const [measurements, setMeasurements] = useState<ProductMeasurements>({
     shoulderCm: product.shoulderCm,
+    sleeveWidthCm: product.sleeveWidthCm,
+    sleeveLengthCm: product.sleeveLengthCm,
     chestCm: product.chestCm,
     waistCm: product.waistCm,
     hipCm: product.hipCm,

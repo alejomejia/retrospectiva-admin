@@ -43,6 +43,8 @@ export function buildEnrichInputContext(
     | "condition"
     | "size"
     | "shoulderCm"
+    | "sleeveWidthCm"
+    | "sleeveLengthCm"
     | "chestCm"
     | "waistCm"
     | "hipCm"
@@ -59,6 +61,8 @@ export function buildEnrichInputContext(
     size: product.size,
     measurements: compact({
       shoulderCm: product.shoulderCm,
+      sleeveWidthCm: product.sleeveWidthCm,
+      sleeveLengthCm: product.sleeveLengthCm,
       chestCm: product.chestCm,
       waistCm: product.waistCm,
       hipCm: product.hipCm,

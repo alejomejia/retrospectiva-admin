@@ -5,6 +5,7 @@ type ProductRow = Record<string, unknown> & { id: string; status: string };
 
 const state: {
   products: ProductRow[];
+  settings: Array<Record<string, unknown>>;
   videos: Array<Record<string, unknown>>;
   etsyOauth: Array<Record<string, unknown>>;
   imagesForPublish: Array<{ r2Key: string; role: string }>;
@@ -19,8 +20,10 @@ const state: {
   listingPatches: Array<Record<string, unknown>>;
   translationUpserted: string | null;
   webhookAdds: Array<{ name: string; opts: unknown }>;
+  featuredListings: Array<{ listing_id: number }>;
 } = {
   products: [],
+  settings: [],
   videos: [],
   etsyOauth: [],
   imagesForPublish: [],
@@ -35,14 +38,18 @@ const state: {
   listingPatches: [],
   translationUpserted: null,
   webhookAdds: [],
+  featuredListings: [],
 };
 
-// Read order: products guard, products re-read, etsy_oauth, videos.
+// Read order: products guard, etsy_oauth (shop config, before the
+// featured-cap gate), products re-read, product_settings (footer),
+// videos.
 let selectSeq = 0;
 const SELECT_PLAN: Array<keyof typeof state> = [
   "products",
-  "products",
   "etsyOauth",
+  "products",
+  "settings",
   "videos",
 ];
 
@@ -151,6 +158,7 @@ vi.mock("./listings", () => ({
     state.translationUpserted = lang;
     return { language: lang };
   }),
+  getFeaturedListings: vi.fn(async (_shop: number) => state.featuredListings),
 }));
 
 const { runEtsyListingUpdate } = await import("./update");
@@ -189,6 +197,7 @@ function baseOauth(): Record<string, unknown> {
 beforeEach(() => {
   selectSeq = 0;
   state.products = [];
+  state.settings = [];
   state.videos = [];
   state.etsyOauth = [baseOauth()];
   state.imagesForPublish = [
@@ -206,6 +215,7 @@ beforeEach(() => {
   state.listingPatches = [];
   state.translationUpserted = null;
   state.webhookAdds = [];
+  state.featuredListings = [];
 });
 
 describe("runEtsyListingUpdate — skip paths", () => {
@@ -278,5 +288,41 @@ describe("runEtsyListingUpdate — happy path", () => {
     ];
     const res = await runEtsyListingUpdate("p1");
     expect(res).toMatchObject({ skipped: false });
+  });
+});
+
+describe("runEtsyListingUpdate — featured-listing cap", () => {
+  it("updates unfeatured (strips featured_rank) when 4 *other* listings are featured", async () => {
+    state.products = [
+      { ...baseProduct(), isFeatured: true },
+      { ...baseProduct(), isFeatured: true },
+    ];
+    state.featuredListings = [
+      { listing_id: 1 },
+      { listing_id: 2 },
+      { listing_id: 3 },
+      { listing_id: 4 },
+    ];
+    const res = await runEtsyListingUpdate("p1");
+    // Other fields/media still sync; the listing just stays unfeatured.
+    expect(res).toMatchObject({ skipped: false, listingId: 9999 });
+    expect(state.listingPatches[0]).not.toHaveProperty("featured_rank");
+  });
+
+  it("keeps featured_rank when this listing is itself one of the 4 featured (excluded from count)", async () => {
+    state.products = [
+      { ...baseProduct(), isFeatured: true },
+      { ...baseProduct(), isFeatured: true },
+    ];
+    // 9999 is this listing; only 3 *others* hold slots.
+    state.featuredListings = [
+      { listing_id: 9999 },
+      { listing_id: 1 },
+      { listing_id: 2 },
+      { listing_id: 3 },
+    ];
+    const res = await runEtsyListingUpdate("p1");
+    expect(res).toMatchObject({ skipped: false, listingId: 9999 });
+    expect(state.listingPatches[0]).toMatchObject({ featured_rank: 1 });
   });
 });

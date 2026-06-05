@@ -244,6 +244,8 @@ export const m = {
         `Plano: ${flat} cm · Contorno: ${doubled} cm`,
       measurements: {
         shoulder: "Hombro",
+        sleeveWidth: "Ancho de manga",
+        sleeveLength: "Largo de manga",
         chest: "Pecho",
         waist: "Cintura",
         hip: "Cadera",
@@ -323,6 +325,23 @@ export const m = {
         regenerateFieldFailed: (label: string) =>
           `No se pudo regenerar ${label.toLowerCase()}.`,
       },
+      listingFooter: {
+        title: "Texto fijo al final",
+        description:
+          "Se añade al final de la descripción al publicar. No se envía a la IA.",
+        usingDefault: "Usando el texto por defecto de Ajustes › Productos:",
+        emptyDefault:
+          "No hay texto fijo configurado en Ajustes › Productos.",
+        overrideToggle: "Personalizar para este producto",
+        overrideLabel: "Texto fijo (solo este producto)",
+        overrideHelp:
+          "Escríbelo en español; lo traduciremos al inglés automáticamente al guardar.",
+        save: "Guardar texto",
+        saving: "Guardando…",
+        saved: "Texto guardado",
+        clear: "Volver al texto por defecto",
+        saveFailed: "No se pudo guardar el texto.",
+      },
       aiImage: {
         title: "Generación de imágenes IA",
         description:
@@ -388,6 +407,11 @@ export const m = {
         commentsLabel: "Comentarios",
         commentsPlaceholder:
           "Marca, tejido, detalles especiales, cómo combinar, defectos… Todo lo que quieras que la IA incluya en la descripción.",
+        pricingSection: {
+          title: "Precio",
+          description:
+            "Precio base, margen, precio de compra y descuento. El precio final se calcula con el margen aplicado.",
+        },
         mediaTitle: "Fotos y videos",
         mediaDescription:
           "La primera foto se usará como portada en Etsy y como base para la imagen generada por IA.",
@@ -536,6 +560,8 @@ export const m = {
         policiesMissing:
           "Configura el perfil de envío y la política de devolución en Ajustes → Integraciones antes de publicar o programar.",
         policiesMissingLink: "Ir a Ajustes",
+        featuredCapReached:
+          "Etsy permite un máximo de 4 productos destacados y ya hay 4. Desactiva «destacado» en este producto (o quítalo de otro) y vuelve a publicar.",
       },
       update: {
         title: "Actualizar en Etsy",
@@ -645,6 +671,18 @@ export const m = {
         rowSaved: "Guardado",
         rowError: "No se pudo guardar",
         clear: "Quitar",
+      },
+      footer: {
+        cardTitle: "Texto fijo al final de la descripción",
+        cardDescription:
+          "Se añade al final de la descripción de cada producto al publicar (Etsy y web), en ambos idiomas. No se envía a la IA: escribe tú mismo las dos versiones. Cada producto puede sobreescribirlo en el paso 2.",
+        labelEs: "Español",
+        labelEn: "Inglés",
+        placeholderEs:
+          "Todas nuestras prendas son vintage, por lo que son delicadas y deben lavarse a mano…",
+        placeholderEn:
+          "All our garments are vintage, so they are delicate and should be hand-washed…",
+        help: "Cuidados, avisos de imperfecciones, recomendaciones de talla… lo mismo en todos los productos.",
       },
     },
     etsy: {

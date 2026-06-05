@@ -169,6 +169,42 @@ export async function runTranslation(
   }
 }
 
+/**
+ * Translate a single ES string to EN, returning the result without
+ * touching the DB. Used for the per-product listing-footer override,
+ * whose EN counterpart is cached at save time rather than living in a
+ * translatable product column. Empty input short-circuits to "".
+ *
+ * Throws on OpenAI errors or a malformed response so the caller can
+ * surface the failure (the footer-override save aborts rather than
+ * caching a stale/empty translation).
+ */
+export async function translateText(text: string): Promise<string> {
+  const source = text.trim();
+  if (!source) return "";
+
+  const response = await openai.responses.create({
+    model: MODELS.translate,
+    input: [
+      { role: "system", content: TRANSLATE_ES_EN },
+      { role: "user", content: JSON.stringify({ value: source }) },
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "TranslatedString",
+        strict: true,
+        schema: STRING_SCHEMA,
+      },
+    },
+    max_output_tokens: MAX_OUTPUT_TOKENS,
+  });
+
+  logCacheUsage({ kind: "translation", model: MODELS.translate, response });
+
+  return parseTranslatedString(safeJsonParse(extractOutputText(response)));
+}
+
 function isEmptySource(v: unknown): boolean {
   if (v === null || v === undefined) return true;
   if (typeof v === "string") return v.trim() === "";

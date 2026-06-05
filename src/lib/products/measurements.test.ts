@@ -9,6 +9,8 @@ import {
 
 const blank: ProductMeasurements = {
   shoulderCm: null,
+  sleeveWidthCm: null,
+  sleeveLengthCm: null,
   chestCm: null,
   waistCm: null,
   hipCm: null,

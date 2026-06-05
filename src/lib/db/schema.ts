@@ -6,6 +6,7 @@ import {
   text,
   uuid,
   integer,
+  real,
   smallint,
   timestamp,
   jsonb,
@@ -130,6 +131,16 @@ export const products = pgTable(
     // enrichment prompt so the model weaves them into the description.
     comments: text("comments"),
 
+    // Optional per-product override of the shop-wide listing footer
+    // (the care/legal boilerplate appended to every listing). null =
+    // inherit the `product_settings` footer. The operator edits ES;
+    // `*_en` is the cached machine translation written at save time.
+    // The footer is appended only at the Etsy + website payload
+    // boundary — never persisted into the description columns — so it
+    // never feeds the AI enrich prompt nor the translation queue.
+    listingFooterEsOverride: text("listing_footer_es_override"),
+    listingFooterEnOverride: text("listing_footer_en_override"),
+
     // User-provided attributes (set in step 1 of the stepper).
     clothingType: clothingType("clothing_type"),
     condition: productCondition("condition").default("perfect"),
@@ -146,13 +157,15 @@ export const products = pgTable(
     // Measurements in cm, stored flat (as measured across the
     // garment). Doubled (×2) at the Etsy / website-payload boundary
     // for chest / waist / hip / leg — see clothing-types.ts.
-    shoulderCm: integer("shoulder_cm"),
-    chestCm: integer("chest_cm"),
-    waistCm: integer("waist_cm"),
-    hipCm: integer("hip_cm"),
-    riseCm: integer("rise_cm"),
-    legCm: integer("leg_cm"),
-    lengthCm: integer("length_cm"),
+    shoulderCm: real("shoulder_cm"),
+    sleeveWidthCm: real("sleeve_width_cm"),
+    sleeveLengthCm: real("sleeve_length_cm"),
+    chestCm: real("chest_cm"),
+    waistCm: real("waist_cm"),
+    hipCm: real("hip_cm"),
+    riseCm: real("rise_cm"),
+    legCm: real("leg_cm"),
+    lengthCm: real("length_cm"),
     braSize: text("bra_size"),
 
     // Etsy-bound metadata. AI-generated, user-editable in step 2.
@@ -510,6 +523,14 @@ export const productSettings = pgTable("product_settings", {
   // Read at the image-placement-worker boundary (Task 11) — cheaper
   // to short-circuit at enqueue time than to skip mid-worker.
   aiImageEnabled: boolean("ai_image_enabled").notNull().default(true),
+
+  // Shop-wide listing footer (care/legal boilerplate) appended to
+  // every listing description at the Etsy + website payload boundary.
+  // Stored as an ES/EN pair the operator maintains by hand so it never
+  // reaches the AI translation queue. Per-product overrides live on
+  // `products.listing_footer_*_override` (null = inherit these).
+  listingFooterEs: text("listing_footer_es").notNull().default(""),
+  listingFooterEn: text("listing_footer_en").notNull().default(""),
 
   // ----- Image-placement shop defaults (Task 11) ------------------
   //

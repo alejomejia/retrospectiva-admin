@@ -24,6 +24,13 @@ vi.mock("@/lib/queue/queues", () => ({
   etsyPublishQueue: { add: publishAddMock, remove: publishRemoveMock },
 }));
 
+// Featured-cap pre-publish gate. Defaults to "slot available" so the
+// existing schedule/publish paths proceed; the cap test flips it.
+const featuredSlotFullForProductMock = vi.fn().mockResolvedValue(false);
+vi.mock("@/lib/integrations/etsy/publish", () => ({
+  featuredSlotFullForProduct: featuredSlotFullForProductMock,
+}));
+
 // `enqueueEnrichJob` consults `latestRunForKind` to decide whether to
 // skip (latest = succeeded) or proceed. Default mock returns null so
 // the queue path runs; individual tests override per-case.
@@ -164,6 +171,8 @@ beforeEach(() => {
   publishRemoveMock.mockResolvedValue(undefined);
   latestRunForKindMock.mockReset();
   latestRunForKindMock.mockResolvedValue(null);
+  featuredSlotFullForProductMock.mockReset();
+  featuredSlotFullForProductMock.mockResolvedValue(false);
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-06-01T10:00:00.000Z"));
 });
@@ -479,5 +488,15 @@ describe("scheduleProduct", () => {
     const target = new Date("2026-06-01T11:00:00.000Z");
     const res = await scheduleProduct("p1", target.toISOString());
     expect(res.ok).toBe(false);
+  });
+
+  it("schedules regardless of the featured cap — the worker decides at fire time", async () => {
+    // Even if the shop is currently full, scheduling must succeed; a
+    // slot can free up before the delayed job fires.
+    featuredSlotFullForProductMock.mockResolvedValue(true);
+    const target = new Date("2026-06-01T11:00:00.000Z");
+    const res = await scheduleProduct("p1", target.toISOString());
+    expect(res.ok).toBe(true);
+    expect(publishAddMock).toHaveBeenCalledTimes(1);
   });
 });

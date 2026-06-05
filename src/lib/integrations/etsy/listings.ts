@@ -267,6 +267,30 @@ export async function getListing(
   return unwrap<ListingDetail>(res, "getListing");
 }
 
+/**
+ * GET /shops/{shop_id}/listings/featured
+ * Returns the shop's currently-featured listings. Etsy caps featured
+ * listings at 4 shop-wide, so the response is small and never needs
+ * pagination. The publish flow uses this to avoid sending a
+ * `featured_rank` once the cap is full (Etsy rejects the whole
+ * listing create/update otherwise).
+ */
+export async function getFeaturedListings(
+  shopId: number,
+  store?: TokenStore,
+): Promise<ListingDetail[]> {
+  const res = await etsyFetch(
+    `/shops/${shopId}/listings/featured`,
+    { method: "GET" },
+    store,
+  );
+  const data = await unwrap<{ results: ListingDetail[] }>(
+    res,
+    "getFeaturedListings",
+  );
+  return data.results ?? [];
+}
+
 export async function updateListing(
   shopId: number,
   listingId: number,

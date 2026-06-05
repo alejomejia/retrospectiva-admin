@@ -39,6 +39,7 @@ export function NewProductStepper({
   mode = "draft",
   shopMarkupPercent,
   shopAiImageEnabled,
+  shopListingFooterEs,
   etsyPoliciesConfigured,
   buyPriceDefaults,
   imageItems,
@@ -54,6 +55,7 @@ export function NewProductStepper({
   mode?: PublishSidebarMode;
   shopMarkupPercent: number;
   shopAiImageEnabled: boolean;
+  shopListingFooterEs: string;
   etsyPoliciesConfigured: boolean;
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
@@ -114,6 +116,7 @@ export function NewProductStepper({
                 <Step2AiReview
                   product={product}
                   initialAiImage={aiGeneratedImage}
+                  shopListingFooterEs={shopListingFooterEs}
                 />
               )}
             </div>

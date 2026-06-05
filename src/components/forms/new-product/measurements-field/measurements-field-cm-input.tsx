@@ -30,7 +30,8 @@ export function CmInput({
     }
     const n = Number(trimmed);
     if (!Number.isFinite(n) || n <= 0 || n > 500) return;
-    onChange(Math.round(n));
+    // Keep at most one decimal; cm columns are `real`.
+    onChange(Math.round(n * 10) / 10);
   };
   const id = `meas-${measurement}`;
   const label = m.products.form.measurements[measurement];
@@ -43,10 +44,10 @@ export function CmInput({
         <Input
           id={id}
           type="number"
-          inputMode="numeric"
+          inputMode="decimal"
           min={1}
           max={500}
-          step={1}
+          step={0.5}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onBlur={(e) => commit(e.target.value)}

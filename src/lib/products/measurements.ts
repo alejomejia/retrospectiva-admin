@@ -12,6 +12,8 @@ import { getClothingType, type Measurement } from "./clothing-types";
 
 export type ProductMeasurements = {
   shoulderCm: number | null;
+  sleeveWidthCm: number | null;
+  sleeveLengthCm: number | null;
   chestCm: number | null;
   waistCm: number | null;
   hipCm: number | null;
@@ -26,6 +28,8 @@ const MEASUREMENT_TO_COLUMN: Record<
   Exclude<keyof ProductMeasurements, "braSize">
 > = {
   shoulder: "shoulderCm",
+  sleeveWidth: "sleeveWidthCm",
+  sleeveLength: "sleeveLengthCm",
   chest: "chestCm",
   waist: "waistCm",
   hip: "hipCm",

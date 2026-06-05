@@ -60,6 +60,47 @@ export async function saveShopAiImageEnabled(
   return { ok: true };
 }
 
+/** Generous ceiling — boilerplate care/legal text, not a novel. */
+const FOOTER_MAX_LEN = 2000;
+
+const ListingFooterSchema = z.object({
+  listingFooterEs: z.string().max(FOOTER_MAX_LEN),
+  listingFooterEn: z.string().max(FOOTER_MAX_LEN),
+});
+
+export type SaveListingFooterInput = z.infer<typeof ListingFooterSchema>;
+
+/**
+ * Persist the shop-wide listing footer (care/legal boilerplate) on the
+ * singleton `product_settings` row. Stored as an ES/EN pair the
+ * operator maintains by hand — never machine-translated — and appended
+ * to every listing at the Etsy + website payload boundary.
+ */
+export async function saveListingFooter(
+  input: SaveListingFooterInput,
+): Promise<SaveResult> {
+  await requireSession();
+
+  const parsed = ListingFooterSchema.safeParse(input);
+  if (!parsed.success) {
+    dev.warn("invalid listing footer input:", parsed.error.issues);
+    return { ok: false, error: m.errors.invalidForm };
+  }
+  const { listingFooterEs, listingFooterEn } = parsed.data;
+
+  await db
+    .insert(productSettings)
+    .values({ id: PRODUCT_SETTINGS_ID, listingFooterEs, listingFooterEn })
+    .onConflictDoUpdate({
+      target: productSettings.id,
+      set: { listingFooterEs, listingFooterEn, updatedAt: sql`now()` },
+    });
+
+  dev.log("saved shop listing footer");
+  revalidatePath("/settings/products");
+  return { ok: true };
+}
+
 const AiDefaultsSchema = z.object({
   aiDefaultModelId: z.string().uuid().nullable(),
   aiDefaultSourcePanel: z.enum(PANEL_ORDER).nullable(),

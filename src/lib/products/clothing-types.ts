@@ -34,6 +34,8 @@ export type ShippingWeightClass = "light" | "medium" | "heavy";
  */
 export type Measurement =
   | "shoulder"
+  | "sleeveWidth"
+  | "sleeveLength"
   | "chest"
   | "waist"
   | "hip"
@@ -89,8 +91,8 @@ export const CLOTHING_TYPES: ClothingTypeEntry[] = [
   {
     value: "shirt",
     category: "upper",
-    measurements: ["shoulder", "chest", "length"],
-    twoXMeasurements: ["chest"],
+    measurements: ["shoulder", "sleeveWidth", "sleeveLength", "chest", "length"],
+    twoXMeasurements: ["sleeveWidth", "chest"],
     etsyTaxonomyKey: "womens_tops_and_tees",
     englishLabel: "shirt",
     defaultAiSourcePanel: "front_full",

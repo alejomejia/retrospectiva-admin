@@ -13,6 +13,9 @@ export type ProductSettings = {
   aiDefaultFramingPreset: string;
   aiDefaultEnvironmentPreset: string;
   aiDefaultImageQuality: string;
+  /** Shop-wide care/legal boilerplate appended to every listing. "" = none. */
+  listingFooterEs: string;
+  listingFooterEn: string;
 };
 
 const DEFAULTS: ProductSettings = {
@@ -23,6 +26,8 @@ const DEFAULTS: ProductSettings = {
   aiDefaultFramingPreset: "waist_up",
   aiDefaultEnvironmentPreset: "textured_wall",
   aiDefaultImageQuality: "low",
+  listingFooterEs: "",
+  listingFooterEn: "",
 };
 
 /**
@@ -40,6 +45,8 @@ export async function getProductSettings(): Promise<ProductSettings> {
       aiDefaultFramingPreset: productSettings.aiDefaultFramingPreset,
       aiDefaultEnvironmentPreset: productSettings.aiDefaultEnvironmentPreset,
       aiDefaultImageQuality: productSettings.aiDefaultImageQuality,
+      listingFooterEs: productSettings.listingFooterEs,
+      listingFooterEn: productSettings.listingFooterEn,
     })
     .from(productSettings)
     .limit(1);

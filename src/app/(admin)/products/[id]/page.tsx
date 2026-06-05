@@ -138,6 +138,7 @@ export default async function ProductDetailPage({
           mode={mode}
           shopMarkupPercent={shopMarkupPercent}
           shopAiImageEnabled={shopAiImageEnabled}
+          shopListingFooterEs={settings.listingFooterEs}
           etsyPoliciesConfigured={etsyPoliciesConfigured}
           buyPriceDefaults={buyPriceDefaults}
           imageItems={imageItems}

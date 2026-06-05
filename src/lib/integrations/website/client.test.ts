@@ -40,6 +40,8 @@ function fakePayload(): WebsitePayload {
     compareAtPriceCents: null,
     measurements: {
       shoulderCm: null,
+      sleeveWidthCm: null,
+      sleeveLengthCm: null,
       chestCm: null,
       waistCm: null,
       hipCm: null,

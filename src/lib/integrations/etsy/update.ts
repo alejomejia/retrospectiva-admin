@@ -3,6 +3,11 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { productVideos, products } from "@/lib/db/schema";
 import { listImagesForEtsyPublish } from "@/lib/products/etsy-publish-payload";
+import {
+  appendListingFooter,
+  resolveListingFooter,
+} from "@/lib/products/listing-footer";
+import { getProductSettings } from "@/lib/products/settings";
 import { fetchBytesFromR2 } from "@/lib/integrations/r2/fetch";
 import { TRANSLATABLE_FIELDS } from "@/lib/integrations/openai/translate";
 import { websiteWebhookQueue } from "@/lib/queue/queues";
@@ -26,6 +31,7 @@ import {
   contentTypeForImage,
   contentTypeForVideo,
   extFromR2Key,
+  isFeaturedSlotFull,
   loadShopConfig,
   translateWithRetry,
 } from "./publish";
@@ -87,6 +93,8 @@ export async function runEtsyListingUpdate(
 
   const listingId = Number(row.etsyListingId);
 
+  const shop = await loadShopConfig();
+
   for (const field of TRANSLATABLE_FIELDS) {
     await translateWithRetry(productId, field);
   }
@@ -100,16 +108,36 @@ export async function runEtsyListingUpdate(
     throw new Error(`product ${productId} disappeared after translation`);
   }
 
-  const shop = await loadShopConfig();
+  // Resolve the listing footer (per-product override, else shop-wide
+  // default) so a re-sync re-appends the same boilerplate the original
+  // publish added. Pre-translated; no OpenAI call here.
+  const footer = resolveListingFooter(product, await getProductSettings());
 
   let payload;
   try {
-    payload = mapProductToCreateDraftPayload({ product, shop });
+    payload = mapProductToCreateDraftPayload({
+      product,
+      shop,
+      footerEn: footer.en,
+    });
   } catch (err) {
     if (err instanceof ListingMapperError) {
       throw new Error(`listing mapper rejected product: ${err.message}`);
     }
     throw err;
+  }
+
+  // Featured-cap fallback (background worker, no operator watching).
+  // Exclude this listing from the count so an already-featured listing
+  // keeps its slot; strip `featured_rank` only when 4 *other* listings
+  // hold them — Etsy would 400 the whole update otherwise. The other
+  // field/media changes still sync; the listing just stays unfeatured.
+  if (
+    payload.featured_rank &&
+    (await isFeaturedSlotFull(shop.shopId, listingId))
+  ) {
+    delete payload.featured_rank;
+    dev.warn("featured cap reached — updating unfeatured", productId);
   }
 
   await updateListing(shop.shopId, listingId, payload);
@@ -170,7 +198,7 @@ export async function runEtsyListingUpdate(
   if (titleEs && descriptionEs) {
     await upsertListingTranslation(shop.shopId, listingId, "es", {
       title: titleEs,
-      description: descriptionEs,
+      description: appendListingFooter(descriptionEs, footer.es),
       tags: product.etsyTagsEs.length > 0 ? product.etsyTagsEs : undefined,
     });
     dev.log("es translation upserted", productId);

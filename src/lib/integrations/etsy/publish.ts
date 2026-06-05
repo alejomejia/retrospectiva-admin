@@ -3,6 +3,11 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { etsyOauth, productVideos, products } from "@/lib/db/schema";
 import { listImagesForEtsyPublish } from "@/lib/products/etsy-publish-payload";
+import {
+  appendListingFooter,
+  resolveListingFooter,
+} from "@/lib/products/listing-footer";
+import { getProductSettings } from "@/lib/products/settings";
 import { fetchBytesFromR2 } from "@/lib/integrations/r2/fetch";
 import {
   TRANSLATABLE_FIELDS,
@@ -18,6 +23,7 @@ import {
 } from "./listing-mapper";
 import {
   createDraftListing,
+  getFeaturedListings,
   updateListing,
   uploadListingImage,
   uploadListingVideo,
@@ -136,6 +142,42 @@ export function contentTypeForVideo(ext: string, fallback: string | null): strin
   }
 }
 
+/** Etsy caps shop-wide featured listings at 4. */
+export const FEATURED_LISTING_CAP = 4;
+
+/**
+ * Whether the shop has no free featured slot. Etsy caps featured
+ * listings at 4 shop-wide and rejects the entire listing
+ * create/update once full, so a featured publish must be cancelled
+ * up front rather than attempted. `currentListingId` (re-publish
+ * path) is excluded from the count so re-pushing an already-featured
+ * listing doesn't count itself toward the cap.
+ */
+export async function isFeaturedSlotFull(
+  shopId: number,
+  currentListingId?: number,
+): Promise<boolean> {
+  const featured = await getFeaturedListings(shopId);
+  const others = featured.filter((l) => l.listing_id !== currentListingId);
+  return others.length >= FEATURED_LISTING_CAP;
+}
+
+/**
+ * Pre-publish featured-cap gate. Returns `true` when the product is
+ * flagged featured but the shop already holds the maximum featured
+ * listings — the caller must cancel the publish and tell the
+ * operator to un-feature first. Non-featured products never query
+ * Etsy. Resolves the shop from `etsy_oauth`.
+ */
+export async function featuredSlotFullForProduct(
+  isFeatured: boolean,
+  currentListingId?: number,
+): Promise<boolean> {
+  if (!isFeatured) return false;
+  const shop = await loadShopConfig();
+  return isFeaturedSlotFull(shop.shopId, currentListingId);
+}
+
 export async function loadShopConfig() {
   const [row] = await db.select().from(etsyOauth).limit(1);
   if (!row) {
@@ -167,6 +209,8 @@ export async function runScheduledPublish(
     return { ok: true, skipped: true, reason: "status" };
   }
 
+  const shop = await loadShopConfig();
+
   // Translate ES → EN inline. We retry per-field rather than letting
   // one transient OpenAI hiccup abort the whole publish. If retries
   // are exhausted, we throw — the BullMQ retry loop catches it and
@@ -186,16 +230,33 @@ export async function runScheduledPublish(
     throw new Error(`product ${productId} disappeared after translation`);
   }
 
-  const shop = await loadShopConfig();
+  // Resolve the listing footer (per-product override, else shop-wide
+  // default). Appended to the description at the payload boundary only
+  // — both members are pre-translated, so this never touches OpenAI.
+  const footer = resolveListingFooter(product, await getProductSettings());
 
   let payload;
   try {
-    payload = mapProductToCreateDraftPayload({ product, shop });
+    payload = mapProductToCreateDraftPayload({
+      product,
+      shop,
+      footerEn: footer.en,
+    });
   } catch (err) {
     if (err instanceof ListingMapperError) {
       throw new Error(`listing mapper rejected product: ${err.message}`);
     }
     throw err;
+  }
+
+  // Featured-cap fallback. The interactive publish action already
+  // gates this, but a *scheduled* job can fire after the shop filled
+  // its 4 featured slots during the delay window. With no operator
+  // watching, publish unfeatured rather than failing — strip
+  // `featured_rank` so Etsy accepts the create.
+  if (payload.featured_rank && (await isFeaturedSlotFull(shop.shopId))) {
+    delete payload.featured_rank;
+    dev.warn("featured cap reached — publishing unfeatured", productId);
   }
 
   // `createDraftListing` is the only step where we'd leak an Etsy
@@ -267,7 +328,7 @@ export async function runScheduledPublish(
   if (titleEs && descriptionEs) {
     await upsertListingTranslation(shop.shopId, draft.listing_id, "es", {
       title: titleEs,
-      description: descriptionEs,
+      description: appendListingFooter(descriptionEs, footer.es),
       tags: product.etsyTagsEs.length > 0 ? product.etsyTagsEs : undefined,
     });
     dev.log("es translation upserted", productId);

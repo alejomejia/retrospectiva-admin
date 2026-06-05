@@ -130,9 +130,18 @@ describe("ProductDraftPatchSchema", () => {
       ).toBe(false);
     });
 
-    it("rejects non-integer", () => {
+    it("accepts one decimal", () => {
       expect(
         ProductDraftPatchSchema.safeParse({ chestCm: 44.5 }).success,
+      ).toBe(true);
+      expect(
+        ProductDraftPatchSchema.safeParse({ chestCm: 61.5 }).success,
+      ).toBe(true);
+    });
+
+    it("rejects more than one decimal", () => {
+      expect(
+        ProductDraftPatchSchema.safeParse({ chestCm: 44.55 }).success,
       ).toBe(false);
     });
 

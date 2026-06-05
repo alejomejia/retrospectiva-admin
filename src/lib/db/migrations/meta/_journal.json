@@ -162,6 +162,27 @@
       "when": 1780303679421,
       "tag": "0022_clear_rumiko_fujikawa",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1780408290913,
+      "tag": "0023_cool_logan",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1780594153206,
+      "tag": "0024_romantic_matthew_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1780595363456,
+      "tag": "0025_blushing_joystick",
+      "breakpoints": true
     }
   ]
 }
