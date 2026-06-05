@@ -6,6 +6,11 @@ import { Logout } from "@/components/layout/logout";
 import { Badge } from "@/components/ui/badge";
 import { config, isProd } from "@/lib/utils/config";
 
+// NOTE: Every admin route is auth-gated and DB-backed — never prerender at
+// build time, where Postgres/Redis are unreachable. Forcing dynamic here
+// covers all current and future segments under (admin).
+export const dynamic = "force-dynamic";
+
 /**
  * Shared layout for every authenticated screen. Sidebar holds the
  * primary nav; topbar shows the active username + sign-out.
