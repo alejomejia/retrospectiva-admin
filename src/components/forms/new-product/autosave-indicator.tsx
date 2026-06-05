@@ -28,12 +28,13 @@ export function AutosaveIndicator({ className }: { className?: string }) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 text-xs text-muted-foreground",
+          "min-w-37 inline-flex justify-center items-center gap-1.5 text-xs",
+          "p-2 text-amber-100 bg-brand-olive-dim rounded-full",
           className,
         )}
         aria-live="polite"
       >
-        <Loader2 className="size-3 animate-spin" />
+        <Loader2 className="size-4 p-1 bg-brand-olive animate-spin rounded-full" />
         {m.products.stepper.autosave.saving}
       </span>
     );
@@ -43,13 +44,14 @@ export function AutosaveIndicator({ className }: { className?: string }) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 text-xs text-brand-terracotta",
+          "min-w-37 inline-flex justify-center items-center gap-1.5 text-xs",
+          "p-2 text-brand-terracotta-100 bg-brand-terracotta rounded-full",
           className,
         )}
         aria-live="polite"
         title={error ?? undefined}
       >
-        <AlertCircle className="size-3" />
+        <AlertCircle className="size-4 p-1 bg-brand-terracotta-deep rounded-full" />
         {m.products.stepper.autosave.error}
       </span>
     );
@@ -59,7 +61,7 @@ export function AutosaveIndicator({ className }: { className?: string }) {
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 text-xs",
+          "min-w-37 inline-flex justify-center items-center gap-1 text-xs",
           "p-2 text-amber-100 bg-brand-olive rounded-full",
           className,
         )}
