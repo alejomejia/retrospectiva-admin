@@ -59,6 +59,7 @@ export default async function ProductsPage({
         markupPercentOverride: products.markupPercentOverride,
         listPriceCentsOverride: products.listPriceCentsOverride,
         createdAt: products.createdAt,
+        isFeatured: products.isFeatured,
       })
       .from(products)
       .where(where)
@@ -100,6 +101,7 @@ export default async function ProductsPage({
     basePriceCents: r.basePriceCents,
     currency: r.currency,
     createdAt: r.createdAt,
+    isFeatured: r.isFeatured,
     thumbnailUrl: thumbByProductId.get(r.id) ?? null,
     effectiveListPriceCents: effectiveListCents({
       basePriceCents: r.basePriceCents,

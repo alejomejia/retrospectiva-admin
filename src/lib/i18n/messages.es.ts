@@ -163,6 +163,9 @@ export const m = {
       sold: "Vendido",
       archived: "Archivado",
     },
+    list: {
+      featuredLabel: "Destacado en Etsy",
+    },
     rowActions: {
       menuLabel: "Acciones",
       delete: "Eliminar",
@@ -209,6 +212,8 @@ export const m = {
       featured: "Destacar en Etsy",
       featuredHint:
         "Etsy permite hasta 4 productos destacados por tienda. Úsalo para piezas estrella.",
+      featuredCapTooltip:
+        "Ya tienes 4 productos destacados, el máximo que permite Etsy. Quita el destacado de otro producto para activar este.",
       primaryColor: "Color principal",
       secondaryColor: "Color secundario",
       colorPlaceholder: "Elige un color",

@@ -37,6 +37,7 @@ import { useNewProductStepper } from "./use-new-product-stepper";
 export function NewProductStepper({
   product,
   mode = "draft",
+  featuredSlotsFull,
   shopMarkupPercent,
   shopAiImageEnabled,
   shopListingFooterEs,
@@ -53,6 +54,8 @@ export function NewProductStepper({
 }: {
   product: Product;
   mode?: PublishSidebarMode;
+  /** Shop already holds the max featured products (excl. this one). */
+  featuredSlotsFull: boolean;
   shopMarkupPercent: number;
   shopAiImageEnabled: boolean;
   shopListingFooterEs: string;
@@ -99,6 +102,7 @@ export function NewProductStepper({
               {vm.currentStep === "inputs" && (
                 <Step1Inputs
                   product={product}
+                  featuredSlotsFull={featuredSlotsFull}
                   shopMarkupPercent={shopMarkupPercent}
                   shopAiImageEnabled={shopAiImageEnabled}
                   buyPriceDefaults={buyPriceDefaults}

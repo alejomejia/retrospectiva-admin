@@ -1,10 +1,15 @@
 "use client";
 
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -114,12 +119,27 @@ function Cell({
     case "title":
       return (
         <TableCell>
-          <Link
-            href={`/products/${row.id}`}
-            className="font-medium hover:text-brand-terracotta"
-          >
-            {row.titleEs ?? m.products.detail.untitled}
-          </Link>
+          <div className="flex items-center gap-1.5">
+            {row.isFeatured ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Star
+                    className="size-4 shrink-0 fill-brand-terracotta text-brand-terracotta"
+                    aria-label={m.products.list.featuredLabel}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {m.products.list.featuredLabel}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+            <Link
+              href={`/products/${row.id}`}
+              className="font-medium hover:text-brand-terracotta"
+            >
+              {row.titleEs ?? m.products.detail.untitled}
+            </Link>
+          </div>
         </TableCell>
       );
     case "status":

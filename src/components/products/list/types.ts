@@ -7,7 +7,13 @@ import type { Product } from "@/lib/db/schema";
  */
 export type ProductListItem = Pick<
   Product,
-  "id" | "titleEs" | "status" | "basePriceCents" | "currency" | "createdAt"
+  | "id"
+  | "titleEs"
+  | "status"
+  | "basePriceCents"
+  | "currency"
+  | "createdAt"
+  | "isFeatured"
 > & {
   thumbnailUrl: string | null;
   effectiveListPriceCents: number | null;

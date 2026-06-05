@@ -3,6 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { etsyOauth, productVideos, products } from "@/lib/db/schema";
 import { listImagesForEtsyPublish } from "@/lib/products/etsy-publish-payload";
+import { FEATURED_LISTING_CAP } from "@/lib/products/featured";
 import {
   appendListingFooter,
   resolveListingFooter,
@@ -141,9 +142,6 @@ export function contentTypeForVideo(ext: string, fallback: string | null): strin
       return fallback ?? "video/mp4";
   }
 }
-
-/** Etsy caps shop-wide featured listings at 4. */
-export const FEATURED_LISTING_CAP = 4;
 
 /**
  * Whether the shop has no free featured slot. Etsy caps featured

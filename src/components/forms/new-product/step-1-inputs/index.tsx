@@ -12,6 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import type { ClothingType, Product } from "@/lib/db/schema";
 import type { ShippingProfile } from "@/lib/integrations/etsy/shop-config";
@@ -40,6 +45,7 @@ export { missingFieldList } from "./step-1-inputs.const";
  */
 export function Step1Inputs({
   product,
+  featuredSlotsFull,
   shopMarkupPercent,
   shopAiImageEnabled,
   buyPriceDefaults,
@@ -53,6 +59,8 @@ export function Step1Inputs({
   r2BaseUrl,
 }: {
   product: Product;
+  /** Shop already holds the max featured products (excl. this one). */
+  featuredSlotsFull: boolean;
   shopMarkupPercent: number;
   shopAiImageEnabled: boolean;
   buyPriceDefaults: Record<ClothingType, number | null>;
@@ -97,11 +105,32 @@ export function Step1Inputs({
               {m.products.form.featuredHint}
             </p>
           </div>
-          <Switch
-            id="is-featured"
-            checked={vm.isFeatured}
-            onCheckedChange={vm.handleFeaturedChange}
-          />
+          {featuredSlotsFull && !vm.isFeatured ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {/* Disabled switches swallow pointer events, so the
+                    wrapper span is what the tooltip listens on. */}
+                <span tabIndex={0} className="inline-flex">
+                  <Switch
+                    id="is-featured"
+                    checked={false}
+                    disabled
+                    aria-label={m.products.form.featured}
+                    className="pointer-events-none"
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {m.products.form.featuredCapTooltip}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Switch
+              id="is-featured"
+              checked={vm.isFeatured}
+              onCheckedChange={vm.handleFeaturedChange}
+            />
+          )}
         </div>
 
         <div className="flex gap-8">

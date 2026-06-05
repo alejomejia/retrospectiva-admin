@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { caveat, dmMono, dmSans } from '@/lib/styles/fonts';
 import "@/lib/styles/globals.css";
 import { cn } from "@/lib/utils/helpers";
@@ -23,7 +24,7 @@ export default function RootLayout({
       className={cn(dmSans.variable, dmMono.variable, caveat.variable, 'brand-paper h-full antialiased')}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>

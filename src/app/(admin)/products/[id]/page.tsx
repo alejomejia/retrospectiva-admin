@@ -19,6 +19,10 @@ import { m } from "@/lib/i18n/messages.es";
 import { getProduct } from "@/lib/products/actions";
 import { getAllBuyPriceDefaults } from "@/lib/products/buy-price-defaults";
 import {
+  countOtherFeaturedProducts,
+  FEATURED_LISTING_CAP,
+} from "@/lib/products/featured";
+import {
   getAiModelImage,
   getAiReferenceImage,
   listProductImages,
@@ -46,6 +50,7 @@ export default async function ProductDetailPage({
     aiModels,
     aiReferenceRow,
     aiModelImageRow,
+    otherFeaturedCount,
   ] = await Promise.all([
     listProductImages(id),
     listProductVideos(id),
@@ -65,7 +70,12 @@ export default async function ProductDetailPage({
     listActiveAiModels(),
     getAiReferenceImage(id),
     getAiModelImage(id),
+    countOtherFeaturedProducts(id),
   ]);
+  // Disable the featured toggle once the shop already holds the max
+  // number of *other* featured products; an already-featured product
+  // can still toggle itself off (it's excluded from the count).
+  const featuredSlotsFull = otherFeaturedCount >= FEATURED_LISTING_CAP;
   const shopMarkupPercent =
     oauthRows[0]?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
   const shopAiImageEnabled = settings.aiImageEnabled;
@@ -136,6 +146,7 @@ export default async function ProductDetailPage({
         <NewProductStepper
           product={product}
           mode={mode}
+          featuredSlotsFull={featuredSlotsFull}
           shopMarkupPercent={shopMarkupPercent}
           shopAiImageEnabled={shopAiImageEnabled}
           shopListingFooterEs={settings.listingFooterEs}
