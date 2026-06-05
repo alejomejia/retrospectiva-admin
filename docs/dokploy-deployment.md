@@ -323,6 +323,85 @@ forwarded headers, so per-IP throttling works without extra config.
 
 ---
 
+## 11 · Lock down external access (bots, crawlers, strangers)
+
+The app already ships several app-level guards (see
+[security.md](./security.md)): every route except the login page is behind the
+session gate in `proxy.ts`, `robots.txt` disallows all crawlers, and security
+headers (`X-Robots-Tag: noindex`, `X-Frame-Options: DENY`, HSTS, CSP
+`frame-ancestors 'none'`, etc.) are sent on every response from
+`next.config.ts`.
+
+`robots.txt` only stops **polite** crawlers. To actually keep strangers and
+ill-behaved bots off the panel, add a network-level gate in front of Traefik.
+Pick **one**:
+
+### Option 1 — Traefik IP allowlist (simplest)
+
+If you and Pia have static/known IPs (home, office, a VPN exit), restrict the
+router to those. Add an `ipallowlist` middleware to the `app` service labels in
+`docker-compose.dokploy.yml`:
+
+```yaml
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.retrospectiva-app.rule=Host(`admin.retrospectiva.com`)
+      - traefik.http.routers.retrospectiva-app.entrypoints=websecure
+      - traefik.http.routers.retrospectiva-app.tls.certresolver=letsencrypt
+      - traefik.http.services.retrospectiva-app.loadbalancer.server.port=3000
+      # only these source IPs reach the app; everyone else gets 403
+      - traefik.http.routers.retrospectiva-app.middlewares=rsv-allowlist
+      - traefik.http.middlewares.rsv-allowlist.ipallowlist.sourcerange=203.0.113.4/32,198.51.100.0/24
+```
+
+Replace the CIDRs with your real addresses. Caveat: if the VPS sits behind
+Cloudflare or another proxy, Traefik sees the proxy IP, not the client —
+you'd need `ipallowlist.ipstrategy.depth` to read the right hop in
+`X-Forwarded-For`. With Dokploy's default direct Traefik exposure, the client
+IP is correct as-is.
+
+### Option 2 — Cloudflare Access / Zero Trust (best for roaming IPs)
+
+If your IPs change (mobile, travel), put the domain behind
+[Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/configure-apps/self-hosted-public-app/):
+
+1. Proxy `admin.retrospectiva.com` through Cloudflare (orange cloud).
+2. Zero Trust → **Access → Applications → Add** a self-hosted app for that
+   hostname.
+3. Policy: **Allow** only your two emails (one-time PIN or Google login). Every
+   request without a valid Access session is blocked at Cloudflare's edge,
+   before it ever reaches the VPS.
+4. Lock the VPS firewall so `443` only accepts Cloudflare's IP ranges — stops
+   anyone bypassing Access by hitting the origin directly.
+
+This gives an **identity-based** gate (login at the edge) on top of the app's
+own auth — defence in depth, and the panel is never exposed to the open
+internet.
+
+### Option 3 — Tailscale / WireGuard (most private)
+
+Don't publish the admin to the public internet at all: bind it to a private
+VPN and reach it over Tailscale. Strongest isolation, slightly more setup
+(install Tailscale on the VPS, point the domain at the tailnet IP, drop the
+public Traefik route). Overkill for most, but it means zero public attack
+surface.
+
+### VPS firewall baseline (do this regardless)
+
+```sh
+ufw default deny incoming
+ufw allow 22/tcp            # SSH — better: restrict to your IP
+ufw allow 80,443/tcp        # Traefik (or only Cloudflare ranges for Option 2)
+ufw deny 3000/tcp           # Dokploy dashboard — reach it over SSH tunnel, not public
+ufw enable
+```
+
+Exposing the Dokploy dashboard (`:3000`) to the public internet is the biggest
+footgun — keep it firewalled and tunnel in via
+`ssh -L 3000:localhost:3000 user@vps`.
+
+---
+
 ## Backups
 
 Dokploy can schedule volume/database backups under the service's **Backups**
