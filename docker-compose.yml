@@ -59,6 +59,12 @@ services:
     # host and bypasses the proxy. The container still listens on 3000.
     expose:
       - "3000"
+    # Apply pending Drizzle migrations before serving. `drizzle-kit migrate`
+    # is idempotent (tracks applied migrations in __drizzle_migrations), so
+    # this is safe on every boot. Single app replica → no migration race.
+    # Call the binaries directly: going through `pnpm <script>` triggers
+    # pnpm v11's verify-deps-before-run, which fails inside the container.
+    command: ["sh", "-c", "node_modules/.bin/drizzle-kit migrate && node_modules/.bin/next start"]
     # `default` keeps Postgres/Redis reachable by service name; `dokploy-network`
     # is the shared external network Traefik runs on — required for the proxy to
     # route the configured Domain to this container.
@@ -78,7 +84,8 @@ services:
     environment:
       DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
       REDIS_URL: redis://redis:6379
-    command: ["pnpm", "worker:prod"]
+    # Direct binary — see app service note on pnpm verify-deps-before-run.
+    command: ["node_modules/.bin/tsx", "src/lib/queue/worker.ts"]
 
 networks:
   # Created/owned by Dokploy; Traefik attaches to it to route domains.

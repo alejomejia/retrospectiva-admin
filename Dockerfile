@@ -32,5 +32,8 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+# tsconfig.json carries the `@/*` path alias the BullMQ worker relies on when
+# run under raw tsx (`next start` doesn't need it, but the worker does).
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 EXPOSE 3000
 CMD ["pnpm", "start"]
