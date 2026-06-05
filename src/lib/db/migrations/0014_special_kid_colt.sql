@@ -1,1 +1,0 @@
-ALTER TABLE "products" ADD COLUMN "ai_image_quality" text DEFAULT 'low' NOT NULL;

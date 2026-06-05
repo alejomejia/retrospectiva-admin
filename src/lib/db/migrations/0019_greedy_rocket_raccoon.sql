@@ -1,1 +1,0 @@
-ALTER TABLE "etsy_oauth" ADD COLUMN "default_readiness_state_id" bigint;

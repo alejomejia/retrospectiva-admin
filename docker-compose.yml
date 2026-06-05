@@ -1,7 +1,14 @@
 # Local + production-shape stack. Mirror this in your VPS deploy.
-# - app:    Next.js server (port 3000)
-# - worker: BullMQ worker (no exposed port)
+# - migrate: one-shot Drizzle migration runner (runs, then exits)
+# - app:     Next.js server (port 3000)
+# - worker:  BullMQ worker (no exposed port)
 # - postgres + redis: persistent state
+#
+# Boot order is enforced via depends_on conditions:
+#   postgres healthy → migrate completes → app + worker start in parallel.
+# This guarantees the schema exists before anything queries it, and protects
+# the worker as well as the app (an inline `migrate && start` would only gate
+# the app, leaving the worker to race the migration).
 #
 # For local dev, you can run only the infra services and use `pnpm dev` on
 # the host: `docker compose up postgres redis`.
@@ -26,6 +33,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      # Grace for cold starts on a small VPS before retries are counted.
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -41,12 +50,28 @@ services:
       timeout: 5s
       retries: 10
 
+  # One-shot migration runner. Applies pending Drizzle migrations, then exits
+  # 0 (or 1 on failure, which blocks app/worker via service_completed_successfully).
+  # src/lib/db/migrate.ts closes the connection and exits cleanly, unlike
+  # `drizzle-kit migrate`. Idempotent: re-running on an up-to-date DB is a no-op.
+  # Binary called directly — `pnpm <script>` triggers pnpm v11's
+  # verify-deps-before-run, which fails inside the container.
+  migrate:
+    build: .
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
+    command: ["node_modules/.bin/tsx", "src/lib/db/migrate.ts"]
+
   app:
     build: .
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     env_file: .env
@@ -59,12 +84,8 @@ services:
     # host and bypasses the proxy. The container still listens on 3000.
     expose:
       - "3000"
-    # Apply pending Drizzle migrations before serving. `drizzle-kit migrate`
-    # is idempotent (tracks applied migrations in __drizzle_migrations), so
-    # this is safe on every boot. Single app replica → no migration race.
-    # Call the binaries directly: going through `pnpm <script>` triggers
-    # pnpm v11's verify-deps-before-run, which fails inside the container.
-    command: ["sh", "-c", "node_modules/.bin/drizzle-kit migrate && node_modules/.bin/next start"]
+    # Migrations already ran in the `migrate` service; just serve.
+    command: ["node_modules/.bin/next", "start"]
     # `default` keeps Postgres/Redis reachable by service name; `dokploy-network`
     # is the shared external network Traefik runs on — required for the proxy to
     # route the configured Domain to this container.
@@ -76,15 +97,15 @@ services:
     build: .
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     env_file: .env
     environment:
       DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
       REDIS_URL: redis://redis:6379
-    # Direct binary — see app service note on pnpm verify-deps-before-run.
+    # Direct binary — see migrate service note on pnpm verify-deps-before-run.
     command: ["node_modules/.bin/tsx", "src/lib/queue/worker.ts"]
 
 networks:

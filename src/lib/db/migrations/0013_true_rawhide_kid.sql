@@ -1,1 +1,0 @@
-ALTER TABLE "ai_models" ADD COLUMN "image_quality" text DEFAULT 'low' NOT NULL;

@@ -1,1 +1,0 @@
-ALTER TYPE "public"."ai_run_kind" ADD VALUE 'field_regenerate';

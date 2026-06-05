@@ -1,1 +1,0 @@
-ALTER TABLE "products" ALTER COLUMN "condition" SET DEFAULT 'perfect';
