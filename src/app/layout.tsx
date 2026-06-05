@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils/helpers";
 export const metadata: Metadata = {
   title: "Retrospectiva — Admin",
   description: "Panel interno de Retrospectiva - tienda de ropa vintage.",
+  // Private admin — never index. Mirrors the X-Robots-Tag header and robots.ts.
+  robots: { index: false, follow: false, nocache: true },
 };
 
 export default function RootLayout({
