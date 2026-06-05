@@ -185,6 +185,45 @@ export async function discardModel(
   }
 }
 
+/**
+ * Hard-delete a model of ANY status, plus every R2 object under its
+ * prefix (`assets/models/{id}/`). Unlike `discardModel` (drafts only,
+ * the detail-page "descartar" flow), this is the gallery row action to
+ * completely remove a model.
+ *
+ * Safe across statuses because `products.ai_model_id` and
+ * `product_settings.ai_default_model_id` both FK with `onDelete: set
+ * null` — existing products keep working, they just lose the reference.
+ *
+ * Order mirrors `deleteProduct`: R2 sweep first (best-effort; an orphan
+ * R2 tree is recoverable, an orphan DB row pointing at deleted assets is
+ * not), then the DB delete.
+ */
+export async function deleteModel(id: string): Promise<ActionResult> {
+  await requireSession();
+  try {
+    const [row] = await db
+      .select({ id: aiModels.id })
+      .from(aiModels)
+      .where(eq(aiModels.id, id))
+      .limit(1);
+    if (!row) {
+      return { ok: false, error: m.models.errors.modelNotFound };
+    }
+    // Best-effort R2 cleanup. If it fails, we still drop the DB row —
+    // orphan R2 objects can be reaped later via the cleanup queue.
+    await deleteR2Prefix({ prefix: `assets/models/${id}/` }).catch((err) => {
+      dev.warn("R2 cleanup failed (non-fatal)", id, err);
+    });
+    await db.delete(aiModels).where(eq(aiModels.id, id));
+    revalidatePath("/models");
+    return { ok: true };
+  } catch (err) {
+    dev.error("deleteModel error", err);
+    return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
+}
+
 /** Move an active model to `archived` — out of rotation but kept. */
 export async function archiveModel(id: string): Promise<ActionResult> {
   await requireSession();

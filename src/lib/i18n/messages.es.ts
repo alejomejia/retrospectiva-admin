@@ -884,6 +884,13 @@ export const m = {
       active: "Activo",
       archived: "Archivado",
     },
+    rowActions: {
+      menuLabel: "Acciones del modelo",
+      delete: "Eliminar",
+      confirmDelete:
+        "¿Eliminar este modelo? Se borrará la imagen del bucket. No se puede deshacer.",
+      deletedToast: "Modelo eliminado",
+    },
     new: {
       title: "Nuevo modelo",
       description:

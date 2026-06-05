@@ -7,6 +7,8 @@ import { m } from "@/lib/i18n/messages.es";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
 
+import { RowActions } from "./row-actions";
+
 const STATUS_VARIANT: Record<
   AiModelStatus,
   "default" | "secondary" | "outline"
@@ -57,6 +59,9 @@ export function ModelsTable({ rows }: { rows: ModelsTableRow[] }) {
             </th>
             <th className="px-3 py-2 text-left">
               {m.models.columns.status}
+            </th>
+            <th className="w-12 px-3 py-2">
+              <span className="sr-only">{m.models.rowActions.menuLabel}</span>
             </th>
           </tr>
         </thead>
@@ -115,6 +120,9 @@ export function ModelsTable({ rows }: { rows: ModelsTableRow[] }) {
                   <Badge variant={STATUS_VARIANT[row.status]}>
                     {m.models.statuses[row.status]}
                   </Badge>
+                </td>
+                <td className="w-12 px-3 py-2 text-right">
+                  <RowActions id={row.id} />
                 </td>
               </tr>
             );
