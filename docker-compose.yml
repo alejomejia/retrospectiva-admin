@@ -14,8 +14,11 @@ services:
       POSTGRES_USER: retrospectiva
       POSTGRES_PASSWORD: retrospectiva
       POSTGRES_DB: retrospectiva
+    # NOTE: bound to loopback only — reachable from the host (local dev) but
+    # never exposed on the VPS public interface. App/worker reach it over the
+    # compose network by service name, no published port required.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,8 +30,9 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    # NOTE: loopback-only, same rationale as postgres above.
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
