@@ -17,7 +17,18 @@ import { createDraftProduct } from "@/lib/products/actions";
  * Route handler (not a page) because the work is pure side-effect +
  * navigation — no UI to render.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  // NOTE: `<Link href="/products/new">` is auto-prefetched by the Next
+  // router on every render of the products list. Prefetch issues a real
+  // GET, which would create a phantom draft on each page load. Bail out
+  // for prefetch requests so drafts are only created on real navigation.
+  const isPrefetch =
+    request.headers.get("next-router-prefetch") !== null ||
+    request.headers.get("purpose") === "prefetch";
+  if (isPrefetch) {
+    return new Response(null, { status: 204 });
+  }
+
   const { id } = await createDraftProduct();
   redirect(`/products/${id}?new=1`);
 }
