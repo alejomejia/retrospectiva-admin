@@ -59,6 +59,12 @@ services:
     # host and bypasses the proxy. The container still listens on 3000.
     expose:
       - "3000"
+    # `default` keeps Postgres/Redis reachable by service name; `dokploy-network`
+    # is the shared external network Traefik runs on — required for the proxy to
+    # route the configured Domain to this container.
+    networks:
+      - default
+      - dokploy-network
 
   worker:
     build: .
@@ -73,6 +79,11 @@ services:
       DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
       REDIS_URL: redis://redis:6379
     command: ["pnpm", "worker:prod"]
+
+networks:
+  # Created/owned by Dokploy; Traefik attaches to it to route domains.
+  dokploy-network:
+    external: true
 
 volumes:
   postgres_data:
