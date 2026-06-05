@@ -53,8 +53,12 @@ services:
     environment:
       DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
       REDIS_URL: redis://redis:6379
-    ports:
-      - "3000:3000"
+    # NOTE: no host port publish — Dokploy's Traefik proxy reaches this
+    # container internally on port 3000 via the Domain configured in the
+    # dashboard. Publishing 3000:3000 conflicts with other services on the
+    # host and bypasses the proxy. The container still listens on 3000.
+    expose:
+      - "3000"
 
   worker:
     build: .
