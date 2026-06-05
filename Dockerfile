@@ -14,10 +14,12 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# DATABASE_URL is needed for any `next build` step that imports the db
-# client. We pass a no-op URL so the build completes; runtime gets the
-# real value from the environment.
+# `next build` collects page data by importing route modules, which pull in
+# the env-validating `config` (zod). We pass no-op URLs so the schema parses
+# and the build completes; runtime gets the real values from the environment
+# (compose `environment:` for the containers).
 ENV DATABASE_URL=postgres://build:build@127.0.0.1:5432/build
+ENV REDIS_URL=redis://127.0.0.1:6379
 RUN pnpm build
 
 # ---------- runner ----------

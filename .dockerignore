@@ -1,0 +1,16 @@
+# Keep the build context lean and avoid clobbering image-built artifacts
+# with host ones (notably node_modules, which breaks pnpm's deps check).
+# NOTE: do NOT ignore `.env` — the Compose build relies on it being present
+# in the context so `next build` can load secrets for env validation.
+# `.env.local` (host dev secrets) is excluded via the `*.local` rule below.
+node_modules
+.next
+.git
+*.local
+npm-debug.log*
+.DS_Store
+coverage
+playwright-report
+test-results
+.vscode
+.idea
