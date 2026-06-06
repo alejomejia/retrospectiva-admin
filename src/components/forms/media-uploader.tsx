@@ -16,11 +16,8 @@ import {
 } from "@/lib/products/media-limits";
 import { uploadProductVideo } from "@/lib/products/videos-actions";
 import { compressImage } from "@/lib/utils/compress-image";
-import { devGroup } from "@/lib/utils/dev";
 import { extractVideoPoster } from "@/lib/utils/extract-video-poster";
 import { cn } from "@/lib/utils/helpers";
-
-const dev = devGroup("upload");
 
 const ACCEPT = [
   // images
@@ -108,15 +105,8 @@ export function MediaUploader({ productId }: { productId: string }) {
                 );
                 continue;
               }
-              dev.log("video branch:", raw.name, raw.type, raw.size);
               const { poster, durationMs, width, height } =
                 await extractVideoPoster(raw);
-              dev.log("poster extracted, calling server action", {
-                poster: poster?.size ?? null,
-                durationMs,
-                width,
-                height,
-              });
               if (
                 durationMs !== null &&
                 durationMs > VIDEO_MAX_DURATION_MS
@@ -137,7 +127,6 @@ export function MediaUploader({ productId }: { productId: string }) {
                 width,
                 height,
               });
-              dev.log("server action returned", result);
               if (!result.ok) {
                 toast.error(`${raw.name}: ${result.error}`);
                 continue;

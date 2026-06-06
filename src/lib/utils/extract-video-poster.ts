@@ -1,9 +1,5 @@
 "use client";
 
-import { devGroup } from "@/lib/utils/dev";
-
-const dev = devGroup("poster");
-
 /**
  * Extracts a poster image from a video file entirely in the browser.
  * Creates a hidden `<video>` element, seeks to a representative frame,
@@ -48,11 +44,8 @@ export async function extractVideoPoster(input: File): Promise<ExtractedPoster> 
   video.preload = "auto";
   video.crossOrigin = "anonymous";
 
-  const dbg = (...a: unknown[]) => dev.log(...a);
-  dbg("start", input.name, input.type, input.size);
   try {
     await waitForLoadedData(video, url);
-    dbg("loadeddata ok", "dur=", video.duration, "w=", video.videoWidth, "h=", video.videoHeight);
 
     const durationMs = Number.isFinite(video.duration)
       ? Math.round(video.duration * 1000)
@@ -64,7 +57,6 @@ export async function extractVideoPoster(input: File): Promise<ExtractedPoster> 
     // If the browser couldn't decode dimensions, we still have a usable
     // upload — just no poster. Return early with poster=null.
     if (width === 0 || height === 0) {
-      dbg("no dimensions → poster null");
       return { poster: null, durationMs, width, height };
     }
 
@@ -72,9 +64,7 @@ export async function extractVideoPoster(input: File): Promise<ExtractedPoster> 
       SEEK_TARGET_SECONDS,
       Number.isFinite(video.duration) ? video.duration / 2 : SEEK_TARGET_SECONDS,
     );
-    dbg("seeking to", targetSeconds);
     await seekTo(video, targetSeconds);
-    dbg("seeked");
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -83,10 +73,8 @@ export async function extractVideoPoster(input: File): Promise<ExtractedPoster> 
     if (!ctx) return { poster: null, durationMs, width, height };
 
     ctx.drawImage(video, 0, 0, width, height);
-    dbg("drew frame, encoding webp");
 
     const blob = await canvasToBlob(canvas, "image/webp", POSTER_QUALITY);
-    dbg("encoded", blob ? `${blob.size} bytes` : "null");
     if (!blob) return { poster: null, durationMs, width, height };
 
     const poster = new File([blob], "poster.webp", {
@@ -94,10 +82,8 @@ export async function extractVideoPoster(input: File): Promise<ExtractedPoster> 
       lastModified: Date.now(),
     });
 
-    dbg("done → returning poster");
     return { poster, durationMs, width, height };
-  } catch (err) {
-    dbg("threw → poster null", err);
+  } catch {
     return { poster: null, durationMs: null, width: 0, height: 0 };
   } finally {
     URL.revokeObjectURL(url);

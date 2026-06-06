@@ -62,24 +62,6 @@ export async function uploadProductVideo(
   const session = await requireSession();
   const { productId, video, poster, durationMs, width, height } = input;
 
-  // Step logging — visible in prod container stdout (devGroup now always
-  // logs server-side). Lets us see exactly where a stuck upload dies:
-  // if "entry" never prints, the request never reached the action (proxy
-  // / body-size / Traefik). If "entry" prints but "r2:video done" doesn't,
-  // it's the R2 PUT.
-  dev.log(
-    "entry: product=",
-    productId,
-    "type=",
-    video.type,
-    "videoBytes=",
-    video.size,
-    "posterBytes=",
-    poster?.size ?? null,
-    "durationMs=",
-    durationMs ?? null,
-  );
-
   if (video.size > VIDEO_MAX_BYTES) {
     return {
       ok: false,
@@ -109,13 +91,11 @@ export async function uploadProductVideo(
   // Guard against a stale tab posting to a deleted product. Also pull
   // createdAt to date-partition the R2 keys (same browseability
   // rationale as images-actions.ts).
-  dev.log("db:product lookup", productId);
   const [product] = await db
     .select({ id: products.id, createdAt: products.createdAt })
     .from(products)
     .where(eq(products.id, productId))
     .limit(1);
-  dev.log("db:product lookup done, found=", Boolean(product));
   if (!product) return { ok: false, error: m.errors.productNotFound };
 
   const uuid = randomUUID();
@@ -134,15 +114,12 @@ export async function uploadProductVideo(
     : null;
 
   try {
-    dev.log("r2:video buffering", video.size, "bytes →", videoKey);
     const videoBuffer = Buffer.from(await video.arrayBuffer());
-    dev.log("r2:video buffered, sending", videoBuffer.byteLength, "bytes");
     await uploadToR2({
       key: videoKey,
       body: videoBuffer,
       contentType: video.type,
     });
-    dev.log("r2:video done");
 
     if (poster && posterKey) {
       const posterBuffer = Buffer.from(await poster.arrayBuffer());
@@ -151,7 +128,6 @@ export async function uploadProductVideo(
         body: posterBuffer,
         contentType: "image/webp",
       });
-      dev.log("r2:poster done", posterKey);
     }
   } catch (err) {
     dev.error("R2 upload failed:", err);
@@ -160,7 +136,6 @@ export async function uploadProductVideo(
       error: err instanceof Error ? err.message : m.errors.couldNotUploadR2,
     };
   }
-  dev.log("db:inserting row");
 
   const existing = await db
     .select({ order: productVideos.order })
