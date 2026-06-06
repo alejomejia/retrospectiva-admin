@@ -21,7 +21,8 @@ import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import type { ClothingType, Product } from "@/lib/db/schema";
 import type { ShippingProfile } from "@/lib/integrations/etsy/shop-config";
 import { m } from "@/lib/i18n/messages.es";
-import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils/helpers";
+import { Star } from "lucide-react";
 
 import {
   AiImageSection,
@@ -116,33 +117,23 @@ export function Step1Inputs({
 
       {/* Product data */}
       <div className="flex flex-col gap-8 p-6 border-b border-border">
-        <header className="flex flex-col gap-2">
-          <h2 className="flex items-center gap-1">
-            <span className="font-mono text-brand-terracotta">02</span>
-            <span className="uppercase text-foreground">{m.products.stepper.step1.title}</span>
-          </h2>
-          <p>{m.products.stepper.step1.description}</p>
-        </header>
-        
-        <div className="flex items-center justify-between rounded-md border border-border bg-card px-4 py-3 max-w-md mb-4">
-          <div className="space-y-0.5">
-            <Label htmlFor="is-featured">{m.products.form.featured}</Label>
-            <p className="text-sm text-muted-foreground">
-              {m.products.form.featuredHint}
-            </p>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <h2 className="flex items-center gap-1">
+              <span className="font-mono text-brand-terracotta">02</span>
+              <span className="uppercase text-foreground">{m.products.stepper.step1.title}</span>
+            </h2>
+            <p>{m.products.stepper.step1.description}</p>
           </div>
           {featuredSlotsFull && !vm.isFeatured ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                {/* Disabled switches swallow pointer events, so the
+                {/* Disabled control swallows pointer events, so the
                     wrapper span is what the tooltip listens on. */}
-                <span tabIndex={0} className="inline-flex">
-                  <Switch
-                    id="is-featured"
-                    checked={false}
-                    disabled
+                <span tabIndex={0} className="inline-flex shrink-0">
+                  <Star
                     aria-label={m.products.form.featured}
-                    className="pointer-events-none"
+                    className="size-6 text-muted-foreground opacity-40"
                   />
                 </span>
               </TooltipTrigger>
@@ -151,13 +142,31 @@ export function Step1Inputs({
               </TooltipContent>
             </Tooltip>
           ) : (
-            <Switch
-              id="is-featured"
-              checked={vm.isFeatured}
-              onCheckedChange={vm.handleFeaturedChange}
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => vm.handleFeaturedChange(!vm.isFeatured)}
+                  aria-pressed={vm.isFeatured}
+                  aria-label={m.products.form.featured}
+                  className="shrink-0 rounded-md p-2 transition-colors hover:bg-muted"
+                >
+                  <Star
+                    className={cn(
+                      "size-6",
+                      vm.isFeatured
+                        ? "fill-brand-terracotta text-brand-terracotta"
+                        : "text-muted-foreground",
+                    )}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {m.products.form.featuredHint}
+              </TooltipContent>
+            </Tooltip>
           )}
-        </div>
+        </header>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <GarmentTypeField value={vm.clothingType} onChange={vm.handleClothingTypeChange} />
