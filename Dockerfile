@@ -20,6 +20,13 @@ COPY . .
 # (compose `environment:` for the containers).
 ENV DATABASE_URL=postgres://build:build@127.0.0.1:5432/build
 ENV REDIS_URL=redis://127.0.0.1:6379
+# NOTE: Server Action ids are encrypted with this key, which Next embeds in
+# the build output. Without a fixed value Next generates a fresh random key
+# on every build, so each redeploy invalidates the action ids held by any
+# already-loaded browser → "Failed to find Server Action". Pinning it keeps
+# the key stable across builds and (for multi-instance) across servers.
+ARG NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
 RUN pnpm build
 
 # ---------- runner ----------
