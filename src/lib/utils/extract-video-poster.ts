@@ -25,6 +25,14 @@ export type ExtractedPoster = {
 
 const POSTER_QUALITY = 0.82;
 const SEEK_TARGET_SECONDS = 1.0;
+// Hard ceiling on each browser-decode step. Some files (variable frame
+// rate, certain HEVC/MOV, mis-reported duration) load metadata but then
+// never fire `loadeddata`/`seeked` — leaving the promise pending forever.
+// Without this, `extractVideoPoster` never returns, so `uploadProductVideo`
+// is never reached and the uploader spinner hangs with zero error client-
+// or server-side. On timeout we degrade to no-poster (the video still
+// uploads) instead of blocking the whole upload.
+const DECODE_STEP_TIMEOUT_MS = 10_000;
 
 export async function extractVideoPoster(input: File): Promise<ExtractedPoster> {
   const url = URL.createObjectURL(input);
@@ -86,7 +94,12 @@ export async function extractVideoPoster(input: File): Promise<ExtractedPoster> 
 
 function waitForLoadedData(video: HTMLVideoElement, url: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("video decode timed out"));
+    }, DECODE_STEP_TIMEOUT_MS);
     const cleanup = () => {
+      clearTimeout(timer);
       video.removeEventListener("loadeddata", onLoad);
       video.removeEventListener("error", onError);
     };
@@ -104,13 +117,21 @@ function waitForLoadedData(video: HTMLVideoElement, url: string): Promise<void> 
   });
 }
 
+// Resolves on `seeked`, on `error`, OR on timeout — never hangs. A failed
+// or slow seek shouldn't sink the upload: we resolve regardless and let the
+// caller try to paint whatever frame is current (a bad frame just makes
+// drawImage/toBlob fail, which degrades to no-poster, not a hang).
 function seekTo(video: HTMLVideoElement, seconds: number): Promise<void> {
   return new Promise((resolve) => {
-    const onSeeked = () => {
-      video.removeEventListener("seeked", onSeeked);
+    const timer = setTimeout(settle, DECODE_STEP_TIMEOUT_MS);
+    function settle() {
+      clearTimeout(timer);
+      video.removeEventListener("seeked", settle);
+      video.removeEventListener("error", settle);
       resolve();
-    };
-    video.addEventListener("seeked", onSeeked);
+    }
+    video.addEventListener("seeked", settle);
+    video.addEventListener("error", settle);
     video.currentTime = seconds;
   });
 }
