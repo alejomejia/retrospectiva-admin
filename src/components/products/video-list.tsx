@@ -85,6 +85,7 @@ function VideoTile({
           src={video.url}
           poster={video.posterUrl ?? undefined}
           controls
+          muted
           preload="metadata"
           className="h-full w-full object-cover"
         />

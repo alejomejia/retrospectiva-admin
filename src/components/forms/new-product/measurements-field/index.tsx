@@ -15,6 +15,7 @@ import {
 import { useAutosave } from "../autosave";
 import { BraSizeInput } from "./measurements-field-bra-size-input";
 import { CmInput } from "./measurements-field-cm-input";
+import { WaistInput } from "./measurements-field-waist-input";
 
 /**
  * Renders one numeric input per measurement required by the
@@ -65,6 +66,25 @@ export function MeasurementsField({
                 onChange({ ...values, braSize: next });
                 schedule({ braSize: next });
               }}
+            />
+          );
+        }
+        if (measurement === "waist") {
+          const commit = (
+            key: "waistCm" | "waistMaxCm",
+            next: number | null,
+          ) => {
+            onChange({ ...values, [key]: next });
+            schedule({ [key]: next } as ProductDraftPatch);
+          };
+          return (
+            <WaistInput
+              key="waist"
+              doubles={doublesAtBoundary(clothingType, "waist")}
+              min={values.waistCm}
+              max={values.waistMaxCm}
+              onChangeMin={(next) => commit("waistCm", next)}
+              onChangeMax={(next) => commit("waistMaxCm", next)}
             />
           );
         }

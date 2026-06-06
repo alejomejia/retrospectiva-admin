@@ -33,7 +33,13 @@ import type { ColumnKey } from "./types";
 export const COLUMN_LABELS: Record<ColumnKey, string> = {
   thumbnail: m.products.columns.thumbnail,
   title: m.products.columns.title,
+  condition: m.products.columns.condition,
+  size: m.products.columns.size,
+  featured: m.products.columns.featured,
   status: m.products.columns.status,
+  basePrice: m.products.columns.basePrice,
+  buyPrice: m.products.columns.buyPrice,
+  discount: m.products.columns.discount,
   price: m.products.columns.price,
   createdAt: m.products.columns.createdAt,
 };

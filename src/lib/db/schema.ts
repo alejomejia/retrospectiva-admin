@@ -161,7 +161,13 @@ export const products = pgTable(
     sleeveWidthCm: real("sleeve_width_cm"),
     sleeveLengthCm: real("sleeve_length_cm"),
     chestCm: real("chest_cm"),
+    // Waist is stored as a min/max pair: `waistCm` is the minimum (the
+    // default, and the only value for non-elastic garments).
+    // `waistMaxCm` is set only for resorted/elastic waistbands —
+    // null otherwise. Both double at the boundary when the clothing
+    // type marks `waist` as x2.
     waistCm: real("waist_cm"),
+    waistMaxCm: real("waist_max_cm"),
     hipCm: real("hip_cm"),
     riseCm: real("rise_cm"),
     legCm: real("leg_cm"),

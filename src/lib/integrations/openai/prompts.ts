@@ -259,6 +259,13 @@ Do not copy them literally.
 
 Do not prioritize comments over visible evidence.
 
+WAIST MEASUREMENT RULE:
+
+The input measurements may include "waistCm" (the minimum waist) and, only for resorted/elastic waistbands, "waistMaxCm" (the maximum waist).
+
+- If BOTH "waistCm" and "waistMaxCm" are present and you mention the waist in the Spanish description, give both values as "cintura mínima X cm" and "cintura máxima Y cm".
+- If ONLY "waistCm" is present, refer to it simply as "cintura X cm" — never "cintura mínima".
+
 FINAL SAFETY RULE:
 
 When uncertain, prefer omission over invention.

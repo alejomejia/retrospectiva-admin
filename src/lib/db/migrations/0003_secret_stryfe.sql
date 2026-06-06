@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "waist_max_cm" real;

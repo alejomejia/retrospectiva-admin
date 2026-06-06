@@ -139,7 +139,13 @@ export const m = {
     columns: {
       thumbnail: "Foto",
       title: "Nombre",
+      condition: "Condición",
+      size: "Talla",
+      featured: "Destacado",
       status: "Estado",
+      basePrice: "Precio base",
+      buyPrice: "Precio de compra",
+      discount: "Descuento",
       price: "Precio Etsy",
       createdAt: "Creado",
       openSelector: "Columnas",
@@ -262,6 +268,11 @@ export const m = {
         length: "Largo",
         braSize: "Talla de copa",
       },
+      waistMin: "Cintura mínima",
+      waistMax: "Cintura máxima",
+      waistElastic: "Cintura resortada",
+      waistElasticHint:
+        "Añade una cintura máxima para prendas con resorte.",
     },
     conditions: {
       perfect: "Perfecto estado",

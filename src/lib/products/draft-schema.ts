@@ -134,6 +134,7 @@ export const ProductDraftPatchSchema = z.object({
   sleeveLengthCm: cm.nullable().optional(),
   chestCm: cm.nullable().optional(),
   waistCm: cm.nullable().optional(),
+  waistMaxCm: cm.nullable().optional(),
   hipCm: cm.nullable().optional(),
   riseCm: cm.nullable().optional(),
   legCm: cm.nullable().optional(),

@@ -15,7 +15,10 @@ export type ProductMeasurements = {
   sleeveWidthCm: number | null;
   sleeveLengthCm: number | null;
   chestCm: number | null;
+  /** Minimum waist (the default; sole value for non-elastic garments). */
   waistCm: number | null;
+  /** Maximum waist — set only for resorted/elastic waistbands. */
+  waistMaxCm: number | null;
   hipCm: number | null;
   riseCm: number | null;
   legCm: number | null;
@@ -81,6 +84,11 @@ export function doubledMeasurements(
     const value = out[key];
     if (typeof value === "number") {
       out[key] = value * 2;
+    }
+    // `waistMaxCm` is a sibling column with no `Measurement` of its
+    // own; it doubles whenever `waist` does.
+    if (m === "waist" && typeof out.waistMaxCm === "number") {
+      out.waistMaxCm = out.waistMaxCm * 2;
     }
   }
   return out;

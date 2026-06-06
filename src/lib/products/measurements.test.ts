@@ -13,6 +13,7 @@ const blank: ProductMeasurements = {
   sleeveLengthCm: null,
   chestCm: null,
   waistCm: null,
+  waistMaxCm: null,
   hipCm: null,
   riseCm: null,
   legCm: null,
@@ -115,5 +116,20 @@ describe("doubledMeasurements", () => {
     expect(out.waistCm).toBe(76);
     expect(out.hipCm).toBeNull();
     expect(out.legCm).toBeNull();
+  });
+
+  it("doubles waistMaxCm alongside waistCm when waist is x2", () => {
+    const out = doubledMeasurements("jean", {
+      ...blank,
+      waistCm: 38,
+      waistMaxCm: 44,
+    });
+    expect(out.waistCm).toBe(76);
+    expect(out.waistMaxCm).toBe(88);
+  });
+
+  it("leaves waistMaxCm null when no max is set", () => {
+    const out = doubledMeasurements("jean", { ...blank, waistCm: 38 });
+    expect(out.waistMaxCm).toBeNull();
   });
 });

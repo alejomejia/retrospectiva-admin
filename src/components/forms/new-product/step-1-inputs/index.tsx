@@ -133,16 +133,10 @@ export function Step1Inputs({
           )}
         </div>
 
-        <div className="flex gap-8">
-          <div className="grow">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <GarmentTypeField value={vm.clothingType} onChange={vm.handleClothingTypeChange} />
-          </div>
-          <div className="grow">
             <ConditionField value={vm.condition} onChange={vm.setCondition} />
-          </div>
-          <div className="grow">
             <SizeField value={vm.size} onChange={vm.setSize} />
-          </div>
         </div>
         <MeasurementsField
           clothingType={vm.clothingType}

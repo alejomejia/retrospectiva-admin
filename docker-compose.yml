@@ -117,6 +117,12 @@ services:
     environment:
       DATABASE_URL: postgres://retrospectiva:retrospectiva@postgres:5432/retrospectiva
       REDIS_URL: redis://redis:6379
+      # The worker runs under raw tsx (no Next.js bundler), so the `react-server`
+      # export condition that makes `import "server-only"` a no-op is never set.
+      # Without it, server-only resolves to its throwing `index.js` and the
+      # worker dies importing config.ts. Set the condition so it resolves to the
+      # empty module, matching how Next loads server-only in the app container.
+      NODE_OPTIONS: "--conditions=react-server"
     # Direct binary — see migrate service note on pnpm verify-deps-before-run.
     command: ["node_modules/.bin/tsx", "src/lib/queue/worker.ts"]
 

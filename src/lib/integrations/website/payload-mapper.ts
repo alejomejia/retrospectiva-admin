@@ -64,7 +64,10 @@ export type WebsiteMeasurements = {
   sleeveWidthCm: number | null;
   sleeveLengthCm: number | null;
   chestCm: number | null;
+  /** Minimum waist (sole value for non-elastic garments). */
   waistCm: number | null;
+  /** Maximum waist — non-null only for resorted/elastic waistbands. */
+  waistMaxCm: number | null;
   hipCm: number | null;
   riseCm: number | null;
   legCm: number | null;
@@ -150,6 +153,7 @@ function buildMeasurements(row: Product): WebsiteMeasurements {
     sleeveLengthCm: null,
     chestCm: null,
     waistCm: null,
+    waistMaxCm: null,
     hipCm: null,
     riseCm: null,
     legCm: null,
@@ -165,6 +169,11 @@ function buildMeasurements(row: Product): WebsiteMeasurements {
     if (raw == null) continue;
     const factor = doublesAtBoundary(row.clothingType, m) ? 2 : 1;
     out[col] = raw * factor;
+    // `waistMaxCm` is a sibling of `waistCm` with no `Measurement`
+    // entry; carry it through with the same doubling factor.
+    if (m === "waist" && row.waistMaxCm != null) {
+      out.waistMaxCm = row.waistMaxCm * factor;
+    }
   }
   return out;
 }

@@ -44,6 +44,7 @@ function fakePayload(): WebsitePayload {
       sleeveLengthCm: null,
       chestCm: null,
       waistCm: null,
+      waistMaxCm: null,
       hipCm: null,
       riseCm: null,
       legCm: null,

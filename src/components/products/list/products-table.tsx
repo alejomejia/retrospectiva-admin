@@ -38,7 +38,13 @@ const STATUS_VARIANT: Record<
   archived: "outline",
 };
 
-const RIGHT_ALIGNED: ColumnKey[] = ["price", "createdAt"];
+const RIGHT_ALIGNED: ColumnKey[] = [
+  "basePrice",
+  "buyPrice",
+  "discount",
+  "price",
+  "createdAt",
+];
 
 export function ProductsTable({ rows }: { rows: ProductListItem[] }) {
   const { prefs } = useColumnPrefs();
@@ -142,12 +148,63 @@ function Cell({
           </div>
         </TableCell>
       );
+    case "condition":
+      return (
+        <TableCell>
+          {row.condition ? m.products.conditions[row.condition] : "—"}
+        </TableCell>
+      );
+    case "size":
+      return (
+        <TableCell>
+          {row.size
+            ? (m.products.sizes[
+                row.size as keyof typeof m.products.sizes
+              ] ?? row.size)
+            : "—"}
+        </TableCell>
+      );
+    case "featured":
+      return (
+        <TableCell>
+          {row.isFeatured ? (
+            <Star
+              className="size-4 fill-brand-terracotta text-brand-terracotta"
+              aria-label={m.products.list.featuredLabel}
+            />
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </TableCell>
+      );
     case "status":
       return (
         <TableCell>
           <Badge variant={STATUS_VARIANT[row.status]}>
             {m.products.statuses[row.status]}
           </Badge>
+        </TableCell>
+      );
+    case "basePrice":
+      return (
+        <TableCell className="text-right font-mono tabular-nums">
+          {row.basePriceCents !== null
+            ? formatCents(row.basePriceCents, row.currency)
+            : "—"}
+        </TableCell>
+      );
+    case "buyPrice":
+      return (
+        <TableCell className="text-right font-mono tabular-nums">
+          {row.buyPriceCents !== null
+            ? formatCents(row.buyPriceCents, row.currency)
+            : "—"}
+        </TableCell>
+      );
+    case "discount":
+      return (
+        <TableCell className="text-right font-mono tabular-nums">
+          {row.discountPercent ? `${row.discountPercent}%` : "—"}
         </TableCell>
       );
     case "price":

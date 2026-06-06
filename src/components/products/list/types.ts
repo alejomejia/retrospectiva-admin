@@ -11,6 +11,10 @@ export type ProductListItem = Pick<
   | "titleEs"
   | "status"
   | "basePriceCents"
+  | "buyPriceCents"
+  | "discountPercent"
+  | "condition"
+  | "size"
   | "currency"
   | "createdAt"
   | "isFeatured"
@@ -23,7 +27,13 @@ export type ProductListItem = Pick<
 export const COLUMN_KEYS = [
   "thumbnail",
   "title",
+  "condition",
+  "featured",
+  "size",
   "status",
+  "basePrice",
+  "buyPrice",
+  "discount",
   "price",
   "createdAt",
 ] as const;
@@ -35,7 +45,13 @@ export type ColumnPref = { key: ColumnKey; visible: boolean };
 export const DEFAULT_COLUMN_PREFS: ColumnPref[] = [
   { key: "thumbnail", visible: true },
   { key: "title", visible: true },
+  { key: "featured", visible: true },
+  { key: "condition", visible: false },
+  { key: "size", visible: false },
   { key: "status", visible: true },
+  { key: "basePrice", visible: true },
+  { key: "buyPrice", visible: true },
+  { key: "discount", visible: true },
   { key: "price", visible: true },
   { key: "createdAt", visible: true },
 ];

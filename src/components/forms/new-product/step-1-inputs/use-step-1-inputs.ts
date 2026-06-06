@@ -119,6 +119,7 @@ export function useStep1Inputs({
     sleeveLengthCm: product.sleeveLengthCm,
     chestCm: product.chestCm,
     waistCm: product.waistCm,
+    waistMaxCm: product.waistMaxCm,
     hipCm: product.hipCm,
     riseCm: product.riseCm,
     legCm: product.legCm,

@@ -16,9 +16,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "worker": "tsx watch src/lib/queue/worker.ts",
-    "worker:prod": "tsx src/lib/queue/worker.ts",
-    "worker:log": "LOG_IMAGE_PLACEMENT_PROMPT=1 tsx watch src/lib/queue/worker.ts",
+    "worker": "NODE_OPTIONS=--conditions=react-server tsx watch src/lib/queue/worker.ts",
+    "worker:prod": "NODE_OPTIONS=--conditions=react-server tsx src/lib/queue/worker.ts",
+    "worker:log": "LOG_IMAGE_PLACEMENT_PROMPT=1 NODE_OPTIONS=--conditions=react-server tsx watch src/lib/queue/worker.ts",
     "hash-password": "tsx scripts/hash-password.ts",
     "etsy:taxonomy": "tsx scripts/fetch-etsy-taxonomy.ts",
     "typecheck": "tsc --noEmit"

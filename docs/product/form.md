@@ -240,6 +240,18 @@ export function flatMeasurements(p: Product): ProductMeasurements;
 
 Never double inside the form layer. Storage is canonical-flat.
 
+### Resorted (elastic) waist — min/max
+
+Waist is stored as a min/max pair. `waist_cm` is the minimum and the
+default — for a non-elastic garment it's the only value entered. A
+"Cintura resortada" toggle in the form reveals an optional
+`waist_max_cm` for elastic/resorted waistbands. Both values double at
+the boundary when the clothing type marks `waist` as x2.
+
+The enrichment prompt phrases the waist accordingly: with both values
+present it writes **"cintura mínima X · cintura máxima Y"**; with only
+the minimum it writes plain **"cintura X"** (never "cintura mínima").
+
 ---
 
 ## 4 · Edit experience (flat form)
@@ -282,7 +294,7 @@ base_price_cents, currency, markup_percent_override, list_price_cents_override
 
 -- Main user provided inputs
 clothing_type, condition, sizes text[],
-shoulder_cm, chest_cm, waist_cm, hip_cm, rise_cm, leg_cm, length_cm,
+shoulder_cm, chest_cm, waist_cm, waist_max_cm, hip_cm, rise_cm, leg_cm, length_cm,
 bra_size
 
 -- AI / Etsy content (bilingual)

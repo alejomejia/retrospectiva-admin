@@ -12,11 +12,20 @@ export function CmInput({
   doubles,
   value,
   onChange,
+  label: labelOverride,
+  idSuffix,
+  required = true,
 }: {
   measurement: Exclude<Measurement, "braSize">;
   doubles: boolean;
   value: number | null;
   onChange: (next: number | null) => void;
+  /** Overrides the i18n label keyed off `measurement` (e.g. waist min/max). */
+  label?: string;
+  /** Disambiguates the input id when two share a `measurement` (waist). */
+  idSuffix?: string;
+  /** Whether to render the required marker. Defaults to true. */
+  required?: boolean;
 }) {
   // Local text buffer between keystrokes and the onBlur commit; the
   // parent never resets it externally, so no prop-sync effect is
@@ -33,11 +42,11 @@ export function CmInput({
     // Keep at most one decimal; cm columns are `real`.
     onChange(Math.round(n * 10) / 10);
   };
-  const id = `meas-${measurement}`;
-  const label = m.products.form.measurements[measurement];
+  const id = `meas-${measurement}${idSuffix ? `-${idSuffix}` : ""}`;
+  const label = labelOverride ?? m.products.form.measurements[measurement];
   return (
     <div className="space-y-1">
-      <Label htmlFor={id} className="text-caplet" required>
+      <Label htmlFor={id} className="text-caplet" required={required}>
         {label}
       </Label>
       <div className="relative">

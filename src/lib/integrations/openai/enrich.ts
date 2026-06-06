@@ -47,6 +47,7 @@ export function buildEnrichInputContext(
     | "sleeveLengthCm"
     | "chestCm"
     | "waistCm"
+    | "waistMaxCm"
     | "hipCm"
     | "riseCm"
     | "legCm"
@@ -65,6 +66,7 @@ export function buildEnrichInputContext(
       sleeveLengthCm: product.sleeveLengthCm,
       chestCm: product.chestCm,
       waistCm: product.waistCm,
+      waistMaxCm: product.waistMaxCm,
       hipCm: product.hipCm,
       riseCm: product.riseCm,
       legCm: product.legCm,

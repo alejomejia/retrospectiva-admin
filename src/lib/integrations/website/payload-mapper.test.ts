@@ -167,6 +167,22 @@ describe("buildWebsitePayload", () => {
     expect(out.measurements.shoulderCm).toBe(45);
     expect(out.measurements.lengthCm).toBe(70);
     expect(out.measurements.waistCm).toBeNull();
+    expect(out.measurements.waistMaxCm).toBeNull();
+  });
+
+  it("doubles waistMaxCm alongside waistCm for an elastic jean", async () => {
+    state.products = [
+      baseProduct({ clothingType: "jean", waistCm: 38, waistMaxCm: 44 }),
+    ];
+    state.images = [
+      { r2Key: "k.jpg", role: "original", order: 0, width: null, height: null },
+    ];
+    const out = await buildWebsitePayload({
+      productId: "prod-1",
+      kind: "publish",
+    });
+    expect(out.measurements.waistCm).toBe(76);
+    expect(out.measurements.waistMaxCm).toBe(88);
   });
 
   it("orders images: originals by `order`, then ai_model appended last", async () => {
