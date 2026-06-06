@@ -25,6 +25,7 @@
  */
 
 import type { ProductImage } from "@/lib/db/schema";
+import { isDev } from "@/lib/utils/config";
 
 const ALLOWED_EXTENSIONS = ["webp", "jpg", "jpeg", "png", "avif"] as const;
 export type AllowedExtension = (typeof ALLOWED_EXTENSIONS)[number];
@@ -33,6 +34,8 @@ const ALLOWED_VIDEO_EXTENSIONS = ["mp4", "mov", "webm"] as const;
 export type AllowedVideoExtension = (typeof ALLOWED_VIDEO_EXTENSIONS)[number];
 
 export type ImageRole = ProductImage["role"];
+
+const ENV_PREFIX = isDev ? "dev/" : "prod/";
 
 /**
  * Renders a Date as `YYYY/MM/DD` in Europe/Madrid. Two-digit month +
@@ -80,7 +83,7 @@ export function generateImageKey({
       `Unsupported image extension "${extension}". Allowed: ${ALLOWED_EXTENSIONS.join(", ")}.`,
     );
   }
-  return `products/${formatDatePrefix(createdAt)}/${productId}/${role}/${uuid}.${ext}`;
+  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/${role}/${uuid}.${ext}`;
 }
 
 /**
@@ -94,7 +97,7 @@ export function publicUrlFor(key: string, baseUrl: string): string {
 
 /** Prefix that scopes ALL keys for a product (used by manual hard-delete). */
 export function productPrefix(productId: string, createdAt: Date): string {
-  return `products/${formatDatePrefix(createdAt)}/${productId}/`;
+  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/`;
 }
 
 /**
@@ -121,7 +124,7 @@ export function generateVideoKey({
       `Unsupported video extension "${extension}". Allowed: ${ALLOWED_VIDEO_EXTENSIONS.join(", ")}.`,
     );
   }
-  return `products/${formatDatePrefix(createdAt)}/${productId}/video/${uuid}.${ext}`;
+  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/video/${uuid}.${ext}`;
 }
 
 /**
@@ -138,5 +141,5 @@ export function generateVideoPosterKey({
   createdAt: Date;
   uuid: string;
 }): string {
-  return `products/${formatDatePrefix(createdAt)}/${productId}/video_poster/${uuid}.webp`;
+  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/video_poster/${uuid}.webp`;
 }
