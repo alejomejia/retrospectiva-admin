@@ -109,11 +109,13 @@ export async function uploadProductVideo(
   // Guard against a stale tab posting to a deleted product. Also pull
   // createdAt to date-partition the R2 keys (same browseability
   // rationale as images-actions.ts).
+  dev.log("db:product lookup", productId);
   const [product] = await db
     .select({ id: products.id, createdAt: products.createdAt })
     .from(products)
     .where(eq(products.id, productId))
     .limit(1);
+  dev.log("db:product lookup done, found=", Boolean(product));
   if (!product) return { ok: false, error: m.errors.productNotFound };
 
   const uuid = randomUUID();
