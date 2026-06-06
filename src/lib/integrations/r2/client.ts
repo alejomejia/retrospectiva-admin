@@ -47,6 +47,21 @@ export const r2 =
       accessKeyId: r2AccessKeyId,
       secretAccessKey: r2SecretAccessKey,
     },
+    // NOTE: the SDK's default socket has NO timeout — a half-open
+    // connection to R2 (network blip on the VPS / Cloudflare hiccup)
+    // leaves `client.send()` awaiting forever. That stalls the video
+    // server action indefinitely: it never resolves OR rejects, so the
+    // uploader's "Subiendo…" spinner hangs with zero error client- or
+    // server-side. Bounding both timeouts converts a stall into a
+    // thrown error the action layer can surface and the SDK can retry.
+    // Both are idle/establish timeouts (reset on socket activity), so a
+    // legitimately long 100 MB upload with bytes flowing is unaffected
+    // — only a genuinely stuck socket trips them.
+    requestHandler: {
+      connectionTimeout: 6_000, // ms to establish the TCP/TLS socket
+      requestTimeout: 30_000, // ms of socket inactivity before abort
+    },
+    maxAttempts: 3, // retry the timeout/transient failure a couple times
   });
 
 if (process.env.NODE_ENV !== "production") {
