@@ -36,6 +36,12 @@ ENV PORT=3000
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+# `next start` re-loads next.config.ts from cwd at runtime (see
+# router-server loadConfig at PHASE_PRODUCTION_SERVER) — it is NOT baked
+# into .next. Without it the server silently falls back to defaults:
+# 1 MB Server Action body limit (video uploads 413), 10 MB proxy buffer,
+# and none of the security headers / CSP. Must ship it in the runner.
+COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
