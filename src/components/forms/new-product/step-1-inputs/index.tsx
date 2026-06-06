@@ -88,11 +88,37 @@ export function Step1Inputs({
 
   return (
     <div>
-      {/* Product data */}
+      {/* Product assets */}
       <div className="flex flex-col gap-8 p-6 border-b border-border">
         <header className="flex flex-col gap-2">
           <h2 className="flex items-center gap-1">
             <span className="font-mono text-brand-terracotta">01</span>
+            <span className="uppercase text-foreground">{m.products.stepper.step1.mediaTitle}</span>
+          </h2>
+          <p>{m.products.stepper.step1.mediaDescription}</p>
+        </header>
+        <MediaUploader productId={product.id} />
+        <div className="space-y-3">
+          <h3 className="text-caplet">
+            {m.products.detail.photosTitle}
+            {imageItems.length > 0 ? ` · ${imageItems.length}` : ""}
+          </h3>
+          <ImageList images={imageItems} />
+        </div>
+        <div className="space-y-3">
+          <h3 className="text-caplet">
+            {m.products.detail.videosTitle}
+            {videoItems.length > 0 ? ` · ${videoItems.length}` : ""}
+          </h3>
+          <VideoList videos={videoItems} />
+        </div>
+      </div>
+
+      {/* Product data */}
+      <div className="flex flex-col gap-8 p-6 border-b border-border">
+        <header className="flex flex-col gap-2">
+          <h2 className="flex items-center gap-1">
+            <span className="font-mono text-brand-terracotta">02</span>
             <span className="uppercase text-foreground">{m.products.stepper.step1.title}</span>
           </h2>
           <p>{m.products.stepper.step1.description}</p>
@@ -164,7 +190,7 @@ export function Step1Inputs({
       <div className="flex flex-col gap-8 p-6 border-b border-border">
         <header className="flex flex-col gap-2">
           <h2 className="flex items-center gap-1">
-            <span className="font-mono text-brand-terracotta">02</span>
+            <span className="font-mono text-brand-terracotta">03</span>
             <span className="uppercase text-foreground">
               {m.products.stepper.step1.pricingSection.title}
             </span>
@@ -194,69 +220,11 @@ export function Step1Inputs({
         </div>
       </div>
 
-      {/* Product assets */}
+      {/* Shipping profile */}
       <div className="flex flex-col gap-8 p-6 border-b border-border">
         <header className="flex flex-col gap-2">
           <h2 className="flex items-center gap-1">
-            <span className="font-mono text-brand-terracotta">03</span>
-            <span className="uppercase text-foreground">{m.products.stepper.step1.mediaTitle}</span>
-          </h2>
-          <p>{m.products.stepper.step1.mediaDescription}</p>
-        </header>
-        <MediaUploader productId={product.id} />
-        <div className="space-y-3">
-          <h3 className="text-caplet">
-            {m.products.detail.photosTitle}
-            {imageItems.length > 0 ? ` · ${imageItems.length}` : ""}
-          </h3>
-          <ImageList images={imageItems} />
-        </div>
-        <div className="space-y-3">
-          <h3 className="text-caplet">
-            {m.products.detail.videosTitle}
-            {videoItems.length > 0 ? ` · ${videoItems.length}` : ""}
-          </h3>
-          <VideoList videos={videoItems} />
-        </div>
-      </div>
-
-      {/* AI product image generation */}
-      <div className="flex flex-col gap-8 p-6">
-        <header className="flex gap-4 items-center justify-between">
-          <div className="flex flex-col gap-2">
-            <h2 className="flex items-center gap-1">
-              <span className="font-mono text-brand-terracotta">04</span>
-              <span className="uppercase text-foreground">{m.products.stepper.step1.aiImageSection.title}</span>
-            </h2>
-            <p>{m.products.stepper.step1.aiImageSection.description}</p>
-          </div>
-          <div className="shrink-0">
-            <AiImageOverrideField
-              value={product.aiImageEnabled}
-              shopAiImageEnabled={shopAiImageEnabled}
-            />
-          </div>
-        </header>
-        <AiImageSection
-          product={product}
-          shopAiImageEnabled={shopAiImageEnabled}
-          aiModels={aiModels}
-          referenceImage={aiReferenceImage}
-          generatedImage={aiGeneratedImage}
-          clothingType={vm.clothingType}
-          r2BaseUrl={r2BaseUrl}
-          // Stepper auto-enqueues placement on Next; a manual button
-          // here would only invite duplicate calls.
-          showGenerateControls={false}
-          onAiRequiredStateChange={vm.handleAiRequiredStateChange}
-        />
-      </div>
-
-      {/* Shipping profile */}
-      <div className="flex flex-col gap-8 p-6 border-t border-border">
-        <header className="flex flex-col gap-2">
-          <h2 className="flex items-center gap-1">
-            <span className="font-mono text-brand-terracotta">05</span>
+            <span className="font-mono text-brand-terracotta">04</span>
             <span className="uppercase text-foreground">
               {m.products.stepper.step1.shippingSection.title}
             </span>
@@ -298,6 +266,38 @@ export function Step1Inputs({
             </Select>
           </div>
         )}
+      </div>
+
+      {/* AI product image generation */}
+      <div className="flex flex-col gap-8 p-6">
+        <header className="flex gap-4 items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <h2 className="flex items-center gap-1">
+              <span className="font-mono text-brand-terracotta">05</span>
+              <span className="uppercase text-foreground">{m.products.stepper.step1.aiImageSection.title}</span>
+            </h2>
+            <p>{m.products.stepper.step1.aiImageSection.description}</p>
+          </div>
+          <div className="shrink-0">
+            <AiImageOverrideField
+              value={product.aiImageEnabled}
+              shopAiImageEnabled={shopAiImageEnabled}
+            />
+          </div>
+        </header>
+        <AiImageSection
+          product={product}
+          shopAiImageEnabled={shopAiImageEnabled}
+          aiModels={aiModels}
+          referenceImage={aiReferenceImage}
+          generatedImage={aiGeneratedImage}
+          clothingType={vm.clothingType}
+          r2BaseUrl={r2BaseUrl}
+          // Stepper auto-enqueues placement on Next; a manual button
+          // here would only invite duplicate calls.
+          showGenerateControls={false}
+          onAiRequiredStateChange={vm.handleAiRequiredStateChange}
+        />
       </div>
     </div>
   );
