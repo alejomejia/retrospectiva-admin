@@ -2,33 +2,22 @@
  * Lightweight tagged logging. Wraps `console` with a `[dev]` (or
  * `[dev:scope]`) tag.
  *
- * Visibility rule (deliberately asymmetric):
- *   - SERVER (`typeof window === "undefined"`): ALWAYS logs, in every
- *     environment including production. Server logs go to the container
- *     stdout, never to a user's browser, so there's no reason to hide
- *     them — and prod-only bugs (like silent upload failures) are
- *     un-debuggable without them.
- *   - CLIENT (browser bundle): logs only in development. In production
- *     these no-op so we never spam end-users' consoles or leak internals
- *     into the client.
+ * Visibility: ALWAYS logs — server AND client, every environment
+ * including production. This is a 2-user internal admin, so there's no
+ * concern about spamming end-user consoles or leaking internals, and
+ * prod-only bugs (silent upload failures, etc.) are otherwise
+ * un-debuggable. Server logs go to container stdout; client logs go to
+ * the browser console.
  *
- * Safe to import from both client and server code. `typeof window` is
- * evaluated per-bundle, so the client bundle still collapses to `noop`
- * in prod.
+ * Safe to import from both client and server code.
  *
  * NOTE: this file is one of the few sanctioned exceptions to the
  * "no `process.env` outside `config.ts`" rule — see
  * `.agents/skills/project-conventions/consume-env-via-config.md`.
  */
 
-// `process.env.NODE_ENV` is the one env value Next.js statically
-// replaces in both server and client bundles, so this check resolves
-// to a literal boolean at build time.
-const IS_DEV = process.env.NODE_ENV === "development";
-// On the server `window` is undefined; in the browser bundle it's defined.
-const IS_SERVER = typeof window === "undefined";
-// Server: always on. Client: dev-only.
-const LOG_ENABLED = IS_SERVER || IS_DEV;
+// Always on, both bundles, all environments — see visibility note above.
+const LOG_ENABLED = true;
 
 const noop: (...args: unknown[]) => void = () => {};
 
