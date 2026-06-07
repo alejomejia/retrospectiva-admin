@@ -13,6 +13,7 @@ import { m } from "@/lib/i18n/messages.es";
 import {
   getRequiredMeasurements,
   getShippingWeightClass,
+  isMeasurementRequired,
 } from "@/lib/products/clothing-types";
 import { enqueueEnrichJob } from "@/lib/products/draft-actions";
 import { type SizeValue } from "@/lib/products/draft-schema";
@@ -154,13 +155,15 @@ export function useStep1Inputs({
     basePriceCents > 0;
   const hasImage = imageItems.length > 0;
   const measurementsFilled = clothingType
-    ? getRequiredMeasurements(clothingType).every((measurement) => {
-        if (measurement === "braSize") {
-          return measurements.braSize != null && measurements.braSize !== "";
-        }
-        const col = measurementToColumn(measurement);
-        return measurements[col as keyof ProductMeasurements] != null;
-      })
+    ? getRequiredMeasurements(clothingType)
+        .filter(isMeasurementRequired)
+        .every((measurement) => {
+          if (measurement === "braSize") {
+            return measurements.braSize != null && measurements.braSize !== "";
+          }
+          const col = measurementToColumn(measurement);
+          return measurements[col as keyof ProductMeasurements] != null;
+        })
     : false;
 
   // Per-product AI image generation is gated by BOTH the shop-wide

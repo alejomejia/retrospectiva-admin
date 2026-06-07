@@ -5,6 +5,7 @@ import type { ClothingType } from "@/lib/db/schema";
 import {
   doublesAtBoundary,
   getRequiredMeasurements,
+  isMeasurementRequired,
 } from "@/lib/products/clothing-types";
 import type { ProductDraftPatch } from "@/lib/products/draft-schema";
 import {
@@ -92,6 +93,7 @@ export function MeasurementsField({
           <CmInput
             key={measurement}
             measurement={measurement}
+            required={isMeasurementRequired(measurement)}
             doubles={doublesAtBoundary(clothingType, measurement)}
             value={values[measurementToColumn(measurement) as keyof ProductMeasurements] as number | null}
             onChange={(next) => {

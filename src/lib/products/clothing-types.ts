@@ -304,6 +304,20 @@ export function getRequiredMeasurements(value: ClothingType): Measurement[] {
 }
 
 /**
+ * Measurements that are rendered for a garment but not required to
+ * proceed. `shoulder` is optional everywhere because strapless cuts
+ * (e.g. a strapless dress or top) have no shoulder to measure.
+ */
+export const OPTIONAL_MEASUREMENTS: ReadonlySet<Measurement> = new Set([
+  "shoulder",
+]);
+
+/** `false` for measurements that are rendered but optional to fill in. */
+export function isMeasurementRequired(measurement: Measurement): boolean {
+  return !OPTIONAL_MEASUREMENTS.has(measurement);
+}
+
+/**
  * `true` if the given measurement value is stored flat and needs to
  * be doubled at the Etsy / website boundary for this clothing type.
  */
