@@ -20,6 +20,10 @@ const state: {
   uploadedVideo: string | null;
   translationUpserted: string | null;
   listingActivated: boolean;
+  listingReused: boolean;
+  existingImages: Array<{ listing_image_id: number }>;
+  deletedImageIds: number[];
+  existingVideos: Array<{ video_id: number }>;
 } = {
   products: [],
   settings: [],
@@ -37,6 +41,10 @@ const state: {
   uploadedVideo: null,
   translationUpserted: null,
   listingActivated: false,
+  listingReused: false,
+  existingImages: [],
+  deletedImageIds: [],
+  existingVideos: [],
 };
 
 // Sequenced source-table picker. The publish flow performs these
@@ -142,12 +150,23 @@ vi.mock("./listings", () => ({
     state.featuredQueried = true;
     return state.featuredListings;
   }),
-  updateListing: vi.fn(async (_shop: number, _id: number, patch: unknown) => {
+  updateListing: vi.fn(async (_shop: number, id: number, patch: unknown) => {
     if ((patch as { state?: string }).state === "active") {
       state.listingActivated = true;
+    } else {
+      // A non-activation updateListing is the resume path pushing the
+      // create payload onto the existing draft.
+      state.listingReused = true;
     }
-    return { listing_id: 9999, state: "active" };
+    return { listing_id: id, state: "draft" };
   }),
+  getListingImages: vi.fn(async () => state.existingImages),
+  deleteListingImage: vi.fn(
+    async (_shop: number, _id: number, imageId: number) => {
+      state.deletedImageIds.push(imageId);
+    },
+  ),
+  getListingVideos: vi.fn(async () => state.existingVideos),
   uploadListingImage: vi.fn(
     async (
       _shop: number,
@@ -234,6 +253,10 @@ beforeEach(() => {
   state.uploadedVideo = null;
   state.translationUpserted = null;
   state.listingActivated = false;
+  state.listingReused = false;
+  state.existingImages = [];
+  state.deletedImageIds = [];
+  state.existingVideos = [];
 });
 
 describe("runScheduledPublish — skip paths", () => {
@@ -332,6 +355,37 @@ describe("runScheduledPublish — happy path", () => {
     ];
     const result = await runScheduledPublish("p1");
     expect(result).toMatchObject({ skipped: false });
+  });
+});
+
+describe("runScheduledPublish — resume existing draft", () => {
+  it("reuses the persisted listing instead of creating a new draft, wiping old images first", async () => {
+    const resumeProduct = { ...baseProduct(), etsyListingId: 4242 };
+    state.products = [resumeProduct, resumeProduct];
+    state.existingImages = [{ listing_image_id: 11 }, { listing_image_id: 22 }];
+
+    const result = await runScheduledPublish("p1");
+
+    expect(result).toMatchObject({ skipped: false, listingId: 4242 });
+    // No fresh draft created; the existing one is reused.
+    expect(state.listingCreated).toBeNull();
+    expect(state.listingReused).toBe(true);
+    // Stale images wiped before re-upload (no duplicates).
+    expect(state.deletedImageIds).toEqual([11, 22]);
+    expect(state.uploadedImages).toHaveLength(2);
+  });
+
+  it("skips video re-upload when the resumed draft already has one", async () => {
+    const resumeProduct = { ...baseProduct(), etsyListingId: 4242 };
+    state.products = [resumeProduct, resumeProduct];
+    state.videos = [
+      { r2Key: "products/2026/05/15/p1/video/clip.mp4", mimeType: "video/mp4" },
+    ];
+    state.existingVideos = [{ video_id: 1 }];
+
+    await runScheduledPublish("p1");
+
+    expect(state.uploadedVideo).toBeNull();
   });
 });
 

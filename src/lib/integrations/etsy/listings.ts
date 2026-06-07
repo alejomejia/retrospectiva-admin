@@ -237,6 +237,73 @@ export async function updateListing(
   return unwrap<Listing>(res, "updateListing");
 }
 
+/**
+ * GET /shops/{shop_id}/listings/{listing_id}/images
+ * Lists the images currently attached to a listing. Used by the
+ * resume path: when re-running a publish against an existing draft we
+ * wipe its images first so the re-upload doesn't duplicate them.
+ */
+export async function getListingImages(
+  shopId: number,
+  listingId: number,
+  store?: TokenStore,
+): Promise<ListingImage[]> {
+  const res = await etsyFetch(
+    `/shops/${shopId}/listings/${listingId}/images`,
+    { method: "GET" },
+    store,
+  );
+  const data = await unwrap<{ results: ListingImage[] }>(
+    res,
+    "getListingImages",
+  );
+  return data.results ?? [];
+}
+
+/**
+ * DELETE /shops/{shop_id}/listings/{listing_id}/images/{listing_image_id}
+ * Removes a single image from a listing. Etsy returns 204 No Content
+ * on success, so there's no body to parse.
+ */
+export async function deleteListingImage(
+  shopId: number,
+  listingId: number,
+  imageId: number,
+  store?: TokenStore,
+): Promise<void> {
+  const res = await etsyFetch(
+    `/shops/${shopId}/listings/${listingId}/images/${imageId}`,
+    { method: "DELETE" },
+    store,
+  );
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Etsy deleteListingImage failed: ${res.status} ${body}`);
+  }
+}
+
+/**
+ * GET /shops/{shop_id}/listings/{listing_id}/videos
+ * Lists the videos attached to a listing (Etsy allows at most one).
+ * Used by the resume path to skip a duplicate video upload.
+ */
+export async function getListingVideos(
+  shopId: number,
+  listingId: number,
+  store?: TokenStore,
+): Promise<ListingVideo[]> {
+  const res = await etsyFetch(
+    `/shops/${shopId}/listings/${listingId}/videos`,
+    { method: "GET" },
+    store,
+  );
+  const data = await unwrap<{ results: ListingVideo[] }>(
+    res,
+    "getListingVideos",
+  );
+  return data.results ?? [];
+}
+
 export type UploadListingImageInput = {
   bytes: Uint8Array;
   filename: string;

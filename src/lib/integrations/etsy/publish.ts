@@ -25,7 +25,10 @@ import {
 } from "./listing-mapper";
 import {
   createDraftListing,
+  deleteListingImage,
   getFeaturedListings,
+  getListingImages,
+  getListingVideos,
   updateListing,
   uploadListingImage,
   uploadListingVideo,
@@ -258,73 +261,96 @@ export async function runScheduledPublish(
     dev.warn("featured cap reached — publishing unfeatured", productId);
   }
 
-  // `createDraftListing` is the only step where we'd leak an Etsy
-  // draft on crash. Persist the listing_id immediately so a retry
-  // can resume against the existing draft via updateListing instead
-  // of orphaning it.
-  const draft = await createDraftListing(shop.shopId, payload);
-  await db
-    .update(products)
-    .set({
-      etsyListingId: draft.listing_id,
-      updatedAt: sql`now()`,
-    })
-    .where(eq(products.id, productId));
-  dev.log("draft listing created", productId, `listingId=${draft.listing_id}`);
+  // Resume an interrupted publish instead of orphaning a fresh draft
+  // on every retry. A prior attempt persists `etsyListingId` the
+  // moment the draft is created (below), so if it's already set we
+  // reuse that draft — push the current payload via updateListing and
+  // wipe its existing images so the re-upload doesn't duplicate them.
+  // Only the first attempt actually calls createDraftListing.
+  let listingId: number;
+  let etsyState: string;
+  if (row.etsyListingId != null) {
+    const updated = await updateListing(shop.shopId, row.etsyListingId, payload);
+    listingId = row.etsyListingId;
+    etsyState = updated.state ?? "draft";
+    const existing = await getListingImages(shop.shopId, listingId);
+    for (const img of existing) {
+      await deleteListingImage(shop.shopId, listingId, img.listing_image_id);
+    }
+    dev.log("draft listing reused", productId, `listingId=${listingId}`);
+  } else {
+    // Persist the listing_id immediately so a mid-flow crash leaves a
+    // draft this resume path can pick up rather than orphaning it.
+    const draft = await createDraftListing(shop.shopId, payload);
+    await db
+      .update(products)
+      .set({
+        etsyListingId: draft.listing_id,
+        updatedAt: sql`now()`,
+      })
+      .where(eq(products.id, productId));
+    listingId = draft.listing_id;
+    etsyState = draft.state ?? "draft";
+    dev.log("draft listing created", productId, `listingId=${listingId}`);
+  }
 
   // Upload images in stored order. Rank is 1-indexed; rank=1 becomes
-  // Etsy's cover image (originals[0] in our list, by design). We
-  // collect the resulting listing_image_id from each upload and PUT
-  // them back via updateListing(image_ids=…) — uploadListingImage's
-  // `rank` parameter has proven unreliable in practice (Etsy ignores
-  // it when multiple images land in the same listing within a few
-  // hundred ms), but the bulk reorder on the listing always sticks.
+  // Etsy's cover image (originals[0] in our list, by design). Uploads
+  // are sequential (awaited one at a time), so Etsy honors each
+  // `rank` — there is no separate reorder PUT. NOTE: do NOT send
+  // `image_ids` to updateListing to reorder; it isn't a writable
+  // param on that endpoint and Etsy 404s the whole request.
   const images = await listImagesForEtsyPublish(productId);
   const altText = (product.titleEn ?? "").trim() || undefined;
-  const imageIds: number[] = [];
   for (let i = 0; i < images.length; i++) {
     const img = images[i]!;
     const { bytes, contentType } = await fetchBytesFromR2({ key: img.r2Key });
     const ext = extFromR2Key(img.r2Key);
-    const uploaded = await uploadListingImage(shop.shopId, draft.listing_id, {
+    await uploadListingImage(shop.shopId, listingId, {
       bytes,
       filename: `image-${i + 1}.${ext}`,
       contentType: contentType ?? contentTypeForImage(ext),
       rank: i + 1,
       altText,
     });
-    imageIds.push(uploaded.listing_image_id);
-  }
-  if (imageIds.length > 1) {
-    await updateListing(shop.shopId, draft.listing_id, { image_ids: imageIds });
   }
   dev.log("images uploaded", productId, `count=${images.length}`);
 
-  // Optional video (at most one per listing).
+  // Optional video (at most one per listing). On the resume path the
+  // draft may already carry the video from a prior attempt — skip the
+  // re-upload so we don't trip Etsy's one-video limit.
   const [video] = await db
     .select()
     .from(productVideos)
     .where(eq(productVideos.productId, productId))
     .limit(1);
   if (video) {
-    const { bytes, contentType } = await fetchBytesFromR2({
-      key: video.r2Key,
-    });
-    const ext = extFromR2Key(video.r2Key);
-    await uploadListingVideo(shop.shopId, draft.listing_id, {
-      bytes,
-      filename: `video.${ext}`,
-      contentType: contentType ?? contentTypeForVideo(ext, video.mimeType),
-      name: `video.${ext}`,
-    });
-    dev.log("video uploaded", productId);
+    const existingVideos =
+      row.etsyListingId != null
+        ? await getListingVideos(shop.shopId, listingId)
+        : [];
+    if (existingVideos.length > 0) {
+      dev.log("video already present — skipping upload", productId);
+    } else {
+      const { bytes, contentType } = await fetchBytesFromR2({
+        key: video.r2Key,
+      });
+      const ext = extFromR2Key(video.r2Key);
+      await uploadListingVideo(shop.shopId, listingId, {
+        bytes,
+        filename: `video.${ext}`,
+        contentType: contentType ?? contentTypeForVideo(ext, video.mimeType),
+        name: `video.${ext}`,
+      });
+      dev.log("video uploaded", productId);
+    }
   }
 
   // ES translation — the EU-Spain visitor sees the canonical copy.
   const titleEs = (product.titleEs ?? "").trim();
   const descriptionEs = (product.descriptionEs ?? "").trim();
   if (titleEs && descriptionEs) {
-    await upsertListingTranslation(shop.shopId, draft.listing_id, "es", {
+    await upsertListingTranslation(shop.shopId, listingId, "es", {
       title: titleEs,
       description: appendListingFooter(descriptionEs, footer.es),
       tags: product.etsyTagsEs.length > 0 ? product.etsyTagsEs : undefined,
@@ -335,9 +361,9 @@ export async function runScheduledPublish(
   // Activate the listing — gated by ETSY_ACTIVATE_ON_PUBLISH. While
   // disabled (default), the listing remains an Etsy draft so the
   // operator can manually verify the upload before going live.
-  let finalEtsyState = draft.state ?? "draft";
+  let finalEtsyState = etsyState;
   if (shouldActivateListing()) {
-    const active = await updateListing(shop.shopId, draft.listing_id, {
+    const active = await updateListing(shop.shopId, listingId, {
       state: "active",
     });
     finalEtsyState = active.state ?? "active";
@@ -362,7 +388,7 @@ export async function runScheduledPublish(
   dev.log(
     "publish complete",
     productId,
-    `listingId=${draft.listing_id}`,
+    `listingId=${listingId}`,
     `etsyState=${finalEtsyState}`,
   );
 
@@ -383,5 +409,5 @@ export async function runScheduledPublish(
     dev.warn("website webhook enqueue failed (non-fatal)", productId, m);
   }
 
-  return { ok: true, skipped: false, listingId: draft.listing_id };
+  return { ok: true, skipped: false, listingId };
 }
