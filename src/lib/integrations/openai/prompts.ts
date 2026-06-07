@@ -84,6 +84,10 @@ Based ONLY o
 
 Generate Spanish content following the provided JSON Schema.
 
+LANGUAGE (NON-NEGOTIABLE):
+
+Every text field you output — titleEs, descriptionEs, etsyTagsEs, etsyMaterialsEs — MUST be written in Spanish (es-ES). This includes EVERY tag. Do NOT output English words or English tags (e.g. write "blusa de flores", never "floral blouse"; "camisa de manga corta", never "short sleeve shirt"). The English versions are produced later by a separate translation step — never here. The only non-Spanish values allowed are the fixed enum fields (etsyWhenMade, etsyPrimaryColor, etsySecondaryColor), which use their required vocabularies.
+
 IMPORTANT:
 
 Only describe the actual garment being sold.
@@ -173,14 +177,14 @@ Example:
 
 If etsyWhenMade = "1980s"
 
-allowed tags:
+allowed tags (in Spanish):
 
-- "80s dress"
-- "vintage 80s"
+- "vestido años 80"
+- "vintage años 80"
 
 not allowed:
 
-- "90s style"
+- "estilo años 90"
 - "y2k"
 
 WRITING STYLE:
@@ -202,7 +206,7 @@ SEO GUIDELINES (how Etsy search works):
 
 Etsy search has two phases. (1) MATCHING: Etsy scans the title, all 13 tags, attributes, category, the description, and the first photo to find listings for a shopper's query — so every distinct keyword across these fields is a separate chance to be found. (2) RANKING: among matches, EXACT keyword matches rank higher than partial ones. This is why variety beats repetition: the same phrase repeated wins nothing, but a new phrase opens a new query.
 
-Write for real shopper search phrases (how a buyer actually types it), and favour specific LONG-TAIL phrases over broad single words — "vintage floral midi dress" converts far better than "dress". Generic single-word keywords are too broad and rank poorly.
+Write for real shopper search phrases (how a buyer actually types it), and favour specific LONG-TAIL phrases over broad single words — "vestido midi de flores" converts far better than "vestido". Generic single-word keywords are too broad and rank poorly. (Write all phrases in Spanish — see the LANGUAGE rule above.)
 
 Map keywords across these categories and spread them across title + tags (aim to cover at least 4):
 
@@ -218,16 +222,16 @@ Use keywords naturally; never stuff or repeat. Accuracy first — never use a se
 
 FIELD RULES:
 
-titleEn:
+titleEs (in Spanish):
 
 - LEAD with what the garment IS (its type) plus its 1-2 strongest descriptors — shoppers on mobile only see the first few words.
 - Short, clear, scannable. First letter uppercase.
-- Separate distinct keyword phrases with pipes or commas — Etsy reads each phrase independently (e.g. "Vintage Floral Midi Dress | 90s Cottagecore Sundress").
+- Separate distinct keyword phrases with pipes or commas — Etsy reads each phrase independently (e.g. "Vestido midi vintage de flores | Vestido años 90 cottagecore").
 - Include real differentiators when known: era, color, pattern, style/aesthetic, material (only if confirmed/visible).
 - Only include attributes clearly visible or confirmed.
 - Do NOT keyword-stack or repeat the same phrase — stuffing hurts ranking and click-through.
 
-descriptionEn:
+descriptionEs (in Spanish):
 
 Structure: up to TWO short paragraphs, separated by a single blank line. Hard cap 700 characters total. No emojis.
 
@@ -245,19 +249,19 @@ PARAGRAPH 2 (ONLY if seller comments are provided) — the seller comments in br
 - If the comments mention any measurements, sizes, or cm numbers, leave those out — numbers belong only to the separate measurements section.
 - If NO comments are provided, OMIT this paragraph entirely. Never invent a second paragraph; the description is then a single paragraph.
 
-etsyTagsEn:
+etsyTagsEs (EVERY tag in Spanish — no English tags):
 
 - Fill ALL 13 tag slots — each one is a separate chance to be found. Never return fewer than 13 unless there is genuinely nothing accurate left to say.
 - Each tag MUST be 20 characters or fewer (Etsy hard cap).
-- Prefer multi-word LONG-TAIL phrases ("floral midi dress"), not single broad words ("dress").
+- Prefer multi-word LONG-TAIL phrases ("vestido midi flores"), not single broad words ("vestido").
 - All 13 tags must be UNIQUE phrases — no repeats, no near-duplicates. Repeating a keyword wastes a slot.
 - Spread tags across the keyword categories above (descriptive, material, recipient, occasion, style, fit/size) — cover at least 4.
-- Do NOT repeat the chosen colors or materials as standalone tags — those already match as attributes; a tag spent on them is wasted. Combine instead (e.g. "blue linen dress", not "blue").
-- If a useful phrase is longer than 20 chars, split it into complementary tags that together cover it (e.g. "vintage 90s floral dress" -> "90s floral dress" + "vintage sundress").
+- Do NOT repeat the chosen colors or materials as standalone tags — those already match as attributes; a tag spent on them is wasted. Combine instead (e.g. "vestido lino azul", not "azul").
+- If a useful phrase is longer than 20 chars, split it into complementary tags that together cover it (e.g. "vestido flores años 90" -> "vestido flores 90" + "vestido vintage").
 - Lowercase. No misspellings (Etsy handles typos). Don't worry about plurals (Etsy matches root words).
 - No contradictory decades/styles. No invented materials. No accessories unless included.
 
-etsyMaterialsEn:
+etsyMaterialsEs (in Spanish):
 
 - ONLY include confirmed or visually obvious materials
 - If uncertain, return empty array
@@ -295,7 +299,7 @@ etsyPrimaryColor / etsySecondaryColor:
 
 comments:
 
-If seller comments are provided, they become the SECOND paragraph of the description (see descriptionEn rules), retold naturally in brand voice.
+If seller comments are provided, they become the SECOND paragraph of the description (see descriptionEs rules), retold naturally in brand voice.
 
 Do not copy them literally.
 
@@ -307,7 +311,7 @@ MEASUREMENTS RULE:
 
 Measurements (waist, bust, length, etc.) are stored and displayed in their own structured section, NOT inside the description.
 
-- Never write measurements, cm values, or size numbers into descriptionEs/descriptionEn.
+- Never write measurements, cm values, or size numbers into descriptionEs.
 - Do not reference "cintura X cm" or similar in the prose; the dedicated measurements section handles all numeric sizing.
 
 FINAL SAFETY RULE:
