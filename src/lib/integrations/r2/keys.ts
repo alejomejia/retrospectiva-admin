@@ -3,7 +3,11 @@
  * tests can lock down the shape without spinning up an S3 mock.
  *
  * Key layout:
- *   products/{YYYY}/{MM}/{DD}/{productId}/{role}/{uuid}.{ext}
+ *   {dev|prod}/products/{YYYY}/{MM}/{DD}/{productId}/{role}/{uuid}.{ext}
+ *
+ * - Every key is prefixed with the environment (`dev/` or `prod/`, via
+ *   `ENV_PREFIX`) so dev and prod media stay isolated in the same R2
+ *   bucket.
  *
  * - The date prefix is the product's CREATION date (not the upload
  *   date), formatted in Europe/Madrid so it matches what the admin
@@ -35,7 +39,7 @@ export type AllowedVideoExtension = (typeof ALLOWED_VIDEO_EXTENSIONS)[number];
 
 export type ImageRole = ProductImage["role"];
 
-const ENV_PREFIX = isDev ? "dev/" : "prod/";
+const ENV_PREFIX = isDev ? "dev" : "prod";
 
 /**
  * Renders a Date as `YYYY/MM/DD` in Europe/Madrid. Two-digit month +
@@ -83,7 +87,7 @@ export function generateImageKey({
       `Unsupported image extension "${extension}". Allowed: ${ALLOWED_EXTENSIONS.join(", ")}.`,
     );
   }
-  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/${role}/${uuid}.${ext}`;
+  return `${ENV_PREFIX}/products/${formatDatePrefix(createdAt)}/${productId}/${role}/${uuid}.${ext}`;
 }
 
 /**
@@ -97,7 +101,7 @@ export function publicUrlFor(key: string, baseUrl: string): string {
 
 /** Prefix that scopes ALL keys for a product (used by manual hard-delete). */
 export function productPrefix(productId: string, createdAt: Date): string {
-  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/`;
+  return `${ENV_PREFIX}/products/${formatDatePrefix(createdAt)}/${productId}/`;
 }
 
 /**
@@ -124,7 +128,7 @@ export function generateVideoKey({
       `Unsupported video extension "${extension}". Allowed: ${ALLOWED_VIDEO_EXTENSIONS.join(", ")}.`,
     );
   }
-  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/video/${uuid}.${ext}`;
+  return `${ENV_PREFIX}/products/${formatDatePrefix(createdAt)}/${productId}/video/${uuid}.${ext}`;
 }
 
 /**
@@ -141,5 +145,5 @@ export function generateVideoPosterKey({
   createdAt: Date;
   uuid: string;
 }): string {
-  return `${ENV_PREFIX}products/${formatDatePrefix(createdAt)}/${productId}/video_poster/${uuid}.webp`;
+  return `${ENV_PREFIX}/products/${formatDatePrefix(createdAt)}/${productId}/video_poster/${uuid}.webp`;
 }

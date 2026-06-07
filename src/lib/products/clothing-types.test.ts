@@ -49,9 +49,11 @@ describe("CLOTHING_TYPES registry", () => {
 });
 
 describe("required measurements", () => {
-  it("shirt has shoulder, chest, length", () => {
+  it("shirt has shoulder, sleeve, chest, length", () => {
     expect(getRequiredMeasurements("shirt")).toEqual([
       "shoulder",
+      "sleeveWidth",
+      "sleeveLength",
       "chest",
       "length",
     ]);

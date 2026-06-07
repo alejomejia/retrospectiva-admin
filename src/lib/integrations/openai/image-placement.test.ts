@@ -312,8 +312,9 @@ describe("runImagePlacement", () => {
     expect(uploadToR2Mock).toHaveBeenCalledTimes(1);
     const upload = uploadToR2Mock.mock.calls[0]![0];
     expect(upload.contentType).toBe("image/png");
+    // Keys carry the env prefix (`dev/` or `prod/`) from `ENV_PREFIX`.
     expect(upload.key).toMatch(
-      /^products\/2026\/05\/21\/p1\/ai_model\/[0-9a-f-]+\.png$/,
+      /^(?:dev|prod)\/products\/2026\/05\/21\/p1\/ai_model\/[0-9a-f-]+\.png$/,
     );
   });
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { isDev } from "@/lib/utils/config";
+
 import {
   formatDatePrefix,
   generateImageKey,
@@ -11,6 +13,11 @@ import {
 
 // 2026-05-15T12:00:00Z = May 15 14:00 in Europe/Madrid (CEST).
 const CREATED_AT = new Date("2026-05-15T12:00:00Z");
+
+// Generated keys carry the env prefix (`dev/` or `prod/`) so dev and
+// prod objects stay isolated in the same R2 bucket. Mirror that logic
+// here so the expectations track whichever env the suite runs under.
+const PREFIX = isDev ? "dev" : "prod";
 
 describe("formatDatePrefix", () => {
   it("renders YYYY/MM/DD in Europe/Madrid with zero-padded month + day", () => {
@@ -42,7 +49,7 @@ describe("generateImageKey", () => {
         uuid: "uuid-1",
         extension: "jpg",
       }),
-    ).toBe("products/2026/05/15/abc/original/uuid-1.jpg");
+    ).toBe(`${PREFIX}/products/2026/05/15/abc/original/uuid-1.jpg`);
   });
 
   it("strips a leading dot from extension and lowercases", () => {
@@ -54,7 +61,7 @@ describe("generateImageKey", () => {
         uuid: "u",
         extension: ".JPG",
       }),
-    ).toBe("products/2026/05/15/abc/original/u.jpg");
+    ).toBe(`${PREFIX}/products/2026/05/15/abc/original/u.jpg`);
   });
 
   it.each(["webp", "jpg", "jpeg", "png", "avif"])(
@@ -93,7 +100,7 @@ describe("generateImageKey", () => {
         uuid: "u",
         extension: "jpg",
       }),
-    ).toMatch(/^products\/2026\/05\/15\/p\/ai_model\//);
+    ).toMatch(new RegExp(`^${PREFIX}/products/2026/05/15/p/ai_model/`));
   });
 });
 
@@ -106,7 +113,7 @@ describe("generateVideoKey", () => {
         uuid: "uuid-1",
         extension: "mp4",
       }),
-    ).toBe("products/2026/05/15/abc/video/uuid-1.mp4");
+    ).toBe(`${PREFIX}/products/2026/05/15/abc/video/uuid-1.mp4`);
   });
 
   it.each(["mp4", "mov", "webm"])("accepts %s", (ext) => {
@@ -143,7 +150,7 @@ describe("generateVideoPosterKey", () => {
         createdAt: CREATED_AT,
         uuid: "uuid-1",
       }),
-    ).toBe("products/2026/05/15/abc/video_poster/uuid-1.webp");
+    ).toBe(`${PREFIX}/products/2026/05/15/abc/video_poster/uuid-1.webp`);
   });
 
   it("matches the same {productId}/{uuid} stem as the video so the pair correlates", () => {
@@ -168,7 +175,7 @@ describe("generateVideoPosterKey", () => {
 describe("productPrefix", () => {
   it("ends with a slash (delete-prefix's safety check requires this)", () => {
     expect(productPrefix("abc", CREATED_AT)).toBe(
-      "products/2026/05/15/abc/",
+      `${PREFIX}/products/2026/05/15/abc/`,
     );
   });
 });
