@@ -20,6 +20,7 @@ import type { WebsitePayload } from "./payload-mapper";
 function fakePayload(): WebsitePayload {
   return {
     productId: "prod-1",
+    slug: "test-product-prod1",
     kind: "publish",
     emittedAt: "2026-05-10T00:00:00.000Z",
     status: "published",

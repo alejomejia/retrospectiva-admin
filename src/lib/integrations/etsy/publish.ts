@@ -9,6 +9,7 @@ import {
   resolveListingFooter,
 } from "@/lib/products/listing-footer";
 import { getProductSettings } from "@/lib/products/settings";
+import { buildSlug } from "@/lib/products/slug";
 import { fetchBytesFromR2 } from "@/lib/integrations/r2/fetch";
 import {
   TRANSLATABLE_FIELDS,
@@ -344,10 +345,16 @@ export async function runScheduledPublish(
     dev.log("activation skipped (ETSY_ACTIVATE_ON_PUBLISH=false)", productId);
   }
 
+  // Freeze the public store slug on first publish. Once set it never
+  // changes (even if the title is later edited) so shared / indexed
+  // website URLs stay valid — see `buildSlug`.
+  const slug = row.slug ?? buildSlug(row.titleEs, row.id);
+
   await db
     .update(products)
     .set({
       status: "published",
+      slug,
       updatedAt: sql`now()`,
     })
     .where(eq(products.id, productId));

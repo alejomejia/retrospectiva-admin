@@ -239,6 +239,12 @@ export const products = pgTable(
      */
     aiImageQuality: text("ai_image_quality").notNull().default("low"),
 
+    // Public store URL slug, e.g. `chaqueta-safari-arena-9f3c1a`.
+    // Frozen at first publish (see `buildSlug`) so editing a title
+    // later never breaks shared / indexed website URLs. Null until a
+    // product is first published. Unique across all products.
+    slug: text("slug"),
+
     // Lifecycle.
     status: productStatus("status").notNull().default("draft"),
     scheduledPublishAt: timestamp("scheduled_publish_at", {
@@ -261,6 +267,7 @@ export const products = pgTable(
     index("products_created_at_idx").on(t.createdAt),
     index("products_scheduled_publish_at_idx").on(t.scheduledPublishAt),
     uniqueIndex("products_etsy_listing_id_idx").on(t.etsyListingId),
+    uniqueIndex("products_slug_idx").on(t.slug),
   ],
 );
 

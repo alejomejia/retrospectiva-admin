@@ -47,10 +47,11 @@ export const config = {
   // - `login` → the sign-in page itself
   // - `api/auth/*` → login/logout server-side flows
   // - `api/webhooks/*` → HMAC-authed, not session-authed
+  // - `api/public/*` → bearer-token-authed (public store API), not session
   // - `api/health` → for Docker healthchecks
   // - `robots.txt` → must be readable by crawlers without a session
   // - `_next/*`, common image extensions → static assets
   matcher: [
-    "/((?!login|api/auth|api/webhooks|api/health|robots\\.txt|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|ico|webp|avif)).*)",
+    "/((?!login|api/auth|api/webhooks|api/public|api/health|robots\\.txt|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|ico|webp|avif)).*)",
   ],
 };

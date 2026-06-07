@@ -20,6 +20,7 @@ import {
 } from "@/lib/products/listing-footer";
 import { inflatedListCents } from "@/lib/products/pricing";
 import { getProductSettings } from "@/lib/products/settings";
+import { buildSlug } from "@/lib/products/slug";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
 
 import type { WebsiteWebhookKind } from "@/lib/queue/queues";
@@ -78,6 +79,8 @@ export type WebsiteMeasurements = {
 
 export type WebsitePayload = {
   productId: string;
+  /** Frozen public store slug, e.g. `chaqueta-safari-arena-9f3c1a`. */
+  slug: string;
   kind: WebsiteWebhookKind;
   emittedAt: string;
   status: Product["status"];
@@ -293,6 +296,7 @@ export async function buildWebsitePayload(input: {
   const now = new Date().toISOString();
   return {
     productId: row.id,
+    slug: row.slug ?? buildSlug(row.titleEs, row.id),
     kind,
     emittedAt: now,
     status: row.status,
