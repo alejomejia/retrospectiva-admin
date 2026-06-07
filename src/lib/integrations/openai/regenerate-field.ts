@@ -27,8 +27,9 @@ import {
 const dev = devGroup("openai.regenerate-field");
 
 /** Hard cap on output tokens for single-field regen. Generous enough
- *  for a max-size description (2000 chars ≈ 600 tokens); conservative
- *  enough that a runaway can't dump $0.50 of output. */
+ *  for a max-size description (700 chars ≈ 230 tokens) with wide
+ *  headroom; conservative enough that a runaway can't dump $0.50 of
+ *  output. */
 const MAX_OUTPUT_TOKENS = 900;
 
 /**
