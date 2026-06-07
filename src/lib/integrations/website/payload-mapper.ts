@@ -20,6 +20,7 @@ import {
 } from "@/lib/products/listing-footer";
 import { inflatedListCents } from "@/lib/products/pricing";
 import { getProductSettings } from "@/lib/products/settings";
+import { prependSizeHeader } from "@/lib/products/size-conversion";
 
 import type { WebsiteWebhookKind } from "@/lib/queue/queues";
 
@@ -216,9 +217,18 @@ export async function buildWebsitePayload(input: {
   // Append the resolved listing footer (per-product override, else
   // shop-wide default) to both languages — mirrors the Etsy payload so
   // the website body matches the live listing. Pre-translated; no AI.
+  // Then prepend the size-conversion header so it leads the description.
   const footer = resolveListingFooter(row, await getProductSettings());
-  const descriptionEsWithFooter = appendListingFooter(descriptionEs, footer.es);
-  const descriptionEnWithFooter = appendListingFooter(descriptionEn, footer.en);
+  const descriptionEsWithFooter = prependSizeHeader(
+    appendListingFooter(descriptionEs, footer.es),
+    row.size,
+    "es",
+  );
+  const descriptionEnWithFooter = prependSizeHeader(
+    appendListingFooter(descriptionEn, footer.en),
+    row.size,
+    "en",
+  );
 
   const imageRows = await db
     .select({

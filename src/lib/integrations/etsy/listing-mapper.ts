@@ -6,6 +6,7 @@ import {
 import type { Product } from "@/lib/db/schema";
 
 import { appendListingFooter } from "@/lib/products/listing-footer";
+import { prependSizeHeader } from "@/lib/products/size-conversion";
 
 import { isEtsyColor } from "./etsy-colors";
 
@@ -102,9 +103,14 @@ export function mapProductToCreateDraftPayload({
 
   const descriptionBody = (product.descriptionEn ?? "").trim();
   if (!descriptionBody) throw new ListingMapperError("missing descriptionEn");
-  // Footer appended at the payload boundary only — never stored in the
-  // description column (keeps it out of the AI + translation paths).
-  const description = appendListingFooter(descriptionBody, footerEn);
+  // Footer appended + size header prepended at the payload boundary
+  // only — never stored in the description column (keeps them out of
+  // the AI + translation paths). Size header leads the description.
+  const description = prependSizeHeader(
+    appendListingFooter(descriptionBody, footerEn),
+    product.size,
+    "en",
+  );
 
   if (!product.etsyTaxonomyId) {
     throw new ListingMapperError("missing etsyTaxonomyId");
