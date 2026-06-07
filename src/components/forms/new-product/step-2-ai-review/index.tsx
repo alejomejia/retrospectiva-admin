@@ -29,7 +29,7 @@ export function Step2AiReview({
   initialAiImage: GeneratedAiImage;
   shopListingFooterEs: string;
 }) {
-  const { phase, error, kick, kickPending } = useStep2AiReview({ product });
+  const { phase, error, kick, kickPending } = useStep2AiReview();
 
   return (
     <div>

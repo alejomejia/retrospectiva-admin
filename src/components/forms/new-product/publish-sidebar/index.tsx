@@ -99,8 +99,7 @@ export function PublishSidebar({
               </Button>
             )}
 
-            {(product.status === "archived" || 
-              product.status === "sold") && (
+            {(product.status === "archived" || product.status === "sold") && (
               <Button
                 type="button"
                 variant="outline"
@@ -112,7 +111,6 @@ export function PublishSidebar({
                 {m.products.editForm.etsy.restoreToDraft}
               </Button>
             )}
-            
           </div>
         </header>
       </aside>
@@ -133,7 +131,9 @@ export function PublishSidebar({
           <Button
             type="button"
             className="p-6"
-            disabled={vm.pending || !etsyPoliciesConfigured}
+            disabled={
+              vm.pending || vm.enrichmentRunning || !etsyPoliciesConfigured
+            }
             onClick={vm.onPublishNow}
           >
             <Send className="size-4" />
@@ -166,13 +166,20 @@ export function PublishSidebar({
           <SchedulePicker
             value={vm.scheduledIso}
             onChange={vm.setScheduledIso}
-            disabled={vm.pending || !etsyPoliciesConfigured}
+            disabled={
+              vm.pending || vm.enrichmentRunning || !etsyPoliciesConfigured
+            }
           />
           <Button
             type="button"
             className="p-6"
             variant="outline"
-            disabled={vm.pending || !vm.scheduledIso || !etsyPoliciesConfigured}
+            disabled={
+              vm.pending ||
+              vm.enrichmentRunning ||
+              !vm.scheduledIso ||
+              !etsyPoliciesConfigured
+            }
             onClick={vm.onSchedule}
           >
             <Clock className="size-4" />

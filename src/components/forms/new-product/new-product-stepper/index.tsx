@@ -13,6 +13,7 @@ import {
 } from "../ai-image-section";
 import { AutosaveProvider } from "../autosave";
 import { AutosaveIndicator } from "../autosave-indicator";
+import { EnrichmentStatusProvider } from "../enrichment-status";
 import { PublishSidebar } from "../publish-sidebar";
 import type { PublishSidebarMode } from "../publish-sidebar/use-publish-sidebar";
 import { Step1Inputs } from "../step-1-inputs";
@@ -82,65 +83,67 @@ export function NewProductStepper({
       initialUpdatedAt={product.updatedAt}
     >
       <StepFooterProvider>
-        <Stepper currentStepIndex={vm.currentIndex}>
-          <div className="p-6 flex justify-between items-center gap-4 border-b border-border">
-            <Stepper.List>
-              {vm.steps.map((step, index) => (
-                <Stepper.Item
-                  key={step.id}
-                  index={index}
-                  label={step.label}
-                  isLast={index === vm.steps.length - 1}
-                />
-              ))}
-            </Stepper.List>
-            <AutosaveIndicator />
-          </div>
-
-          <div className="flex">
-            <div>
-              {vm.currentStep === "inputs" && (
-                <Step1Inputs
-                  product={product}
-                  featuredSlotsFull={featuredSlotsFull}
-                  shopMarkupPercent={shopMarkupPercent}
-                  shopAiImageEnabled={shopAiImageEnabled}
-                  buyPriceDefaults={buyPriceDefaults}
-                  imageItems={imageItems}
-                  videoItems={videoItems}
-                  aiModels={aiModels}
-                  aiReferenceImage={aiReferenceImage}
-                  aiGeneratedImage={aiGeneratedImage}
-                  shippingProfiles={shippingProfiles}
-                  shippingMapping={shippingMapping}
-                  r2BaseUrl={r2BaseUrl}
-                />
-              )}
-              {vm.currentStep === "ai" && (
-                <Step2AiReview
-                  product={product}
-                  initialAiImage={aiGeneratedImage}
-                  shopListingFooterEs={shopListingFooterEs}
-                />
-              )}
+        <EnrichmentStatusProvider product={product}>
+          <Stepper currentStepIndex={vm.currentIndex}>
+            <div className="p-6 flex justify-between items-center gap-4 border-b border-border">
+              <Stepper.List>
+                {vm.steps.map((step, index) => (
+                  <Stepper.Item
+                    key={step.id}
+                    index={index}
+                    label={step.label}
+                    isLast={index === vm.steps.length - 1}
+                  />
+                ))}
+              </Stepper.List>
+              <AutosaveIndicator />
             </div>
-            <div className="border-l border-border w-full max-w-sm bg-card">
-              <PublishSidebar
-                product={product}
-                etsyPoliciesConfigured={etsyPoliciesConfigured}
-                mode={mode}
-              />
-            </div>
-          </div>
 
-          <StepperFooter
-            prevStep={vm.prevStep}
-            nextStep={vm.nextStep}
-            nextStepLabel={vm.nextStepLabel}
-            onPrev={() => vm.prevStep && vm.go(vm.prevStep)}
-            onNext={() => vm.nextStep && vm.go(vm.nextStep)}
-          />
-        </Stepper>
+            <div className="flex">
+              <div>
+                {vm.currentStep === "inputs" && (
+                  <Step1Inputs
+                    product={product}
+                    featuredSlotsFull={featuredSlotsFull}
+                    shopMarkupPercent={shopMarkupPercent}
+                    shopAiImageEnabled={shopAiImageEnabled}
+                    buyPriceDefaults={buyPriceDefaults}
+                    imageItems={imageItems}
+                    videoItems={videoItems}
+                    aiModels={aiModels}
+                    aiReferenceImage={aiReferenceImage}
+                    aiGeneratedImage={aiGeneratedImage}
+                    shippingProfiles={shippingProfiles}
+                    shippingMapping={shippingMapping}
+                    r2BaseUrl={r2BaseUrl}
+                  />
+                )}
+                {vm.currentStep === "ai" && (
+                  <Step2AiReview
+                    product={product}
+                    initialAiImage={aiGeneratedImage}
+                    shopListingFooterEs={shopListingFooterEs}
+                  />
+                )}
+              </div>
+              <div className="border-l border-border w-full max-w-sm bg-card">
+                <PublishSidebar
+                  product={product}
+                  etsyPoliciesConfigured={etsyPoliciesConfigured}
+                  mode={mode}
+                />
+              </div>
+            </div>
+
+            <StepperFooter
+              prevStep={vm.prevStep}
+              nextStep={vm.nextStep}
+              nextStepLabel={vm.nextStepLabel}
+              onPrev={() => vm.prevStep && vm.go(vm.prevStep)}
+              onNext={() => vm.nextStep && vm.go(vm.nextStep)}
+            />
+          </Stepper>
+        </EnrichmentStatusProvider>
       </StepFooterProvider>
     </AutosaveProvider>
   );

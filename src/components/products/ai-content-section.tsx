@@ -125,6 +125,7 @@ export function AiContentSection({
         maxItems={13}
         maxItemLength={45}
         placeholder={m.products.editForm.aiContent.materialsPlaceholder}
+        required={false}
       />
       <EraField
         productId={product.id}
@@ -217,14 +218,16 @@ function RegenerateFieldButton({
 
 function FieldHeader({
   label,
+  required = true,
   children,
 }: {
   label: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <Label className="text-caplet" required>
+      <Label className="text-caplet" required={required}>
         {label}
       </Label>
       {children}
@@ -343,6 +346,7 @@ function ChipField({
   maxItems,
   maxItemLength,
   placeholder,
+  required = true,
 }: {
   productId: string;
   label: string;
@@ -351,6 +355,7 @@ function ChipField({
   maxItems: number;
   maxItemLength: number;
   placeholder: string;
+  required?: boolean;
 }) {
   const { schedule } = useAutosave();
   const [value, setValue] = useState<string[]>(initial);
@@ -365,7 +370,7 @@ function ChipField({
 
   return (
     <div className="space-y-2">
-      <FieldHeader label={label}>
+      <FieldHeader label={label} required={required}>
         <RegenerateFieldButton
           label={label}
           pending={pending}

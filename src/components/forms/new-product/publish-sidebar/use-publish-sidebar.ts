@@ -17,6 +17,7 @@ import {
 } from "@/lib/products/draft-actions";
 
 import { useAutosave } from "../autosave";
+import { useEnrichmentStatusContext } from "../enrichment-status";
 
 export type PublishSidebarMode = "draft" | "edit";
 
@@ -65,6 +66,10 @@ export function usePublishSidebar({
 }) {
   const router = useRouter();
   const { flush } = useAutosave();
+  // Block Publish/Schedule until AI enrichment finishes — publishing a
+  // draft mid-enrichment would push empty/partial title/description to Etsy.
+  const { phase: enrichmentPhase } = useEnrichmentStatusContext();
+  const enrichmentRunning = enrichmentPhase === "running";
   const [scheduledIso, setScheduledIso] = useState<string | null>(
     product.scheduledPublishAt
       ? product.scheduledPublishAt.toISOString()
@@ -202,6 +207,7 @@ export function usePublishSidebar({
     scheduledIso,
     setScheduledIso,
     pending,
+    enrichmentRunning,
     onSaveDraft,
     onSchedule,
     onPublishNow,
