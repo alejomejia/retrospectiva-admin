@@ -24,6 +24,8 @@ const state: {
   existingImages: Array<{ listing_image_id: number }>;
   deletedImageIds: number[];
   existingVideos: Array<{ video_id: number }>;
+  taxonomyProperties: unknown[];
+  appliedProperties: Array<{ propertyId: number; values: string[]; valueIds: number[]; scaleId?: number }>;
 } = {
   products: [],
   settings: [],
@@ -45,6 +47,8 @@ const state: {
   existingImages: [],
   deletedImageIds: [],
   existingVideos: [],
+  taxonomyProperties: [],
+  appliedProperties: [],
 };
 
 // Sequenced source-table picker. The publish flow performs these
@@ -167,6 +171,17 @@ vi.mock("./listings", () => ({
     },
   ),
   getListingVideos: vi.fn(async () => state.existingVideos),
+  getPropertiesByTaxonomyId: vi.fn(async () => state.taxonomyProperties),
+  updateListingProperty: vi.fn(
+    async (
+      _shop: number,
+      _id: number,
+      propertyId: number,
+      input: { values: string[]; valueIds: number[]; scaleId?: number },
+    ) => {
+      state.appliedProperties.push({ propertyId, ...input });
+    },
+  ),
   uploadListingImage: vi.fn(
     async (
       _shop: number,
@@ -257,6 +272,8 @@ beforeEach(() => {
   state.existingImages = [];
   state.deletedImageIds = [];
   state.existingVideos = [];
+  state.taxonomyProperties = [];
+  state.appliedProperties = [];
 });
 
 describe("runScheduledPublish — skip paths", () => {
@@ -386,6 +403,62 @@ describe("runScheduledPublish — resume existing draft", () => {
     await runScheduledPublish("p1");
 
     expect(state.uploadedVideo).toBeNull();
+  });
+});
+
+describe("runScheduledPublish — color/size attributes", () => {
+  it("resolves stored color + size to Etsy value/scale ids and PUTs them as listing properties", async () => {
+    state.taxonomyProperties = [
+      {
+        property_id: 200,
+        name: "primary_color",
+        display_name: "Primary color",
+        scales: [],
+        possible_values: [
+          { value_id: 1, name: "Black" },
+          { value_id: 2, name: "Red" },
+        ],
+      },
+      {
+        property_id: 100,
+        name: "size",
+        display_name: "Size",
+        scales: [{ scale_id: 301, display_name: "Women's US Letter" }],
+        possible_values: [
+          { value_id: 71, name: "S", scale_id: 301 },
+          { value_id: 72, name: "M", scale_id: 301 },
+        ],
+      },
+    ];
+    const product = {
+      ...baseProduct(),
+      etsyPrimaryColor: "black",
+      etsySecondaryColor: null,
+      size: "S",
+    };
+    state.products = [product, product];
+
+    await runScheduledPublish("p1");
+
+    const color = state.appliedProperties.find((p) => p.propertyId === 200);
+    const size = state.appliedProperties.find((p) => p.propertyId === 100);
+    expect(color).toMatchObject({ values: ["Black"], valueIds: [1] });
+    expect(size).toMatchObject({
+      values: ["S"],
+      valueIds: [71],
+      scaleId: 301,
+    });
+  });
+
+  it("does not abort the publish when an attribute can't be matched", async () => {
+    state.taxonomyProperties = []; // no properties resolvable
+    const product = { ...baseProduct(), etsyPrimaryColor: "black", size: "S" };
+    state.products = [product, product];
+
+    const result = await runScheduledPublish("p1");
+
+    expect(result).toMatchObject({ skipped: false, listingId: 9999 });
+    expect(state.appliedProperties).toHaveLength(0);
   });
 });
 

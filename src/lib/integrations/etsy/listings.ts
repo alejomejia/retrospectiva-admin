@@ -391,4 +391,108 @@ export async function upsertListingTranslation(
   return unwrap<ListingTranslation>(res, "upsertListingTranslation");
 }
 
+/**
+ * A single value option for a taxonomy property (e.g. the color
+ * "Black" → `value_id` 1). `scale_id` is set only on scaled
+ * properties like Size.
+ */
+export type TaxonomyPropertyValue = {
+  value_id: number;
+  name: string;
+  scale_id?: number | null;
+};
+
+/**
+ * A measurement scale for a scaled property (e.g. Size → "Women's
+ * US Letter"). `display_name` is what the operator would recognize.
+ */
+export type TaxonomyPropertyScale = {
+  scale_id: number;
+  display_name: string;
+  description?: string;
+};
+
+/**
+ * One property available on a taxonomy node (Primary color, Size, …),
+ * with the value vocabulary and (for scaled properties) the scales.
+ * Property ids and value ids are NOT universal — they depend on the
+ * listing's taxonomy, so they must be resolved per-taxonomy rather
+ * than hardcoded. See `getPropertiesByTaxonomyId`.
+ */
+export type TaxonomyProperty = {
+  property_id: number;
+  name: string;
+  display_name: string;
+  scales: TaxonomyPropertyScale[];
+  is_required: boolean;
+  supports_attributes: boolean;
+  supports_variations: boolean;
+  possible_values: TaxonomyPropertyValue[];
+};
+
+/**
+ * GET /seller-taxonomy/nodes/{taxonomy_id}/properties
+ * Returns the properties (color, size, …) valid for a taxonomy node,
+ * each with its value vocabulary. The publish flow uses this to
+ * translate our stored color/size strings into the `value_id` /
+ * `scale_id` pairs Etsy's listing-property endpoint requires.
+ */
+export async function getPropertiesByTaxonomyId(
+  taxonomyId: number,
+  store?: TokenStore,
+): Promise<TaxonomyProperty[]> {
+  const res = await etsyFetch(
+    `/seller-taxonomy/nodes/${taxonomyId}/properties`,
+    { method: "GET" },
+    store,
+  );
+  const data = await unwrap<{ results: TaxonomyProperty[] }>(
+    res,
+    "getPropertiesByTaxonomyId",
+  );
+  return data.results ?? [];
+}
+
+export type UpdateListingPropertyInput = {
+  /** Human-readable value strings, parallel to `valueIds`. */
+  values: string[];
+  /** Etsy `value_id`s for {@link values}, in the same order. */
+  valueIds: number[];
+  /** Required for scaled properties (e.g. Size); omit for color. */
+  scaleId?: number;
+};
+
+/**
+ * PUT /shops/{shop_id}/listings/{listing_id}/properties/{property_id}
+ * Sets a single attribute (color, size, …) on a listing. Etsy needs
+ * both the `values` (display strings) and the matching `value_ids`,
+ * plus a `scale_id` for scaled properties.
+ */
+export async function updateListingProperty(
+  shopId: number,
+  listingId: number,
+  propertyId: number,
+  input: UpdateListingPropertyInput,
+  store?: TokenStore,
+): Promise<void> {
+  const body: Record<string, unknown> = {
+    values: input.values,
+    value_ids: input.valueIds,
+  };
+  if (typeof input.scaleId === "number") body.scale_id = input.scaleId;
+  const res = await etsyFetch(
+    `/shops/${shopId}/listings/${listingId}/properties/${propertyId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: toFormUrlEncoded(body),
+    },
+    store,
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Etsy updateListingProperty failed: ${res.status} ${text}`);
+  }
+}
+
 export const __testing = { toFormUrlEncoded };

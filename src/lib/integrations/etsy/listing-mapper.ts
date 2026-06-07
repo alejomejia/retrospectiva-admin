@@ -8,8 +8,6 @@ import type { Product } from "@/lib/db/schema";
 import { appendListingFooter } from "@/lib/products/listing-footer";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
 
-import { isEtsyColor } from "./etsy-colors";
-
 import type {
   CreateDraftListingPayload,
   WhenMade,
@@ -185,12 +183,10 @@ export function mapProductToCreateDraftPayload({
   if (tags.length > 0) payload.tags = tags;
   if (materials.length > 0) payload.materials = materials;
 
-  if (isEtsyColor(product.etsyPrimaryColor)) {
-    payload.primary_color = product.etsyPrimaryColor;
-  }
-  if (isEtsyColor(product.etsySecondaryColor)) {
-    payload.secondary_color = product.etsySecondaryColor;
-  }
+  // NOTE: color/size are NOT set here. Etsy ignores `primary_color`/
+  // `secondary_color` on the create/update payload — they're listing
+  // *properties* (attributes) set via a separate per-taxonomy
+  // endpoint after the draft exists. See `applyListingProperties`.
   if (product.isFeatured) {
     // Etsy treats any positive `featured_rank` as "featured"; the
     // exact value only controls the display order among featured

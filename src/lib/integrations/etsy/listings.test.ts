@@ -26,6 +26,8 @@ const {
   uploadListingVideo,
   upsertListingTranslation,
   etsyPriceToCents,
+  getPropertiesByTaxonomyId,
+  updateListingProperty,
 } = await import("./listings");
 
 beforeEach(() => {
@@ -118,6 +120,45 @@ describe("updateListing", () => {
     expect(fetchCalls[0]!.path).toBe("/shops/7/listings/42");
     expect(fetchCalls[0]!.init.method).toBe("PUT");
     expect(String(fetchCalls[0]!.init.body)).toContain("state=active");
+  });
+});
+
+describe("getPropertiesByTaxonomyId", () => {
+  it("GETs the taxonomy properties endpoint and returns results", async () => {
+    nextResponse = () =>
+      new Response(
+        JSON.stringify({ results: [{ property_id: 200, name: "primary_color" }] }),
+        { status: 200 },
+      );
+    const out = await getPropertiesByTaxonomyId(123);
+    expect(fetchCalls[0]!.path).toBe("/seller-taxonomy/nodes/123/properties");
+    expect(fetchCalls[0]!.init.method).toBe("GET");
+    expect(out).toHaveLength(1);
+    expect(out[0]!.property_id).toBe(200);
+  });
+});
+
+describe("updateListingProperty", () => {
+  it("PUTs urlencoded value_ids + values + scale_id to the property endpoint", async () => {
+    nextResponse = () => new Response("", { status: 200 });
+    await updateListingProperty(7, 42, 100, {
+      values: ["S"],
+      valueIds: [91],
+      scaleId: 22,
+    });
+    expect(fetchCalls[0]!.path).toBe("/shops/7/listings/42/properties/100");
+    expect(fetchCalls[0]!.init.method).toBe("PUT");
+    const body = String(fetchCalls[0]!.init.body);
+    expect(body).toContain("values=S");
+    expect(body).toContain("value_ids=91");
+    expect(body).toContain("scale_id=22");
+  });
+
+  it("throws on non-2xx with status + body", async () => {
+    nextResponse = () => new Response("bad value_id", { status: 400 });
+    await expect(
+      updateListingProperty(7, 42, 100, { values: ["S"], valueIds: [91] }),
+    ).rejects.toThrow(/400.*bad value_id/);
   });
 });
 

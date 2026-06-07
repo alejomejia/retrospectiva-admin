@@ -23,13 +23,16 @@ import {
   ListingMapperError,
   mapProductToCreateDraftPayload,
 } from "./listing-mapper";
+import { applyListingProperties } from "./listing-properties";
 import {
   createDraftListing,
   deleteListingImage,
   getFeaturedListings,
   getListingImages,
   getListingVideos,
+  getPropertiesByTaxonomyId,
   updateListing,
+  updateListingProperty,
   uploadListingImage,
   uploadListingVideo,
   upsertListingTranslation,
@@ -345,6 +348,28 @@ export async function runScheduledPublish(
       dev.log("video uploaded", productId);
     }
   }
+
+  // Color + size attributes. These are Etsy listing *properties*, not
+  // create-payload fields, so they're resolved against the taxonomy
+  // and PUT separately now that the draft exists. Best-effort: a
+  // missing/unmatched attribute is logged and skipped, never fatal —
+  // the listing is already valid without it.
+  const appliedProps = await applyListingProperties(
+    shop.shopId,
+    listingId,
+    payload.taxonomy_id,
+    {
+      primaryColor: product.etsyPrimaryColor,
+      secondaryColor: product.etsySecondaryColor,
+      size: product.size,
+    },
+    {
+      getProperties: getPropertiesByTaxonomyId,
+      updateProperty: updateListingProperty,
+      warn: (...args) => dev.warn(...(args as [unknown, ...unknown[]])),
+    },
+  );
+  dev.log("listing properties applied", productId, appliedProps.join(",") || "none");
 
   // ES translation — the EU-Spain visitor sees the canonical copy.
   const titleEs = (product.titleEs ?? "").trim();
