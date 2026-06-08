@@ -233,6 +233,7 @@ export async function buildWebsitePayload(input: {
     ),
     row.size,
     "es",
+    row.condition,
   );
   const descriptionEnWithFooter = prependSizeHeader(
     prependMeasurementBlock(
@@ -243,6 +244,7 @@ export async function buildWebsitePayload(input: {
     ),
     row.size,
     "en",
+    row.condition,
   );
 
   const imageRows = await db

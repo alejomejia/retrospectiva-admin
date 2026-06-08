@@ -76,8 +76,10 @@ describe("mapProductToCreateDraftPayload", () => {
     expect(payload).toMatchObject({
       quantity: 1,
       title: "Vintage blue dress",
-      // Size header (from the `size` column) leads the description.
-      description: "Size: M | EU 40 | UK 12 | US 8\n\nBeautiful dress.",
+      // Size header (from the `size` column) leads the description,
+      // with the condition appended to the same line.
+      description:
+        "Size: M | EU 40 | UK 12 | US 8 | Condition: Perfect\n\nBeautiful dress.",
       // 100.00 EUR * 1.30 = 130.00 → charm-priced to 130.99
       price: 130.99,
       who_made: "someone_else",

@@ -116,6 +116,7 @@ export function mapProductToCreateDraftPayload({
     ),
     product.size,
     "en",
+    product.condition,
   );
 
   if (!product.etsyTaxonomyId) {

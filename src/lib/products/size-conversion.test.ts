@@ -15,6 +15,23 @@ describe("formatSizeHeader", () => {
     expect(formatSizeHeader("2X", "en")).toBe("Size: 2X | EU 50 | UK 22 | US 18");
   });
 
+  it("appends the condition segment when supplied", () => {
+    expect(formatSizeHeader("S", "en", "perfect")).toBe(
+      "Size: S | EU 36 | UK 8 | US 4 | Condition: Perfect",
+    );
+    expect(formatSizeHeader("S", "es", "very_good")).toBe(
+      "Talla: S | EU 36 | UK 8 | US 4 | Estado: Muy bueno",
+    );
+    expect(formatSizeHeader("M", "en", "good")).toBe(
+      "Size: M | EU 40 | UK 12 | US 8 | Condition: Good",
+    );
+  });
+
+  it("omits the condition segment when condition is absent", () => {
+    expect(formatSizeHeader("S", "en", null)).toBe("Size: S | EU 36 | UK 8 | US 4");
+    expect(formatSizeHeader("S", "en")).toBe("Size: S | EU 36 | UK 8 | US 4");
+  });
+
   it("returns null when size is missing", () => {
     expect(formatSizeHeader(null, "en")).toBeNull();
     expect(formatSizeHeader(undefined, "en")).toBeNull();
@@ -45,5 +62,11 @@ describe("prependSizeHeader", () => {
 
   it("returns just the header when the body is empty", () => {
     expect(prependSizeHeader("", "S", "en")).toBe("Size: S | EU 36 | UK 8 | US 4");
+  });
+
+  it("includes the condition segment in the prepended header", () => {
+    expect(prependSizeHeader("A lovely dress.", "M", "en", "good")).toBe(
+      "Size: M | EU 40 | UK 12 | US 8 | Condition: Good\n\nA lovely dress.",
+    );
   });
 });

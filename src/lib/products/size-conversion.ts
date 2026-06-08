@@ -18,6 +18,7 @@
  * re-enrichment.
  */
 
+import type { ProductCondition } from "@/lib/db/schema";
 import { type EtsySize, isEtsySize } from "@/lib/integrations/etsy/etsy-sizes";
 
 /** Locale label for the header prefix. */
@@ -26,8 +27,23 @@ const HEADER_LABEL: Record<"es" | "en", string> = {
   en: "Size",
 };
 
+/** Locale label for the condition segment of the header. */
+const CONDITION_LABEL: Record<"es" | "en", string> = {
+  es: "Estado",
+  en: "Condition",
+};
+
+/** Localized condition value shown after the size conversion. */
+const CONDITION_VALUE: Record<"es" | "en", Record<ProductCondition, string>> = {
+  es: { perfect: "Perfecto", very_good: "Muy bueno", good: "Bueno" },
+  en: { perfect: "Perfect", very_good: "Very good", good: "Good" },
+};
+
 /** Joiner between the size header and the description body. */
 const HEADER_SEPARATOR = "\n\n";
+
+/** Joiner between header segments (size parts and condition). */
+const SEGMENT_SEPARATOR = " | ";
 
 type RegionSizes = { eu: number; uk: number; us: number };
 
@@ -50,19 +66,26 @@ const SIZE_CONVERSIONS: Record<EtsySize, RegionSizes> = {
 
 /**
  * Builds the localized size header for a product, e.g.
- * `Size: S | EU 36 | UK 8 | US 4`. Returns `null` when no usable size
- * is set (so callers can omit the line entirely).
+ * `Size: S | EU 36 | UK 8 | US 4 | Condition: Perfect`. The condition
+ * segment is appended only when a condition is supplied. Returns `null`
+ * when no usable size is set (so callers can omit the line entirely).
  *
  * @param size - the product's stored size value (US-letter scale)
  * @param locale - `"es"` → `Talla:` prefix, `"en"` → `Size:` prefix
+ * @param condition - the product's condition; omits the segment when absent
  */
 export function formatSizeHeader(
   size: string | null | undefined,
   locale: "es" | "en",
+  condition?: ProductCondition | null,
 ): string | null {
   if (!isEtsySize(size)) return null;
   const { eu, uk, us } = SIZE_CONVERSIONS[size];
-  return `${HEADER_LABEL[locale]}: ${size} | EU ${eu} | UK ${uk} | US ${us}`;
+  let header = `${HEADER_LABEL[locale]}: ${size} | EU ${eu} | UK ${uk} | US ${us}`;
+  if (condition) {
+    header += `${SEGMENT_SEPARATOR}${CONDITION_LABEL[locale]}: ${CONDITION_VALUE[locale][condition]}`;
+  }
+  return header;
 }
 
 /**
@@ -73,13 +96,15 @@ export function formatSizeHeader(
  * @param body - the description body (already footer-appended)
  * @param size - the product's stored size value (US-letter scale)
  * @param locale - language of the header label
+ * @param condition - the product's condition; appended to the header line
  */
 export function prependSizeHeader(
   body: string,
   size: string | null | undefined,
   locale: "es" | "en",
+  condition?: ProductCondition | null,
 ): string {
-  const header = formatSizeHeader(size, locale);
+  const header = formatSizeHeader(size, locale, condition);
   if (!header) return body;
   const trimmedBody = body.trim();
   if (!trimmedBody) return header;
