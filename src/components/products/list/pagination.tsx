@@ -42,7 +42,8 @@ export function Pagination({
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
-  console.log({ totalCount, pageSize })
+  // Single page → nothing to paginate; hide the whole control.
+  if (totalPages <= 1) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
