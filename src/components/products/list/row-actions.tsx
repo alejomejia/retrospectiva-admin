@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, Tag, Trash2 } from "lucide-react";
+import { CheckCircle, MoreVertical, Tag, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { deleteProduct } from "@/lib/products/actions";
-import { markAsSold } from "@/lib/products/draft-actions";
+import { markAsPublished, markAsSold } from "@/lib/products/draft-actions";
 import { m } from "@/lib/i18n/messages.es";
 
 import type { ProductListItem } from "./types";
@@ -34,6 +34,14 @@ const SELLABLE: ReadonlySet<ProductListItem["status"]> = new Set([
   "archived",
 ]);
 
+/** Statuses a product can be manually marked published from. Mirrors
+ *  `PUBLISHABLE_STATUSES` in `markAsPublished` — used to reconcile a
+ *  row whose Etsy listing is already live but local status is stale. */
+const PUBLISHABLE: ReadonlySet<ProductListItem["status"]> = new Set([
+  "scheduled",
+  "archived",
+]);
+
 export function RowActions({ row }: { row: ProductListItem }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -41,7 +49,8 @@ export function RowActions({ row }: { row: ProductListItem }) {
 
   const canDelete = DELETABLE.has(row.status);
   const canMarkSold = SELLABLE.has(row.status);
-  if (!canDelete && !canMarkSold) return null;
+  const canMarkPublished = PUBLISHABLE.has(row.status);
+  if (!canDelete && !canMarkSold && !canMarkPublished) return null;
 
   const onDelete = () => {
     if (!window.confirm(m.products.rowActions.confirmDelete)) return;
@@ -71,6 +80,20 @@ export function RowActions({ row }: { row: ProductListItem }) {
     });
   };
 
+  const onMarkPublished = () => {
+    if (!window.confirm(m.products.rowActions.confirmMarkPublished)) return;
+    startTransition(async () => {
+      const result = await markAsPublished(row.id);
+      if (result.ok) {
+        toast.success(m.products.rowActions.publishedToast);
+        router.refresh();
+      } else {
+        toast.error(result.error);
+      }
+      setOpen(false);
+    });
+  };
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
@@ -84,6 +107,18 @@ export function RowActions({ row }: { row: ProductListItem }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {canMarkPublished && (
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              onMarkPublished();
+            }}
+            disabled={isPending}
+          >
+            <CheckCircle />
+            {m.products.rowActions.markPublished}
+          </DropdownMenuItem>
+        )}
         {canMarkSold && (
           <DropdownMenuItem
             onSelect={(e) => {

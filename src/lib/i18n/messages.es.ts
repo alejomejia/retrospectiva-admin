@@ -180,6 +180,9 @@ export const m = {
       markSold: "Marcar como vendido",
       confirmMarkSold: "¿Marcar este producto como vendido? Seguirá visible en la web, marcado como vendido.",
       soldToast: "Producto marcado como vendido",
+      markPublished: "Marcar como publicado",
+      confirmMarkPublished: "¿Marcar este producto como publicado? Úsalo solo si el anuncio ya está activo en Etsy. No se enviará nada a Etsy; solo se actualiza el estado local y se notifica a la web.",
+      publishedToast: "Producto marcado como publicado",
     },
     detail: {
       backLink: "Productos",

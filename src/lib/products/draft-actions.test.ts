@@ -157,6 +157,7 @@ const {
   archiveProduct,
   cancelSchedule,
   enqueueEnrichJob,
+  markAsPublished,
   markAsSold,
   restoreToDraft,
   saveDraftAndExit,
@@ -335,6 +336,44 @@ describe("markAsSold", () => {
   it("rejects a non-sellable status without writing or notifying", async () => {
     dbState.selectRow = { status: "draft" };
     const res = await markAsSold("p1");
+    expect(res.ok).toBe(false);
+    expect(dbState.updateCalls).toHaveLength(0);
+    expect(webhookAddMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("markAsPublished", () => {
+  it("flips a scheduled row to published, drops the delayed job, and fires the publish webhook", async () => {
+    dbState.selectRow = { status: "scheduled", slug: "vestido-azul", titleEs: "Vestido azul" };
+    const res = await markAsPublished("p1");
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values).toMatchObject({ status: "published" });
+    expect(publishRemoveMock).toHaveBeenCalledWith("p1");
+    expect(webhookAddMock).toHaveBeenCalledWith(
+      "publish",
+      { productId: "p1", kind: "publish" },
+      { jobId: "publish:p1" },
+    );
+  });
+
+  it("freezes a slug when the row has none", async () => {
+    dbState.selectRow = { status: "scheduled", slug: null, titleEs: "Vestido azul" };
+    const res = await markAsPublished("p1");
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.slug).toEqual(expect.any(String));
+    expect(dbState.updateCalls[0]?.values.slug).not.toBe("");
+  });
+
+  it("keeps an existing frozen slug unchanged", async () => {
+    dbState.selectRow = { status: "archived", slug: "kept-slug", titleEs: "Otro" };
+    const res = await markAsPublished("p1");
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.slug).toBe("kept-slug");
+  });
+
+  it("rejects a non-publishable status without writing or notifying", async () => {
+    dbState.selectRow = { status: "draft", slug: null, titleEs: "Borrador" };
+    const res = await markAsPublished("p1");
     expect(res.ok).toBe(false);
     expect(dbState.updateCalls).toHaveLength(0);
     expect(webhookAddMock).not.toHaveBeenCalled();

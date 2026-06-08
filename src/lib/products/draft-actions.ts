@@ -11,6 +11,7 @@ import { m } from "@/lib/i18n/messages.es";
 import { featuredSlotFullForProduct } from "@/lib/integrations/etsy/publish";
 import { latestRunForKind } from "@/lib/integrations/openai/ai-runs-log";
 import { translateText } from "@/lib/integrations/openai/translate";
+import { buildSlug } from "@/lib/products/slug";
 import {
   REGENERABLE_FIELDS,
   type RegenerableField,
@@ -256,6 +257,75 @@ export async function markAsSold(id: string): Promise<DraftActionResult> {
     return { ok: true };
   } catch (err) {
     dev.error("markAsSold DB error:", err);
+    return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
+}
+
+/** Statuses a product can be manually marked published from. A
+ *  `scheduled` row whose Etsy push half-completed (listing live but
+ *  the status flip never committed) is the primary case; `archived`
+ *  covers re-listing a pulled product that is back on Etsy. A `draft`
+ *  is excluded on purpose — it has no live listing, so the real
+ *  publish flow (`publishNow`) must run instead. */
+const PUBLISHABLE_STATUSES: ReadonlySet<string> = new Set([
+  "scheduled",
+  "archived",
+]);
+
+/**
+ * Manually reconcile a product to `status='published'` WITHOUT touching
+ * Etsy. Use when the listing is already live on Etsy but the local
+ * status is stale — e.g. a `scheduled` row whose publish job pushed the
+ * listing but failed before committing the status flip (see
+ * `runScheduledPublish`). Mirrors the tail of the real publish path:
+ * freezes the public slug on first publish and fires the `publish`
+ * website webhook. Any pending delayed publish job is dropped so the
+ * schedule can't fire a duplicate push later. Allowed from
+ * `scheduled` / `archived`.
+ */
+export async function markAsPublished(id: string): Promise<DraftActionResult> {
+  await requireSession();
+  try {
+    const [row] = await db
+      .select({
+        status: products.status,
+        slug: products.slug,
+        titleEs: products.titleEs,
+      })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!row) {
+      return { ok: false, error: m.errors.productNotFound };
+    }
+    if (!PUBLISHABLE_STATUSES.has(row.status)) {
+      return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+
+    // Freeze the public store slug on first publish — once set it never
+    // changes so shared / indexed URLs stay valid (mirrors `publish`).
+    const slug = row.slug ?? buildSlug(row.titleEs, id);
+
+    await db
+      .update(products)
+      .set({ status: "published", slug, updatedAt: sql`now()` })
+      .where(eq(products.id, id));
+    dev.log("status → published (manual reconcile)", id);
+
+    // Drop any pending delayed publish job so a later fire can't push a
+    // duplicate listing. "job is active" races self-cancel via the
+    // worker's status check (it sees status='published' and skips).
+    await etsyPublishQueue.remove(id).catch(() => {
+      /* no prior job, or already active — both fine */
+    });
+
+    await notifyWebsite(id, "publish");
+
+    revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
+    return { ok: true };
+  } catch (err) {
+    dev.error("markAsPublished DB error:", err);
     return { ok: false, error: m.errors.couldNotSaveChanges };
   }
 }
