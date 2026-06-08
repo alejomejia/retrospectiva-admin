@@ -29,7 +29,8 @@ export function Step2AiReview({
   initialAiImage: GeneratedAiImage;
   shopListingFooterEs: string;
 }) {
-  const { phase, error, kick, kickPending } = useStep2AiReview();
+  const { phase, error, kick, kickPending, contentVersion } =
+    useStep2AiReview();
 
   return (
     <div>
@@ -54,7 +55,7 @@ export function Step2AiReview({
         )}
         {phase !== "running" && (
           <AiContentSection
-            key={product.updatedAt.getTime()}
+            key={`content-${contentVersion}`}
             product={product}
             onRegenerate={kick}
             regenerating={kickPending}
@@ -62,7 +63,7 @@ export function Step2AiReview({
         )}
         {phase !== "running" && (
           <ListingFooterField
-            key={`footer-${product.updatedAt.getTime()}`}
+            key={`footer-${product.id}`}
             productId={product.id}
             shopFooterDefaultEs={shopListingFooterEs}
             initialOverrideEs={product.listingFooterEsOverride}

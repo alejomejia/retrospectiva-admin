@@ -57,10 +57,29 @@ export function useEnrichmentStatus({
   const enrichStatus = aiStatus?.enrich?.status ?? null;
   const enrichFinishedAt = aiStatus?.enrich?.finishedAt ?? null;
   const lastRefreshedFinishedAt = useRef<string | null>(null);
+  // Whether step 2 was entered on a product whose enrich content is
+  // already present in the server render. If so, the first succeeded
+  // poll is just re-observing content we already have — adopt its
+  // `finishedAt` as the baseline without refreshing/remounting.
+  const enteredEnriched = useRef(
+    Boolean(product.titleEs && product.titleEs.trim() !== ""),
+  );
+  // Bumped in lockstep with each post-enrich refresh. Drives the
+  // `key` on the editable AI-content fields so they remount with the
+  // freshly generated values — and ONLY then, never on the unrelated
+  // refreshes (autosave, image placement) that also re-fetch the row.
+  const [contentVersion, setContentVersion] = useState(0);
   useEffect(() => {
     if (enrichStatus !== "succeeded" || !enrichFinishedAt) return;
     if (lastRefreshedFinishedAt.current === enrichFinishedAt) return;
+    const isFirstObservation = lastRefreshedFinishedAt.current === null;
     lastRefreshedFinishedAt.current = enrichFinishedAt;
+    // Skip the redundant refresh when the first observed run is the one
+    // the server already rendered — only a genuinely newer run (a
+    // regenerate, or the initial enrich on a fresh draft) should pull
+    // fresh content and remount the fields.
+    if (isFirstObservation && enteredEnriched.current) return;
+    setContentVersion((v) => v + 1);
     router.refresh();
   }, [enrichStatus, enrichFinishedAt, router]);
 
@@ -91,5 +110,5 @@ export function useEnrichmentStatus({
     });
   };
 
-  return { phase, error, kick, kickPending };
+  return { phase, error, kick, kickPending, contentVersion };
 }
