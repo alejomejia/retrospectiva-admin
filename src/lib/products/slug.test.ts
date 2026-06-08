@@ -38,4 +38,10 @@ describe("buildSlug", () => {
   it("handles null/empty title with a stable suffix", () => {
     expect(buildSlug(null, id)).toBe("item-9f3c1a");
   });
+
+  it("strips the SEO suffix after ` | ` before slugifying", () => {
+    expect(buildSlug("Chaqueta Safari Arena | Vintage second hand", id)).toBe(
+      "chaqueta-safari-arena-9f3c1a",
+    );
+  });
 });

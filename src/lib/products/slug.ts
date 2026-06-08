@@ -53,5 +53,9 @@ export function slugifyTitle(title: string): string {
  */
 export function buildSlug(title: string | null | undefined, id: string): string {
   const suffix = id.replace(/-/g, "").slice(0, ID_SUFFIX_LENGTH);
-  return `${slugifyTitle(title ?? "")}-${suffix}`;
+  // Titles carry SEO suffixes after a `|` (e.g. `Chaqueta | Vintage second
+  // hand`); the slug uses only the leading piece, mirroring the storefront
+  // display name (`cleanName` in retrospectiva-website).
+  const display = (title ?? "").split(" | ").at(0) ?? "";
+  return `${slugifyTitle(display)}-${suffix}`;
 }
