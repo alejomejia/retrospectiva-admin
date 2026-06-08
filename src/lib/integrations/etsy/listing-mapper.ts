@@ -6,6 +6,7 @@ import {
 import type { Product } from "@/lib/db/schema";
 
 import { appendListingFooter } from "@/lib/products/listing-footer";
+import { prependMeasurementBlock } from "@/lib/products/measurement-header";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
 
 import { ETSY_MATERIAL_MAX_LEN, ETSY_TAG_MAX_LEN } from "./etsy-text";
@@ -102,11 +103,17 @@ export function mapProductToCreateDraftPayload({
 
   const descriptionBody = (product.descriptionEn ?? "").trim();
   if (!descriptionBody) throw new ListingMapperError("missing descriptionEn");
-  // Footer appended + size header prepended at the payload boundary
-  // only — never stored in the description column (keeps them out of
-  // the AI + translation paths). Size header leads the description.
+  // Footer appended + measurement block + size header prepended at the
+  // payload boundary only — never stored in the description column
+  // (keeps them out of the AI + translation paths). Size header leads,
+  // measurement block sits just below it, then the description body.
   const description = prependSizeHeader(
-    appendListingFooter(descriptionBody, footerEn),
+    prependMeasurementBlock(
+      appendListingFooter(descriptionBody, footerEn),
+      product.clothingType,
+      product,
+      "en",
+    ),
     product.size,
     "en",
   );

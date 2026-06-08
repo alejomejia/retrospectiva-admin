@@ -19,6 +19,7 @@ import {
   resolveListingFooter,
 } from "@/lib/products/listing-footer";
 import { inflatedListCents } from "@/lib/products/pricing";
+import { prependMeasurementBlock } from "@/lib/products/measurement-header";
 import { getProductSettings } from "@/lib/products/settings";
 import { buildSlug } from "@/lib/products/slug";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
@@ -220,15 +221,26 @@ export async function buildWebsitePayload(input: {
   // Append the resolved listing footer (per-product override, else
   // shop-wide default) to both languages — mirrors the Etsy payload so
   // the website body matches the live listing. Pre-translated; no AI.
-  // Then prepend the size-conversion header so it leads the description.
+  // Then prepend the measurement block and the size-conversion header
+  // so the description leads with size, then measurements, then body.
   const footer = resolveListingFooter(row, await getProductSettings());
   const descriptionEsWithFooter = prependSizeHeader(
-    appendListingFooter(descriptionEs, footer.es),
+    prependMeasurementBlock(
+      appendListingFooter(descriptionEs, footer.es),
+      row.clothingType,
+      row,
+      "es",
+    ),
     row.size,
     "es",
   );
   const descriptionEnWithFooter = prependSizeHeader(
-    appendListingFooter(descriptionEn, footer.en),
+    prependMeasurementBlock(
+      appendListingFooter(descriptionEn, footer.en),
+      row.clothingType,
+      row,
+      "en",
+    ),
     row.size,
     "en",
   );

@@ -136,8 +136,22 @@ describe("buildWebsitePayload", () => {
     });
     expect(out.title).toEqual({ es: "Camisa vintage", en: "Vintage shirt" });
     expect(out.description).toEqual({
-      es: "Camisa de los 90s",
-      en: "90s shirt",
+      es: [
+        "Medidas:",
+        "- Hombro: 45cm",
+        "- Pecho: Plano 50cm - Contorno 100cm",
+        "- Largo: 70cm",
+        "",
+        "Camisa de los 90s",
+      ].join("\n"),
+      en: [
+        "Measurements:",
+        "- Shoulder: 45cm",
+        "- Chest: Flat 50cm - Around 100cm",
+        "- Length: 70cm",
+        "",
+        "90s shirt",
+      ].join("\n"),
     });
     expect(out.tags).toEqual({
       es: ["vintage", "camisa"],
