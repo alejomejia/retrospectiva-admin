@@ -26,17 +26,23 @@ function sizeProperty(): TaxonomyProperty {
     property_id: 100,
     name: "size",
     display_name: "Size",
+    // Scale display names mirror the live Etsy "Women's clothing size"
+    // property: region/system labels, none mention "women". The
+    // numeric scale comes first (as it does live) to guard against the
+    // picker falling through to scales[0].
     scales: [
-      { scale_id: 11, display_name: "Men's" },
-      { scale_id: 22, display_name: "Women's US Letter" },
+      { scale_id: 24, display_name: "US numeric" },
+      { scale_id: 25, display_name: "US letter" },
+      { scale_id: 26, display_name: "UK" },
     ],
     is_required: false,
     supports_attributes: true,
     supports_variations: true,
     possible_values: [
-      { value_id: 91, name: "S", scale_id: 22 },
-      { value_id: 92, name: "M", scale_id: 22 },
-      { value_id: 81, name: "S", scale_id: 11 },
+      { value_id: 1688, name: "2", scale_id: 24 },
+      { value_id: 1696, name: "4", scale_id: 24 },
+      { value_id: 91, name: "S", scale_id: 25 },
+      { value_id: 92, name: "M", scale_id: 25 },
     ],
   };
 }
@@ -85,7 +91,7 @@ describe("applyListingProperties", () => {
     ]);
   });
 
-  it("picks the women's scale and the value scoped to it for size", async () => {
+  it("picks the US-letter scale and the value scoped to it for size", async () => {
     const { updates, deps } = makeDeps([sizeProperty()]);
     const applied = await applyListingProperties(
       7,
@@ -96,7 +102,7 @@ describe("applyListingProperties", () => {
     );
     expect(applied).toEqual(["size"]);
     expect(updates).toEqual([
-      { propertyId: 100, values: ["S"], valueIds: [91], scaleId: 22 },
+      { propertyId: 100, values: ["S"], valueIds: [91], scaleId: 25 },
     ]);
   });
 

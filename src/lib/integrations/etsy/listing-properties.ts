@@ -46,15 +46,23 @@ function findValueByName(
 }
 
 /**
- * Pick the women's US-letter sizing scale. Etsy exposes several size
- * scales per taxonomy (Women's, Men's, numeric, …); the shop only
- * ever sells women's letter sizes (XS/S/M/…), so prefer a scale whose
- * name mentions "women", then fall back to the first available scale.
+ * Pick the US-letter sizing scale. Etsy's "Women's clothing size"
+ * property exposes its scales by region/system — the live
+ * `display_name`s are "US numeric", "US letter", "UK", "FR", … (NONE
+ * mention "women"; that word is only in the property name). The shop
+ * sells letter sizes (XS/S/M/…), which live in the "US letter" scale
+ * (scale_id 25), so prefer "us letter", then any scale mentioning
+ * "letter", and only then fall back to the first scale.
+ *
+ * NOTE: do not match on "women" — no scale carries it, so that lookup
+ * silently fell through to the numeric scale (0/2/4/…), where "S"
+ * never matched and the size attribute was dropped on every publish.
  */
 function pickWomensLetterScale(property: TaxonomyProperty) {
   const scales = property.scales ?? [];
   return (
-    scales.find((s) => norm(s.display_name).includes("women")) ??
+    scales.find((s) => norm(s.display_name) === norm("US letter")) ??
+    scales.find((s) => norm(s.display_name).includes("letter")) ??
     scales[0] ??
     undefined
   );
