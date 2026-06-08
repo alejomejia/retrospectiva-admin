@@ -8,7 +8,9 @@ import {
   appendListingFooter,
   resolveListingFooter,
 } from "@/lib/products/listing-footer";
+import { prependMeasurementBlock } from "@/lib/products/measurement-header";
 import { getProductSettings } from "@/lib/products/settings";
+import { prependSizeHeader } from "@/lib/products/size-conversion";
 import { buildSlug } from "@/lib/products/slug";
 import { fetchBytesFromR2 } from "@/lib/integrations/r2/fetch";
 import {
@@ -375,9 +377,23 @@ export async function runScheduledPublish(
   const titleEs = (product.titleEs ?? "").trim();
   const descriptionEs = (product.descriptionEs ?? "").trim();
   if (titleEs && descriptionEs) {
+    // Mirror the EN payload boundary (see mapProductToCreateDraftPayload):
+    // size header leads, measurement block below it, then footer-appended
+    // body — all in ES so the translated listing isn't missing the prepend.
+    const descriptionEsFull = prependSizeHeader(
+      prependMeasurementBlock(
+        appendListingFooter(descriptionEs, footer.es),
+        product.clothingType,
+        product,
+        "es",
+      ),
+      product.size,
+      "es",
+      product.condition,
+    );
     await upsertListingTranslation(shop.shopId, listingId, "es", {
       title: titleEs,
-      description: appendListingFooter(descriptionEs, footer.es),
+      description: descriptionEsFull,
       tags: product.etsyTagsEs.length > 0 ? product.etsyTagsEs : undefined,
     });
     dev.log("es translation upserted", productId);
