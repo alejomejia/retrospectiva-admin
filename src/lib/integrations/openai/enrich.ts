@@ -5,6 +5,11 @@ import { type Product, productImages, products } from "@/lib/db/schema";
 import { devGroup } from "@/lib/utils/dev";
 
 import { ETSY_COLORS } from "@/lib/integrations/etsy/etsy-colors";
+import {
+  clampPhrasesToMaxLen,
+  ETSY_MATERIAL_MAX_LEN,
+  ETSY_TAG_MAX_LEN,
+} from "@/lib/integrations/etsy/etsy-text";
 
 import { completeRun, failRun, startRun } from "./ai-runs-log";
 import { MODELS, openai } from "./client";
@@ -205,7 +210,13 @@ export async function runEnrichment(productId: string): Promise<void> {
     logCacheUsage({ kind: "enrich", model: MODELS.text, response });
 
     const text = extractOutputText(response);
-    const parsed = EnrichmentOutput.safeParse(safeJsonParse(text));
+    // OpenAI structured outputs ignore JSON-Schema maxLength, so the
+    // model routinely emits tags/materials over the Etsy per-entry cap
+    // (Spanish phrases run long). Clamp at word boundaries before zod so
+    // a normal over-length phrase repairs instead of failing the job.
+    const parsed = EnrichmentOutput.safeParse(
+      clampEnrichmentPhrases(safeJsonParse(text)),
+    );
     if (!parsed.success) {
       const summary = parsed.error.issues
         .map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`)
@@ -275,7 +286,7 @@ const ENRICHMENT_JSON_SCHEMA = {
     etsyTagsEs: {
       type: "array",
       maxItems: 13,
-      items: { type: "string", minLength: 1, maxLength: 30 },
+      items: { type: "string", minLength: 1, maxLength: 20 },
     },
     etsyMaterialsEs: {
       type: "array",
@@ -314,6 +325,30 @@ function safeJsonParse(s: string): unknown {
       `Model output was not valid JSON: ${err instanceof Error ? err.message : err}`,
     );
   }
+}
+
+/**
+ * Repair the model's tag/material arrays to the Etsy per-entry caps
+ * before zod validation. Non-arrays are left untouched so zod still
+ * reports a precise type error. Other fields pass through unchanged.
+ */
+function clampEnrichmentPhrases(parsed: unknown): unknown {
+  if (typeof parsed !== "object" || parsed === null) return parsed;
+  const obj = parsed as Record<string, unknown>;
+  return {
+    ...obj,
+    ...(Array.isArray(obj.etsyTagsEs)
+      ? { etsyTagsEs: clampPhrasesToMaxLen(obj.etsyTagsEs, ETSY_TAG_MAX_LEN) }
+      : {}),
+    ...(Array.isArray(obj.etsyMaterialsEs)
+      ? {
+          etsyMaterialsEs: clampPhrasesToMaxLen(
+            obj.etsyMaterialsEs,
+            ETSY_MATERIAL_MAX_LEN,
+          ),
+        }
+      : {}),
+  };
 }
 
 /**

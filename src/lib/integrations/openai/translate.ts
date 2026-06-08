@@ -2,6 +2,11 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { products, type Product } from "@/lib/db/schema";
+import {
+  clampPhrasesToMaxLen,
+  ETSY_MATERIAL_MAX_LEN,
+  ETSY_TAG_MAX_LEN,
+} from "@/lib/integrations/etsy/etsy-text";
 import { devGroup } from "@/lib/utils/dev";
 
 import { completeRun, failRun, startRun } from "./ai-runs-log";
@@ -146,7 +151,10 @@ export async function runTranslation(
     const parsed = safeJsonParse(text);
 
     const translated = isArrayField
-      ? parseTranslatedArray(parsed, (sourceValue as string[]).length)
+      ? clampTranslatedArray(
+          field,
+          parseTranslatedArray(parsed, (sourceValue as string[]).length),
+        )
       : parseTranslatedString(parsed);
 
     await db
@@ -203,6 +211,26 @@ export async function translateText(text: string): Promise<string> {
   logCacheUsage({ kind: "translation", model: MODELS.translate, response });
 
   return parseTranslatedString(safeJsonParse(extractOutputText(response)));
+}
+
+/**
+ * Clamp a translated tag/material array to the Etsy per-entry cap. The
+ * cap applies in every locale, and the translator can lengthen a phrase
+ * (an EN rendering may run longer than its ES source), so the EN side is
+ * clamped here rather than relying on the listing mapper to drop the
+ * over-length entries it would otherwise discard.
+ */
+function clampTranslatedArray(
+  field: TranslatableField,
+  translated: string[],
+): string[] {
+  if (field === "etsyTagsEs") {
+    return clampPhrasesToMaxLen(translated, ETSY_TAG_MAX_LEN);
+  }
+  if (field === "etsyMaterialsEs") {
+    return clampPhrasesToMaxLen(translated, ETSY_MATERIAL_MAX_LEN);
+  }
+  return translated;
 }
 
 function isEmptySource(v: unknown): boolean {

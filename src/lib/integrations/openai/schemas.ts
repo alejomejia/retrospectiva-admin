@@ -19,7 +19,10 @@ import { ETSY_ERA_VALUES } from "@/lib/products/draft-schema";
  *     prose stays tight even as the published listing grows. (Etsy's
  *     own cap is 102 400.)
  *   - tags: 13 entries, each ≤ 20 chars (Etsy hard cap — tags over
- *     20 chars are rejected/truncated by Etsy, so generate within it)
+ *     20 chars are rejected by Etsy in every locale, ES and EN alike,
+ *     so generate within it). Note: OpenAI structured outputs ignore
+ *     JSON-Schema maxLength, so the model can still drift over 20; the
+ *     processor clamps over-long tags before this schema validates.
  *   - materials: 13 entries, each ≤ 45 chars (Etsy hard cap)
  *
  * Note: `etsyTaxonomyId` is NOT part of this schema. It's derived

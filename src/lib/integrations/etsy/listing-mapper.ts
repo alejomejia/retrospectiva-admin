@@ -8,6 +8,7 @@ import type { Product } from "@/lib/db/schema";
 import { appendListingFooter } from "@/lib/products/listing-footer";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
 
+import { ETSY_MATERIAL_MAX_LEN, ETSY_TAG_MAX_LEN } from "./etsy-text";
 import type {
   CreateDraftListingPayload,
   WhenMade,
@@ -45,9 +46,9 @@ const WHEN_MADE_VALUES: ReadonlySet<WhenMade> = new Set<WhenMade>([
  *  never fails a length validation server-side. The product form
  *  already enforces equivalent limits on the way in. */
 const MAX_TAGS = 13;
-const MAX_TAG_LEN = 20;
+const MAX_TAG_LEN = ETSY_TAG_MAX_LEN;
 const MAX_MATERIALS = 13;
-const MAX_MATERIAL_LEN = 45;
+const MAX_MATERIAL_LEN = ETSY_MATERIAL_MAX_LEN;
 const MAX_TITLE_LEN = 140;
 
 export type ShopPublishConfig = {

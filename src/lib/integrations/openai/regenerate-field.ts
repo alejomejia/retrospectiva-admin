@@ -6,6 +6,11 @@ import {
   ETSY_COLORS,
   type EtsyColor,
 } from "@/lib/integrations/etsy/etsy-colors";
+import {
+  clampPhrasesToMaxLen,
+  ETSY_MATERIAL_MAX_LEN,
+  ETSY_TAG_MAX_LEN,
+} from "@/lib/integrations/etsy/etsy-text";
 import { ETSY_ERA_VALUES, type EtsyEra } from "@/lib/products/draft-schema";
 import { devGroup } from "@/lib/utils/dev";
 
@@ -189,7 +194,7 @@ function schemaForField(field: RegenerableField) {
         return {
           type: "array",
           maxItems: 13,
-          items: { type: "string", minLength: 1, maxLength: 30 },
+          items: { type: "string", minLength: 1, maxLength: 20 },
         };
       case "etsyMaterialsEs":
         return {
@@ -241,7 +246,13 @@ function parseFieldValue(
       if (!Array.isArray(value) || !value.every((v) => typeof v === "string")) {
         throw new Error(`${field} value was not a string array`);
       }
-      return value as string[];
+      // Clamp to the Etsy per-entry cap (structured outputs ignore
+      // JSON-Schema maxLength) so a regenerated phrase repairs rather
+      // than persisting an over-length tag/material.
+      return clampPhrasesToMaxLen(
+        value as string[],
+        field === "etsyTagsEs" ? ETSY_TAG_MAX_LEN : ETSY_MATERIAL_MAX_LEN,
+      );
     case "etsyWhenMade":
       if (
         typeof value !== "string" ||

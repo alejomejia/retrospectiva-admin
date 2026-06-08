@@ -142,8 +142,8 @@ export const ProductDraftPatchSchema = z.object({
   braSize: trimmedShortString(20),
 
   // Etsy-bound AI metadata
-  etsyTagsEs: stringArray(13, 30),
-  etsyTagsEn: stringArray(13, 30),
+  etsyTagsEs: stringArray(13, 20),
+  etsyTagsEn: stringArray(13, 20),
   etsyMaterialsEs: stringArray(13, 45),
   etsyMaterialsEn: stringArray(13, 45),
   etsyWhenMade: z.enum(ETSY_ERA_VALUES).nullable().optional(),

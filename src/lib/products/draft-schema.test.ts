@@ -169,16 +169,16 @@ describe("ProductDraftPatchSchema", () => {
       ).toBe(false);
     });
 
-    it("rejects a tag over 30 characters", () => {
+    it("rejects a tag over 20 characters (Etsy per-locale cap)", () => {
       const r = ProductDraftPatchSchema.safeParse({
-        etsyTagsEs: ["x".repeat(31)],
+        etsyTagsEs: ["x".repeat(21)],
       });
       expect(r.success).toBe(false);
     });
 
-    it("accepts up to 13 tags of 30 chars", () => {
+    it("accepts up to 13 tags of 20 chars", () => {
       const r = ProductDraftPatchSchema.safeParse({
-        etsyTagsEs: Array(13).fill("x".repeat(30)),
+        etsyTagsEs: Array(13).fill("x".repeat(20)),
       });
       expect(r.success).toBe(true);
     });
