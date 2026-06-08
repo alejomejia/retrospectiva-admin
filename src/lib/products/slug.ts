@@ -9,8 +9,10 @@
  *
  * The slug is FROZEN at first publish (persisted to `products.slug`)
  * so editing a title later doesn't break shared / indexed URLs. The
- * Spanish title is canonical (admin + brand are ES-first); see
- * `buildWebsitePayload` for where the slug is emitted on the wire.
+ * slug is built from the ENGLISH title (`titleEn`, available post
+ * ES→EN translation at the publish boundary), falling back to the
+ * Spanish title only when untranslated; see `buildWebsitePayload` for
+ * where the slug is emitted on the wire.
  */
 
 /** Number of leading hex chars of the UUID used as the uniqueness suffix. */
@@ -39,10 +41,11 @@ export function slugifyTitle(title: string): string {
 }
 
 /**
- * Builds the frozen public slug for a product from its canonical
- * (Spanish) title and immutable id.
+ * Builds the frozen public slug for a product from its title and
+ * immutable id.
  *
- * @param title - The canonical product title (`titleEs`).
+ * @param title - The product title to slugify — the English title
+ *   (`titleEn`) at the publish boundary, Spanish as a fallback.
  * @param id - The product UUID; its first 6 hex chars become the suffix.
  * @returns A collision-proof, URL-safe slug.
  *

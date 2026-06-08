@@ -364,6 +364,30 @@ describe("markAsPublished", () => {
     expect(dbState.updateCalls[0]?.values.slug).not.toBe("");
   });
 
+  it("builds the frozen slug from the English title, not the Spanish one", async () => {
+    dbState.selectRow = {
+      status: "scheduled",
+      slug: null,
+      titleEs: "Vestido azul",
+      titleEn: "Blue dress",
+    };
+    const res = await markAsPublished("p1");
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.slug).toMatch(/^blue-dress-/);
+  });
+
+  it("falls back to the Spanish title when there is no English title", async () => {
+    dbState.selectRow = {
+      status: "scheduled",
+      slug: null,
+      titleEs: "Vestido azul",
+      titleEn: null,
+    };
+    const res = await markAsPublished("p1");
+    expect(res.ok).toBe(true);
+    expect(dbState.updateCalls[0]?.values.slug).toMatch(/^vestido-azul-/);
+  });
+
   it("keeps an existing frozen slug unchanged", async () => {
     dbState.selectRow = { status: "archived", slug: "kept-slug", titleEs: "Otro" };
     const res = await markAsPublished("p1");

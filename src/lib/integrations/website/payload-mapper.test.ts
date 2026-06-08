@@ -138,7 +138,7 @@ describe("buildWebsitePayload", () => {
     expect(out.description).toEqual({
       es: [
         "Medidas:",
-        "- Hombro: 45cm",
+        "- Hombro a hombro: 45cm",
         "- Pecho: Plano 50cm - Contorno 100cm",
         "- Largo: 70cm",
         "",

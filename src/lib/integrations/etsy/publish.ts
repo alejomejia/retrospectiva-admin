@@ -414,8 +414,10 @@ export async function runScheduledPublish(
 
   // Freeze the public store slug on first publish. Once set it never
   // changes (even if the title is later edited) so shared / indexed
-  // website URLs stay valid — see `buildSlug`.
-  const slug = row.slug ?? buildSlug(row.titleEs, row.id);
+  // website URLs stay valid — see `buildSlug`. Built from the English
+  // title (`product` is the post-translation re-read), falling back to
+  // the Spanish title only if translation yielded nothing.
+  const slug = row.slug ?? buildSlug(product.titleEn ?? product.titleEs, row.id);
 
   await db
     .update(products)

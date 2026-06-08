@@ -310,7 +310,7 @@ export async function buildWebsitePayload(input: {
   const now = new Date().toISOString();
   return {
     productId: row.id,
-    slug: row.slug ?? buildSlug(row.titleEs, row.id),
+    slug: row.slug ?? buildSlug(row.titleEn ?? row.titleEs, row.id),
     kind,
     emittedAt: now,
     status: row.status,

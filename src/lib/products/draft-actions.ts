@@ -291,6 +291,7 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
         status: products.status,
         slug: products.slug,
         titleEs: products.titleEs,
+        titleEn: products.titleEn,
       })
       .from(products)
       .where(eq(products.id, id))
@@ -304,7 +305,8 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
 
     // Freeze the public store slug on first publish — once set it never
     // changes so shared / indexed URLs stay valid (mirrors `publish`).
-    const slug = row.slug ?? buildSlug(row.titleEs, id);
+    // Prefer the English title; fall back to Spanish if untranslated.
+    const slug = row.slug ?? buildSlug(row.titleEn ?? row.titleEs, id);
 
     await db
       .update(products)
