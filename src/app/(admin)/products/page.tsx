@@ -48,6 +48,16 @@ export default async function ProductsPage({
 
   const offset = (params.page - 1) * params.pageSize;
 
+  // Published listings sort by when they went live on Etsy
+  // (`scheduledPublishAt` — set to the trigger moment for publish-now,
+  // the planned fire time for scheduled). Coalesce to `createdAt` so a
+  // manually-reconciled row with no scheduled time still sorts sanely.
+  // Every other tab keeps creation-date order.
+  const orderBy =
+    params.tab === "published"
+      ? desc(sql`coalesce(${products.scheduledPublishAt}, ${products.createdAt})`)
+      : desc(products.createdAt);
+
   const [productRows, totalResult] = await Promise.all([
     db
       .select({
@@ -67,7 +77,7 @@ export default async function ProductsPage({
       })
       .from(products)
       .where(where)
-      .orderBy(desc(products.createdAt))
+      .orderBy(orderBy)
       .limit(params.pageSize)
       .offset(offset),
     db
