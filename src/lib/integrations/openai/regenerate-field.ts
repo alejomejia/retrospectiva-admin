@@ -32,10 +32,11 @@ import {
 const dev = devGroup("openai.regenerate-field");
 
 /** Hard cap on output tokens for single-field regen. Generous enough
- *  for a max-size description (700 chars ≈ 230 tokens) with wide
- *  headroom; conservative enough that a runaway can't dump $0.50 of
- *  output. */
-const MAX_OUTPUT_TOKENS = 900;
+ *  for a max-size description (2000 chars ≈ 600 tokens) PLUS the
+ *  gpt-5 family's invisible reasoning tokens, which count against
+ *  this same cap; conservative enough that a runaway can't dump
+ *  $0.50 of output. */
+const MAX_OUTPUT_TOKENS = 2000;
 
 /**
  * The five AI-populated columns the user can independently regenerate

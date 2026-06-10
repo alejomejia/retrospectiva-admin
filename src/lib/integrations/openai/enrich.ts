@@ -109,9 +109,12 @@ export async function primaryImageUrl(
 const dev = devGroup("openai.enrich");
 
 /** Hard cap on output tokens. Generous enough for a max-size title +
- *  description + 13 tags + 13 materials + era + key, conservative
- *  enough that a runaway generation can't dump $1 of output. */
-const MAX_OUTPUT_TOKENS = 1500;
+ *  description + 13 tags + 13 materials + era + key (~900 visible
+ *  tokens) PLUS the gpt-5 family's invisible reasoning tokens, which
+ *  count against this same cap — gpt-5-mini at "minimal" effort still
+ *  burns several hundred. Conservative enough that a runaway
+ *  generation can't dump $1 of output. */
+const MAX_OUTPUT_TOKENS = 3000;
 
 /** Public base URL for R2 images. Read here (not via `config`) to
  *  keep this file usable from the BullMQ worker — see

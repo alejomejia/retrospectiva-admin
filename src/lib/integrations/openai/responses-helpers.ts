@@ -25,6 +25,8 @@ const RATES_USD_PER_M_TOKENS: Record<
 > = {
   // gpt-5 family: $5/M input, $15/M output (placeholder).
   "gpt-5": { input: 5, output: 15 },
+  // gpt-5-mini: $0.25/M input, $2/M output (approx public).
+  "gpt-5-mini": { input: 0.25, output: 2 },
   // gpt-4o-mini: $0.15/M input, $0.60/M output (approx public).
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };
@@ -65,15 +67,32 @@ const IMAGE_RATES_USD_PER_CALL: Record<
  * back to walking `output[].content[]` when the SDK doesn't expose
  * `output_text` directly (older SDK versions, certain streaming
  * shapes). Throws when neither path yields a non-empty string.
+ *
+ * Also rejects `status: "incomplete"` responses up front. On the
+ * gpt-5 reasoning family the invisible reasoning tokens count against
+ * `max_output_tokens`, so an under-sized cap truncates the JSON
+ * payload mid-string — surfacing here as a clear cap error instead of
+ * a confusing `JSON.parse` failure downstream.
  */
 export function extractOutputText(response: unknown): string {
   const r = response as {
+    status?: string;
+    incomplete_details?: { reason?: string };
     output?: Array<{
       type?: string;
       content?: Array<{ type?: string; text?: string }>;
     }>;
     output_text?: string;
   };
+  if (r.status === "incomplete") {
+    const reason = r.incomplete_details?.reason ?? "unknown";
+    throw new Error(
+      `Responses API call incomplete (reason: ${reason})` +
+        (reason === "max_output_tokens"
+          ? " — output truncated; reasoning tokens count against max_output_tokens, raise the caller's cap"
+          : ""),
+    );
+  }
   if (typeof r.output_text === "string" && r.output_text !== "") {
     return r.output_text;
   }
