@@ -75,7 +75,7 @@ describe("mapProductToCreateDraftPayload", () => {
     });
     expect(payload).toMatchObject({
       quantity: 1,
-      title: "Vintage blue dress",
+      title: "Vintage blue dress | Vintage second hand",
       // Size header (from the `size` column) leads the description,
       // with the condition appended to the same line.
       description:

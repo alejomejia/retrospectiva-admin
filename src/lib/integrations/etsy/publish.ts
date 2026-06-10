@@ -12,6 +12,7 @@ import { prependMeasurementBlock } from "@/lib/products/measurement-header";
 import { getProductSettings } from "@/lib/products/settings";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
 import { buildSlug } from "@/lib/products/slug";
+import { appendTitleSuffix } from "@/lib/products/title-suffix";
 import { fetchBytesFromR2 } from "@/lib/integrations/r2/fetch";
 import {
   TRANSLATABLE_FIELDS,
@@ -392,7 +393,7 @@ export async function runScheduledPublish(
       product.condition,
     );
     await upsertListingTranslation(shop.shopId, listingId, "es", {
-      title: titleEs,
+      title: appendTitleSuffix(titleEs, "es"),
       description: descriptionEsFull,
       tags: product.etsyTagsEs.length > 0 ? product.etsyTagsEs : undefined,
     });

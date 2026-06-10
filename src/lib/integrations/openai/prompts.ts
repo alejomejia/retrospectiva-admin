@@ -226,7 +226,7 @@ titleEs (in Spanish):
 
 - LEAD with what the garment IS (its type) plus its 1-2 strongest descriptors — shoppers on mobile only see the first few words.
 - Short, clear, scannable. First letter uppercase.
-- Separate distinct keyword phrases with pipes or commas — Etsy reads each phrase independently (e.g. "Vestido midi vintage de flores | Vestido años 90 cottagecore").
+- Output ONE single phrase only — the garment type plus its strongest descriptors (e.g. "Camisa manga larga estampado floral"). Do NOT split into multiple keyword phrases and do NOT use pipes ("|") or commas to chain a second phrase. A fixed brand suffix is appended later automatically.
 - Include real differentiators when known: era, color, pattern, style/aesthetic, material (only if confirmed/visible).
 - Only include attributes clearly visible or confirmed.
 - Do NOT keyword-stack or repeat the same phrase — stuffing hurts ranking and click-through.
