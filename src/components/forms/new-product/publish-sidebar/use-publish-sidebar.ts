@@ -79,11 +79,10 @@ export function usePublishSidebar({
 
   const onSaveDraft = () => {
     startTransition(async () => {
+      // `flush` surfaces its own error toast on failure (autosave
+      // provider), so we only need to abort here.
       const flushed = await flush();
-      if (!flushed) {
-        toast.error(m.errors.couldNotSaveChanges);
-        return;
-      }
+      if (!flushed) return;
       const result = await saveDraftAndExit(product.id);
       if (!result.ok) {
         toast.error(result.error);
@@ -101,10 +100,7 @@ export function usePublishSidebar({
     }
     startTransition(async () => {
       const flushed = await flush();
-      if (!flushed) {
-        toast.error(m.errors.couldNotSaveChanges);
-        return;
-      }
+      if (!flushed) return;
       const result = await scheduleProduct(product.id, scheduledIso);
       if (!result.ok) {
         toast.error(result.error);
@@ -121,10 +117,7 @@ export function usePublishSidebar({
     }
     startTransition(async () => {
       const flushed = await flush();
-      if (!flushed) {
-        toast.error(m.errors.couldNotSaveChanges);
-        return;
-      }
+      if (!flushed) return;
       const result = await publishNow(product.id);
       if (!result.ok) {
         toast.error(result.error);

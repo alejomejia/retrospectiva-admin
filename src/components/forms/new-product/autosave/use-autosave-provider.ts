@@ -7,7 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
+import { toast } from "sonner";
 
+import { m } from "@/lib/i18n/messages.es";
 import { updateProductDraftField } from "@/lib/products/draft-actions";
 import { type ProductDraftPatch } from "@/lib/products/draft-schema";
 
@@ -72,13 +74,23 @@ export function useAutosaveProvider({
         dev.error("autosave failed", result.error);
         setStatus("error");
         setError(result.error);
+        // Surface the failure (incl. server-side zod validation, which
+        // returns `m.errors.invalidForm`) as a toast — the corner pill
+        // alone is easy to miss.
+        toast.error(m.products.stepper.autosave.error, {
+          description: result.error,
+        });
         // On failure, restore the patch so a future flush retries.
         pendingRef.current = { ...patch, ...pendingRef.current };
         return false;
       } catch (e) {
         dev.error("autosave threw", e);
+        const message = e instanceof Error ? e.message : "Unknown error";
         setStatus("error");
-        setError(e instanceof Error ? e.message : "Unknown error");
+        setError(message);
+        toast.error(m.products.stepper.autosave.error, {
+          description: message,
+        });
         pendingRef.current = { ...patch, ...pendingRef.current };
         return false;
       } finally {
