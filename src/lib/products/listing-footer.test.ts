@@ -57,9 +57,9 @@ describe("resolveListingFooter", () => {
 });
 
 describe("appendListingFooter", () => {
-  it("joins body and footer with a blank line", () => {
+  it("joins body and footer with a --- divider rule", () => {
     expect(appendListingFooter("Body text", "Footer text")).toBe(
-      "Body text\n\nFooter text",
+      "Body text\n\n---\n\nFooter text",
     );
   });
 

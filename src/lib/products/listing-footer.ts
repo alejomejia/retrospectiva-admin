@@ -1,8 +1,12 @@
 import type { Product } from "@/lib/db/schema";
 import type { ProductSettings } from "./settings";
 
-/** Joiner between a listing description and its footer. */
-const FOOTER_SEPARATOR = "\n\n";
+/**
+ * Joiner between a listing description and its footer: a blank line, a
+ * `---` divider rule, then another blank line, so the shared boilerplate
+ * footer reads as a distinct block below the AI description.
+ */
+const FOOTER_SEPARATOR = "\n\n---\n\n";
 
 export type ListingFooter = { es: string; en: string };
 
@@ -45,9 +49,10 @@ export function resolveListingFooter(
 }
 
 /**
- * Appends `footer` to a listing `body`, separated by a blank line.
- * Empty footer (or empty body) is handled gracefully so callers can
- * pass the resolved footer unconditionally.
+ * Appends `footer` to a listing `body`, separated by a `---` divider
+ * rule on its own line. Empty footer (or empty body) is handled
+ * gracefully — no dangling divider — so callers can pass the resolved
+ * footer unconditionally.
  */
 export function appendListingFooter(body: string, footer: string): string {
   const trimmedFooter = footer.trim();
