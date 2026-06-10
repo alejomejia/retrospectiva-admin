@@ -162,8 +162,7 @@ describe("runEnrichment", () => {
     expect(call.model).toBe("gpt-5");
     expect(call.text.format.type).toBe("json_schema");
 
-    // Cost-optimization knobs: capped output + minimal reasoning.
-    expect(call.max_output_tokens).toBeGreaterThan(0);
+    // Cost-optimization knob: minimal reasoning.
     expect(call.reasoning?.effort).toBe("minimal");
 
     // The product photo is attached as `input_image` so the model

@@ -108,14 +108,6 @@ export async function primaryImageUrl(
 
 const dev = devGroup("openai.enrich");
 
-/** Hard cap on output tokens. Generous enough for a max-size title +
- *  description + 13 tags + 13 materials + era + key (~900 visible
- *  tokens) PLUS the gpt-5 family's invisible reasoning tokens, which
- *  count against this same cap — gpt-5-mini at "minimal" effort still
- *  burns several hundred. Conservative enough that a runaway
- *  generation can't dump $1 of output. */
-const MAX_OUTPUT_TOKENS = 3000;
-
 /** Public base URL for R2 images. Read here (not via `config`) to
  *  keep this file usable from the BullMQ worker — see
  *  `docs/overview/project-conventions.md` §1. */
@@ -134,7 +126,7 @@ const R2_PUBLIC_BASE_URL =
  *   - User text (compacted JSON) ≈ 40-80 tokens
  *   - First product image ≈ 765 tokens (low detail) / 1100+ (high)
  *   - Reasoning ≈ 200-400 tokens (we ask for "minimal")
- *   - Output ≈ 400-800 tokens (capped at MAX_OUTPUT_TOKENS)
+ *   - Output ≈ 400-800 tokens
  *
  * Throws on hard failure (no row, OpenAI error, schema mismatch).
  * The worker wrapping this catches + reports.
@@ -201,7 +193,6 @@ export async function runEnrichment(productId: string): Promise<void> {
           schema: ENRICHMENT_JSON_SCHEMA,
         },
       },
-      max_output_tokens: MAX_OUTPUT_TOKENS,
       // The Responses API ignores `reasoning` on non-reasoning models,
       // so it's safe to send unconditionally. For the gpt-5 family
       // "minimal" cuts the invisible-but-billed reasoning step to its

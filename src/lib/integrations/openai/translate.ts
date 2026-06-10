@@ -20,12 +20,6 @@ import {
 
 const dev = devGroup("openai.translate");
 
-/** Per-field ceiling. A 2000-char description maps to ~500 output
- *  tokens after translation; titles + chips are << 100. 1200 is
- *  enough headroom for the longest case while keeping a runaway
- *  generation bounded. */
-const MAX_OUTPUT_TOKENS = 1200;
-
 /**
  * The four ES product columns that the Etsy-publish processor
  * translates to their EN counterparts before pushing the listing.
@@ -142,7 +136,6 @@ export async function runTranslation(
           schema: isArrayField ? ARRAY_SCHEMA : STRING_SCHEMA,
         },
       },
-      max_output_tokens: MAX_OUTPUT_TOKENS,
     });
 
     logCacheUsage({ kind: "translation", model: MODELS.translate, response });
@@ -205,7 +198,6 @@ export async function translateText(text: string): Promise<string> {
         schema: STRING_SCHEMA,
       },
     },
-    max_output_tokens: MAX_OUTPUT_TOKENS,
   });
 
   logCacheUsage({ kind: "translation", model: MODELS.translate, response });

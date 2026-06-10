@@ -68,11 +68,9 @@ const IMAGE_RATES_USD_PER_CALL: Record<
  * `output_text` directly (older SDK versions, certain streaming
  * shapes). Throws when neither path yields a non-empty string.
  *
- * Also rejects `status: "incomplete"` responses up front. On the
- * gpt-5 reasoning family the invisible reasoning tokens count against
- * `max_output_tokens`, so an under-sized cap truncates the JSON
- * payload mid-string — surfacing here as a clear cap error instead of
- * a confusing `JSON.parse` failure downstream.
+ * Also rejects `status: "incomplete"` responses up front (truncated
+ * output, content filter) so callers get a clear error naming the
+ * reason instead of a confusing `JSON.parse` failure downstream.
  */
 export function extractOutputText(response: unknown): string {
   const r = response as {
@@ -86,12 +84,7 @@ export function extractOutputText(response: unknown): string {
   };
   if (r.status === "incomplete") {
     const reason = r.incomplete_details?.reason ?? "unknown";
-    throw new Error(
-      `Responses API call incomplete (reason: ${reason})` +
-        (reason === "max_output_tokens"
-          ? " — output truncated; reasoning tokens count against max_output_tokens, raise the caller's cap"
-          : ""),
-    );
+    throw new Error(`Responses API call incomplete (reason: ${reason})`);
   }
   if (typeof r.output_text === "string" && r.output_text !== "") {
     return r.output_text;

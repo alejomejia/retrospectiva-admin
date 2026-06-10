@@ -23,7 +23,7 @@ describe("extractOutputText", () => {
     ).toBe('{"ok":true}');
   });
 
-  it("throws a cap-specific error on max_output_tokens truncation", () => {
+  it("throws naming the reason on truncated (incomplete) responses", () => {
     expect(() =>
       extractOutputText({
         status: "incomplete",
