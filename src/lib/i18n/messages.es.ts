@@ -545,6 +545,7 @@ export const m = {
       },
       step2: {
         title: "Revisión con IA",
+        featureImageLabel: "Foto principal del producto",
         description:
           "La IA genera el título, la descripción, las etiquetas, los materiales, la época y la categoría de Etsy. Puedes ajustar cada campo a mano.",
         runningLabel: "Generando contenido…",

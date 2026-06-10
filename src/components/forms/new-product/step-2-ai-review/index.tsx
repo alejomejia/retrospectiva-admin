@@ -1,10 +1,12 @@
 "use client";
 
 import { AiContentSection } from "@/components/products/ai-content-section";
+import type { ImageListItem } from "@/components/products/image-list";
 import type { Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 
 import type { GeneratedAiImage } from "../ai-image-section";
+import { FeatureImage } from "./step-2-ai-review-feature-image";
 import { ListingFooterField } from "./step-2-ai-review-footer";
 import { AiImagePlacementSection } from "./step-2-ai-review-image-placement";
 import { FailureBanner } from "./step-2-ai-review-failure-banner";
@@ -24,10 +26,14 @@ export function Step2AiReview({
   product,
   initialAiImage,
   shopListingFooterEs,
+  featureImage,
 }: {
   product: Product;
   initialAiImage: GeneratedAiImage;
   shopListingFooterEs: string;
+  /** Primary product photo (first in the ordered list), for side-by-side
+   *  comparison against the AI-generated copy. Null when no photos. */
+  featureImage: ImageListItem | null;
 }) {
   const { phase, error, kick, kickPending, contentVersion } =
     useStep2AiReview();
@@ -45,6 +51,7 @@ export function Step2AiReview({
           </h2>
           <p>{m.products.stepper.step2.description}</p>
         </header>
+        <FeatureImage image={featureImage} />
         {phase === "running" && <RunningSkeleton />}
         {phase === "failed" && (
           <FailureBanner
