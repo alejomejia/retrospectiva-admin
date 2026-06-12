@@ -48,7 +48,7 @@ const MEASUREMENT_LABELS: Record<"es" | "en", Record<Measurement, string>> = {
     waist: "Cintura",
     hip: "Cadera",
     rise: "Tiro",
-    leg: "Pernera",
+    leg: "Pierna",
     length: "Largo",
     braSize: "Talla de copa",
   },

@@ -215,7 +215,7 @@ async function notifyWebsite(
     await websiteWebhookQueue.add(
       kind,
       { productId, kind },
-      { jobId: `${kind}:${productId}` },
+      { jobId: `${kind}-${productId}` },
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

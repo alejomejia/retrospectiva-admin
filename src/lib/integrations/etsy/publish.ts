@@ -446,7 +446,7 @@ export async function runScheduledPublish(
     await websiteWebhookQueue.add(
       "publish",
       { productId, kind: "publish" },
-      { jobId: `publish:${productId}` },
+      { jobId: `publish-${productId}` },
     );
   } catch (e) {
     const m = e instanceof Error ? e.message : String(e);

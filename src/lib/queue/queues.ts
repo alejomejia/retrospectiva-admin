@@ -87,10 +87,11 @@ export type AiImagePlacementJob = { productId: string };
  *                 on the store, flagged sold).
  *   - `archive` — operator pulls a product that wasn't sold.
  *
- * jobId = `${kind}:${productId}` so re-pushes of the same kind for
+ * jobId = `${kind}-${productId}` so re-pushes of the same kind for
  * the same product coalesce — BullMQ ignores adds for an existing
  * jobId, which matches the desired "latest wins" semantics for
- * idempotent revalidation.
+ * idempotent revalidation. NOTE: BullMQ forbids `:` in custom job
+ * ids (key separator), so the parts join with `-`, not `:`.
  */
 export const websiteWebhookQueue = new Queue("website-webhook", {
   connection: redis,

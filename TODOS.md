@@ -1,6 +1,8 @@
 # TODO
 
 ## Critical
+- [ ] Chest and waist must not be REQUIRED, must be OPTIONAL
+- [ ] 
 
 ## Non Critical
 

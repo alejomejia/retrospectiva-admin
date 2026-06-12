@@ -267,7 +267,7 @@ export const m = {
         waist: "Cintura",
         hip: "Cadera",
         rise: "Tiro",
-        leg: "Pernera",
+        leg: "Pierna",
         length: "Largo",
         braSize: "Talla de copa",
       },
