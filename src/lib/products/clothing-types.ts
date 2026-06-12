@@ -307,9 +307,13 @@ export function getRequiredMeasurements(value: ClothingType): Measurement[] {
  * Measurements that are rendered for a garment but not required to
  * proceed. `shoulder` is optional everywhere because strapless cuts
  * (e.g. a strapless dress or top) have no shoulder to measure.
+ * `waist` and `chest` are optional so a garment can be published
+ * without them when the measurement isn't meaningful or available.
  */
 export const OPTIONAL_MEASUREMENTS: ReadonlySet<Measurement> = new Set([
   "shoulder",
+  "waist",
+  "chest",
 ]);
 
 /** `false` for measurements that are rendered but optional to fill in. */

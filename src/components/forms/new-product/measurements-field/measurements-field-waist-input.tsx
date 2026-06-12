@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { m } from "@/lib/i18n/messages.es";
+import { isMeasurementRequired } from "@/lib/products/clothing-types";
 
 import { CmInput } from "./measurements-field-cm-input";
 
@@ -48,6 +49,7 @@ export function WaistInput({
           value={min}
           onChange={onChangeMin}
           label={elastic ? m.products.form.waistMin : undefined}
+          required={isMeasurementRequired("waist")}
         />
         <div className="flex items-center gap-2">
           <Switch
