@@ -199,6 +199,13 @@ export async function runEnrichment(productId: string): Promise<void> {
       // floor — easily the biggest single cost lever for a task this
       // mechanical.
       reasoning: { effort: "minimal" },
+      // On reasoning models (gpt-5*, incl. -nano) the invisible reasoning
+      // tokens are drawn from this same budget. The full enrichment JSON
+      // runs ~800-900 output tokens; without generous headroom nano
+      // spends the budget reasoning and never emits the body, returning
+      // `incomplete (reason: max_output_tokens)`. 4096 covers reasoning +
+      // the largest realistic payload.
+      max_output_tokens: 4096,
     });
 
     logCacheUsage({ kind: "enrich", model: MODELS.text, response });

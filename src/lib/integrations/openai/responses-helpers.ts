@@ -27,6 +27,12 @@ const RATES_USD_PER_M_TOKENS: Record<
   "gpt-5": { input: 5, output: 15 },
   // gpt-5-mini: $0.25/M input, $2/M output (approx public).
   "gpt-5-mini": { input: 0.25, output: 2 },
+  // gpt-5-nano: $0.05/M input, $0.40/M output (approx public).
+  "gpt-5-nano": { input: 0.05, output: 0.4 },
+  // gpt-4.1-mini: $0.40/M input, $1.60/M output (approx public).
+  "gpt-4.1-mini": { input: 0.4, output: 1.6 },
+  // gpt-4.1-nano: $0.10/M input, $0.40/M output (approx public).
+  "gpt-4.1-nano": { input: 0.1, output: 0.4 },
   // gpt-4o-mini: $0.15/M input, $0.60/M output (approx public).
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
 };

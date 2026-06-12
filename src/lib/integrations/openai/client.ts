@@ -30,7 +30,7 @@ if (process.env.NODE_ENV !== "production") {
 
 /** Model IDs in one place so callers don't fish through env reads. */
 export const MODELS = {
-  text: process.env.OPENAI_TEXT_MODEL ?? "gpt-5",
+  text: process.env.OPENAI_TEXT_MODEL ?? "gpt-4.1-mini",
   translate: process.env.OPENAI_TRANSLATE_MODEL ?? "gpt-4o-mini",
   image: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2",
 } as const;

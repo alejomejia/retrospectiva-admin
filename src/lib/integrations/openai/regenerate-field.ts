@@ -138,6 +138,10 @@ export async function regenerateField(
         },
       },
       reasoning: { effort: "minimal" },
+      // Reasoning models draw hidden reasoning tokens from this budget.
+      // A single field is small, but nano still needs headroom or it
+      // returns `incomplete (reason: max_output_tokens)`. See enrich.ts.
+      max_output_tokens: 2048,
     });
 
     logCacheUsage({ kind: "field_regenerate", model: MODELS.text, response });

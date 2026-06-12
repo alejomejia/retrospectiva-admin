@@ -39,7 +39,7 @@ const Schema = z.object({
 
   // ----- openai -----
   OPENAI_API_KEY: z.string().min(1),
-  OPENAI_TEXT_MODEL: z.string().default("gpt-5"),
+  OPENAI_TEXT_MODEL: z.string().default("gpt-4.1-mini"),
   OPENAI_TRANSLATE_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_IMAGE_MODEL: z.string().default("gpt-image-2"),
   BRAND_VOICE_PROMPT: z.string().optional(),

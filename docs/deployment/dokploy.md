@@ -201,7 +201,7 @@ SESSION_SECRET=<openssl rand -base64 48>
 
 # --- openai ---
 OPENAI_API_KEY=sk-…
-OPENAI_TEXT_MODEL=gpt-5
+OPENAI_TEXT_MODEL=gpt-4.1-mini
 OPENAI_IMAGE_MODEL=gpt-image-2
 OPENAI_TRANSLATE_MODEL=gpt-4o-mini
 
