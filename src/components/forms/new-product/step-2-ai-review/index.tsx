@@ -52,6 +52,16 @@ export function Step2AiReview({
           <p>{m.products.stepper.step2.description}</p>
         </header>
         <FeatureImage image={featureImage} />
+        {product.comments && (
+          <div className="flex flex-col gap-2">
+            <span className="text-caplet text-muted-foreground">
+              {m.products.stepper.step1.commentsLabel}
+            </span>
+            <p className="max-w-prose whitespace-pre-wrap rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground">
+              {product.comments}
+            </p>
+          </div>
+        )}
         {phase === "running" && <RunningSkeleton />}
         {phase === "failed" && (
           <FailureBanner
