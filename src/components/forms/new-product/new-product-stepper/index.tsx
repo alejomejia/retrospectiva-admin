@@ -100,7 +100,7 @@ export function NewProductStepper({
             </div>
 
             <div className="flex">
-              <div>
+              <div className="flex-1 w-full">
                 {vm.currentStep === "inputs" && (
                   <Step1Inputs
                     product={product}

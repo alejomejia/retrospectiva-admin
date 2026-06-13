@@ -41,7 +41,7 @@ export default async function AdminLayout({
         </div>
         <Logout />
       </aside>
-      <div className="w-full ml-56">
+      <div className="w-full ml-56 min-h-screen">
         {children}
       </div>
     </div>
