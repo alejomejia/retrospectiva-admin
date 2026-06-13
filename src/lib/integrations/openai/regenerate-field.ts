@@ -20,7 +20,7 @@ import {
   latestSucceededEnrichInput,
   startRun,
 } from "./ai-runs-log";
-import { MODELS, openai } from "./client";
+import { MODELS, openai, reasoningParams } from "./client";
 import { buildEnrichInputContext, primaryImageUrl } from "./enrich";
 import { BRAND_VOICE, ENRICH_SYSTEM } from "./prompts";
 import {
@@ -137,7 +137,7 @@ export async function regenerateField(
           schema: schemaForField(field),
         },
       },
-      reasoning: { effort: "minimal" },
+      ...reasoningParams(MODELS.text),
       // Reasoning models draw hidden reasoning tokens from this budget.
       // A single field is small, but nano still needs headroom or it
       // returns `incomplete (reason: max_output_tokens)`. See enrich.ts.

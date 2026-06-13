@@ -12,7 +12,7 @@ import {
 } from "@/lib/integrations/etsy/etsy-text";
 
 import { completeRun, failRun, startRun } from "./ai-runs-log";
-import { MODELS, openai } from "./client";
+import { MODELS, openai, reasoningParams } from "./client";
 import { BRAND_VOICE, ENRICH_SYSTEM } from "./prompts";
 import {
   estimateCostUsd,
@@ -193,12 +193,12 @@ export async function runEnrichment(productId: string): Promise<void> {
           schema: ENRICHMENT_JSON_SCHEMA,
         },
       },
-      // The Responses API ignores `reasoning` on non-reasoning models,
-      // so it's safe to send unconditionally. For the gpt-5 family
-      // "minimal" cuts the invisible-but-billed reasoning step to its
-      // floor — easily the biggest single cost lever for a task this
+      // `reasoning` is sent only for reasoning models (gpt-5*, o-series);
+      // non-reasoning models like gpt-4.1-mini reject it outright. For the
+      // gpt-5 family "minimal" cuts the invisible-but-billed reasoning step
+      // to its floor — easily the biggest single cost lever for a task this
       // mechanical.
-      reasoning: { effort: "minimal" },
+      ...reasoningParams(MODELS.text),
       // On reasoning models (gpt-5*, incl. -nano) the invisible reasoning
       // tokens are drawn from this same budget. The full enrichment JSON
       // runs ~800-900 output tokens; without generous headroom nano

@@ -34,3 +34,34 @@ export const MODELS = {
   translate: process.env.OPENAI_TRANSLATE_MODEL ?? "gpt-4o-mini",
   image: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2",
 } as const;
+
+/**
+ * Whether a model accepts the Responses API `reasoning` parameter.
+ *
+ * Only the reasoning families (gpt-5*, o1/o3/o4*) support it; non-reasoning
+ * models like `gpt-4.1-mini` reject the request outright with
+ * "reasoning not supported in this model", so callers must omit the
+ * parameter rather than rely on it being ignored.
+ *
+ * @param model - The OpenAI model id (e.g. `gpt-4.1-mini`, `gpt-5-nano`).
+ * @returns `true` when `reasoning` may be sent for this model.
+ */
+export function isReasoningModel(model: string): boolean {
+  return /^(gpt-5|o[134])/.test(model);
+}
+
+/**
+ * Builds the optional `reasoning` slice of a Responses API request,
+ * gated on {@link isReasoningModel}. Spread into the request body so the
+ * parameter is present only for models that accept it.
+ *
+ * @param model - The OpenAI model id the request targets.
+ * @param effort - Reasoning effort; defaults to the cost-floor `minimal`.
+ * @returns `{ reasoning: { effort } }` for reasoning models, else `{}`.
+ */
+export function reasoningParams(
+  model: string,
+  effort: "minimal" | "low" | "medium" | "high" = "minimal",
+): { reasoning?: { effort: typeof effort } } {
+  return isReasoningModel(model) ? { reasoning: { effort } } : {};
+}

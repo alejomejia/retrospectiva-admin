@@ -12,6 +12,9 @@ vi.mock("@/lib/integrations/openai/client", () => ({
     translate: "gpt-4o-mini",
     image: "gpt-image-2",
   },
+  isReasoningModel: (m: string) => /^(gpt-5|o[134])/.test(m),
+  reasoningParams: (m: string, effort = "minimal") =>
+    /^(gpt-5|o[134])/.test(m) ? { reasoning: { effort } } : {},
 }));
 
 type DbProductRow = {
