@@ -1,5 +1,6 @@
 import { AiImageToggleForm } from "@/components/forms/ai-image-toggle-form";
 import { BuyPriceDefaultsForm } from "@/components/forms/buy-price-defaults-form";
+import { DefaultDiscountForm } from "@/components/forms/default-discount-form";
 import { ListingFooterForm } from "@/components/forms/listing-footer-form";
 import { ShopMarkupForm } from "@/components/forms/shop-markup-form";
 import { PageHeader } from "@/components/layout/page-header";
@@ -51,8 +52,11 @@ export default async function ProductSettingsPage() {
                   {m.settings.products.markupCardDescription}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <ShopMarkupForm currentMarkupPercent={currentMarkupPercent} />
+                <DefaultDiscountForm
+                  currentDiscountPercent={settings.defaultDiscountPercent}
+                />
               </CardContent>
             </Card>
 

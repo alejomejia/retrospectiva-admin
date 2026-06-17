@@ -15,10 +15,11 @@
 export const DEFAULT_MARKUP_PERCENT = 30;
 
 /**
- * Discount percentage the product form's sale toggle writes when
- * switched on. The toggle stores this exact value in
- * `products.discount_percent`; the column itself accepts any 1–99 so a
- * per-product rate can be exposed later without a migration.
+ * Hard fallback discount percentage. The live shop default lives on
+ * `product_settings.default_discount_percent` (operator-editable) and
+ * is what the form's sale toggle actually writes; this constant only
+ * backstops the settings UI placeholder when no row exists yet. The
+ * `products.discount_percent` column accepts any 1–99 per-product rate.
  */
 export const DEFAULT_DISCOUNT_PERCENT = 25;
 

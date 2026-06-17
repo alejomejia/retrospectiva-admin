@@ -39,7 +39,7 @@ export const m = {
   },
 
   appShell: {
-    versionBadge: "v0.1 · dev",
+    versionBadge: "v0.2 · dev",
     signedInAs: "Sesión iniciada como",
   },
 
@@ -390,6 +390,9 @@ export const m = {
         scheduledForLabel: "Publicación programada",
         cancelSchedule: "Cancelar programación",
         scheduleCancelledToast: "Programación cancelada",
+        updateWeb: "Actualizar en web",
+        updateWebRunning: "Actualizando en la web…",
+        updateWebDone: "Producto actualizado en la web",
         markSold: "Marcar como vendido",
         markSoldConfirm:
           "¿Marcar este producto como vendido? Seguirá visible en la web, marcado como vendido.",
@@ -669,6 +672,9 @@ export const m = {
       markupLabel: "Margen por defecto",
       markupHelp: (def: number) =>
         `Valor por defecto: ${def}%. Cubre comisiones + tasas de Etsy.`,
+      discountLabel: "Descuento por defecto",
+      discountHelp:
+        "Porcentaje de rebaja que se aplica al activar el descuento en un producto. Puedes anularlo en cada producto.",
       save: "Guardar",
       saving: "Guardando…",
       saved: "Valores guardados",

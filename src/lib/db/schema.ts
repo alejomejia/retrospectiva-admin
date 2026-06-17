@@ -537,6 +537,14 @@ export const productSettings = pgTable("product_settings", {
   listingFooterEs: text("listing_footer_es").notNull().default(""),
   listingFooterEn: text("listing_footer_en").notNull().default(""),
 
+  // Shop-wide default sale percentage written to `products.discount_percent`
+  // when the product form's discount toggle is switched on. The operator can
+  // change this freely, and override it per product (1–99) — mirrors the
+  // markup default/override split.
+  defaultDiscountPercent: smallint("default_discount_percent")
+    .notNull()
+    .default(25),
+
   // ----- Image-placement shop defaults (Task 11) ------------------
   //
   // Snapshotted onto a fresh `products` row at draft-creation time

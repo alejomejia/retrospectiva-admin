@@ -48,6 +48,7 @@ export function Step1Inputs({
   product,
   featuredSlotsFull,
   shopMarkupPercent,
+  shopDefaultDiscountPercent,
   shopAiImageEnabled,
   buyPriceDefaults,
   imageItems,
@@ -63,6 +64,7 @@ export function Step1Inputs({
   /** Shop already holds the max featured products (excl. this one). */
   featuredSlotsFull: boolean;
   shopMarkupPercent: number;
+  shopDefaultDiscountPercent: number;
   shopAiImageEnabled: boolean;
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
@@ -211,6 +213,7 @@ export function Step1Inputs({
             basePriceCents={vm.basePriceCents}
             markupPercentOverride={vm.markupOverride}
             shopMarkupPercent={shopMarkupPercent}
+            shopDefaultDiscountPercent={shopDefaultDiscountPercent}
             discountPercent={vm.discountPercent}
             currency={product.currency}
             onBaseChange={vm.setBasePriceCents}

@@ -83,6 +83,8 @@ export type AiImagePlacementJob = { productId: string };
  * website consumer revalidates its product cache and updates the
  * store. Producers:
  *   - `publish` — the Etsy publish processor surfaces a new listing.
+ *   - `update`  — operator edits an already-published product and
+ *                 pushes the revised data (re-translated ES→EN).
  *   - `sold`    — operator manually marks a product sold (still shown
  *                 on the store, flagged sold).
  *   - `archive` — operator pulls a product that wasn't sold.
@@ -98,7 +100,7 @@ export const websiteWebhookQueue = new Queue("website-webhook", {
   defaultJobOptions: DEFAULT_JOB_OPTIONS,
 });
 
-export type WebsiteWebhookKind = "publish" | "archive" | "sold";
+export type WebsiteWebhookKind = "publish" | "update" | "archive" | "sold";
 
 export type WebsiteWebhookJob = {
   productId: string;

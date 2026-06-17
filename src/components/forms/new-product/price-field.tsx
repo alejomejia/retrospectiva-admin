@@ -6,11 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { m } from "@/lib/i18n/messages.es";
-import {
-  DEFAULT_DISCOUNT_PERCENT,
-  effectiveListCents,
-  inflatedListCents,
-} from "@/lib/products/pricing";
+import { effectiveListCents, inflatedListCents } from "@/lib/products/pricing";
 import {
   centsToPriceEur,
   formatCents,
@@ -29,6 +25,7 @@ export function PriceField({
   basePriceCents,
   markupPercentOverride,
   shopMarkupPercent,
+  shopDefaultDiscountPercent,
   discountPercent,
   currency,
   onBaseChange,
@@ -38,6 +35,8 @@ export function PriceField({
   basePriceCents: number | null;
   markupPercentOverride: number | null;
   shopMarkupPercent: number;
+  /** Shop-wide default sale % written when the discount toggle goes on. */
+  shopDefaultDiscountPercent: number;
   discountPercent: number | null;
   currency: string;
   onBaseChange: (cents: number | null) => void;
@@ -51,6 +50,9 @@ export function PriceField({
   );
   const [markupStr, setMarkupStr] = useState(
     markupPercentOverride == null ? "" : String(markupPercentOverride),
+  );
+  const [discountStr, setDiscountStr] = useState(
+    discountPercent == null ? "" : String(discountPercent),
   );
   const [baseError, setBaseError] = useState<string | null>(null);
 
@@ -98,7 +100,7 @@ export function PriceField({
   const activeMarkup = markupPercentOverride ?? shopMarkupPercent;
 
   const discountOn = discountPercent != null && discountPercent > 0;
-  const activeDiscount = discountPercent ?? DEFAULT_DISCOUNT_PERCENT;
+  const activeDiscount = discountPercent ?? shopDefaultDiscountPercent;
   // Inflated (published) price when the discount is on, plus the price
   // the buyer pays once the matching Etsy sale is applied on top.
   const inflatedCents =
@@ -109,9 +111,28 @@ export function PriceField({
       : null;
 
   const handleDiscountToggle = (next: boolean) => {
-    const value = next ? DEFAULT_DISCOUNT_PERCENT : null;
+    const value = next ? shopDefaultDiscountPercent : null;
     onDiscountChange(value);
+    setDiscountStr(value == null ? "" : String(value));
     schedule({ discountPercent: value });
+  };
+
+  // Per-product discount override. Empty falls back to the shop default
+  // (the discount stays on); out-of-range input is ignored. Mirrors the
+  // markup override's blur-commit behavior.
+  const commitDiscount = (raw: string) => {
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      onDiscountChange(shopDefaultDiscountPercent);
+      setDiscountStr(String(shopDefaultDiscountPercent));
+      schedule({ discountPercent: shopDefaultDiscountPercent });
+      return;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n < 1 || n > 99) return;
+    const rounded = Math.round(n);
+    onDiscountChange(rounded);
+    schedule({ discountPercent: rounded });
   };
 
   return (
@@ -183,11 +204,30 @@ export function PriceField({
               : m.products.form.discountHint}
           </p>
         </div>
-        <Switch
-          id="discount-toggle"
-          checked={discountOn}
-          onCheckedChange={handleDiscountToggle}
-        />
+        <div className="flex items-center gap-3">
+          {discountOn && (
+            <div className="flex items-center gap-1">
+              <Input
+                id="discount-override"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                placeholder={String(shopDefaultDiscountPercent)}
+                value={discountStr}
+                onChange={(e) => setDiscountStr(e.target.value)}
+                onBlur={(e) => commitDiscount(e.target.value)}
+                className="w-20"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+          )}
+          <Switch
+            id="discount-toggle"
+            checked={discountOn}
+            onCheckedChange={handleDiscountToggle}
+          />
+        </div>
       </div>
     </div>
   );

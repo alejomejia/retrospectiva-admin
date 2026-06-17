@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Clock,
   FileText,
+  Globe,
   RotateCcw,
   Send,
   Settings,
@@ -58,6 +59,18 @@ export function PublishSidebar({
             {m.products.stepper.actions.description}
           </p>
           <div className="flex flex-col gap-3">
+            {product.etsyListingId != null && (
+              <Button
+                type="button"
+                className="p-6"
+                disabled={vm.pending}
+                onClick={vm.onUpdateWebsite}
+              >
+                <Globe className="size-4" />
+                {m.products.editForm.etsy.updateWeb}
+              </Button>
+            )}
+
             {(product.status === "published" ||
               product.status === "scheduled") && (
               <Button

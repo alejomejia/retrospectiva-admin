@@ -1,0 +1,1 @@
+ALTER TABLE "product_settings" ADD COLUMN "default_discount_percent" smallint DEFAULT 25 NOT NULL;

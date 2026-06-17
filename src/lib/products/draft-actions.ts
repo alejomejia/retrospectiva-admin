@@ -10,7 +10,11 @@ import { aiRuns, etsyOauth, products } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 import { featuredSlotFullForProduct } from "@/lib/integrations/etsy/publish";
 import { latestRunForKind } from "@/lib/integrations/openai/ai-runs-log";
-import { translateText } from "@/lib/integrations/openai/translate";
+import {
+  TRANSLATABLE_FIELDS,
+  runTranslation,
+  translateText,
+} from "@/lib/integrations/openai/translate";
 import { buildSlug } from "@/lib/products/slug";
 import {
   REGENERABLE_FIELDS,
@@ -342,6 +346,60 @@ export async function archiveProduct(id: string): Promise<DraftActionResult> {
 
 export async function restoreToDraft(id: string): Promise<DraftActionResult> {
   return setStatus(id, "draft", "product.restoredToDraft");
+}
+
+/**
+ * Push edits made to an already-published product out to the public
+ * website. Per-field autosave has already persisted the Spanish edits;
+ * this action re-translates the four translatable ES columns to their
+ * EN counterparts (the admin UI only edits Spanish, so the EN cache
+ * would otherwise stay stale) and then enqueues an `update` website
+ * webhook so the store re-validates with the fresh data.
+ *
+ * Website only — the live Etsy listing is intentionally left untouched
+ * (the app is one-way admin→Etsy and the operator reconciles Etsy by
+ * hand). Requires a product that has been pushed to Etsy at least once
+ * (`etsy_listing_id` set); the website payload deep-links the listing
+ * and can't be built without it.
+ */
+export async function updatePublishedProduct(
+  id: string,
+): Promise<DraftActionResult> {
+  await requireSession();
+  try {
+    const [row] = await db
+      .select({ etsyListingId: products.etsyListingId })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
+    if (!row) {
+      return { ok: false, error: m.errors.productNotFound };
+    }
+    if (row.etsyListingId == null) {
+      return { ok: false, error: m.errors.couldNotSaveChanges };
+    }
+
+    // Re-translate ES→EN for every translatable field. Sequential to
+    // keep the OpenAI call volume predictable; a single failure aborts
+    // the push so we never ship a half-translated payload.
+    for (const field of TRANSLATABLE_FIELDS) {
+      await runTranslation(id, field);
+    }
+
+    await db
+      .update(products)
+      .set({ updatedAt: sql`now()` })
+      .where(eq(products.id, id));
+
+    await notifyWebsite(id, "update");
+
+    revalidatePath("/products");
+    revalidatePath(`/products/${id}`);
+    return { ok: true };
+  } catch (err) {
+    dev.error("updatePublishedProduct error:", err);
+    return { ok: false, error: m.errors.couldNotSaveChanges };
+  }
 }
 
 /**

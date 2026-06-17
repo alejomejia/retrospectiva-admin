@@ -14,6 +14,7 @@ import {
   restoreToDraft,
   saveDraftAndExit,
   scheduleProduct,
+  updatePublishedProduct,
 } from "@/lib/products/draft-actions";
 
 import { useAutosave } from "../autosave";
@@ -183,6 +184,24 @@ export function usePublishSidebar({
     });
   };
 
+  const onUpdateWebsite = () => {
+    startTransition(async () => {
+      // Persist any pending field edits before re-translating + pushing,
+      // so the webhook carries the latest Spanish copy. `flush` toasts
+      // its own failure.
+      const flushed = await flush();
+      if (!flushed) return;
+      const toastId = toast.loading(m.products.editForm.etsy.updateWebRunning);
+      const result = await updatePublishedProduct(product.id);
+      if (!result.ok) {
+        toast.error(result.error, { id: toastId });
+        return;
+      }
+      toast.success(m.products.editForm.etsy.updateWebDone, { id: toastId });
+      router.refresh();
+    });
+  };
+
   const onRestoreToDraft = () => {
     startTransition(async () => {
       const result = await restoreToDraft(product.id);
@@ -208,5 +227,6 @@ export function usePublishSidebar({
     onMarkSold,
     onArchive,
     onRestoreToDraft,
+    onUpdateWebsite,
   };
 }

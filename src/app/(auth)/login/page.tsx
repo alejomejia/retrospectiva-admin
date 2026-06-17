@@ -30,7 +30,7 @@ export default function LoginPage() {
       </Suspense>
       <div className="flex justify-end gap-3">
         <Badge variant="secondary" className="font-mono uppercase tracking-widest">
-          v0.1 · dev
+          v0.2 · dev
         </Badge>
       </div>
     </div>

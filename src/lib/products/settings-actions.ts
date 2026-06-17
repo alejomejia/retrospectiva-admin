@@ -101,6 +101,46 @@ export async function saveListingFooter(
   return { ok: true };
 }
 
+const DefaultDiscountSchema = z.object({
+  defaultDiscountPercent: z.coerce.number().int().min(1).max(99),
+});
+
+export type SaveDefaultDiscountInput = {
+  defaultDiscountPercent: number | string;
+};
+
+/**
+ * Persist the shop-wide default discount percentage on the singleton
+ * `product_settings` row. Written to `products.discount_percent` when
+ * the product form's discount toggle is switched on; the operator can
+ * still override it per product. Upserts so the row materializes on
+ * first write — no separate seed migration needed.
+ */
+export async function saveDefaultDiscount(
+  input: SaveDefaultDiscountInput,
+): Promise<SaveResult> {
+  await requireSession();
+
+  const parsed = DefaultDiscountSchema.safeParse(input);
+  if (!parsed.success) {
+    dev.warn("invalid default discount input:", parsed.error.issues);
+    return { ok: false, error: m.errors.invalidForm };
+  }
+  const { defaultDiscountPercent } = parsed.data;
+
+  await db
+    .insert(productSettings)
+    .values({ id: PRODUCT_SETTINGS_ID, defaultDiscountPercent })
+    .onConflictDoUpdate({
+      target: productSettings.id,
+      set: { defaultDiscountPercent, updatedAt: sql`now()` },
+    });
+
+  dev.log("saved shop default discount", { defaultDiscountPercent });
+  revalidatePath("/settings/products");
+  return { ok: true };
+}
+
 const AiDefaultsSchema = z.object({
   aiDefaultModelId: z.string().uuid().nullable(),
   aiDefaultSourcePanel: z.enum(PANEL_ORDER).nullable(),

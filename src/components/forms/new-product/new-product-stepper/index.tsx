@@ -40,6 +40,7 @@ export function NewProductStepper({
   mode = "draft",
   featuredSlotsFull,
   shopMarkupPercent,
+  shopDefaultDiscountPercent,
   shopAiImageEnabled,
   shopListingFooterEs,
   etsyPoliciesConfigured,
@@ -58,6 +59,7 @@ export function NewProductStepper({
   /** Shop already holds the max featured products (excl. this one). */
   featuredSlotsFull: boolean;
   shopMarkupPercent: number;
+  shopDefaultDiscountPercent: number;
   shopAiImageEnabled: boolean;
   shopListingFooterEs: string;
   etsyPoliciesConfigured: boolean;
@@ -106,6 +108,7 @@ export function NewProductStepper({
                     product={product}
                     featuredSlotsFull={featuredSlotsFull}
                     shopMarkupPercent={shopMarkupPercent}
+                    shopDefaultDiscountPercent={shopDefaultDiscountPercent}
                     shopAiImageEnabled={shopAiImageEnabled}
                     buyPriceDefaults={buyPriceDefaults}
                     imageItems={imageItems}

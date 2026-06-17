@@ -64,11 +64,19 @@ export function useEnrichmentStatus({
   const enteredEnriched = useRef(
     Boolean(product.titleEs && product.titleEs.trim() !== ""),
   );
-  // Bumped in lockstep with each post-enrich refresh. Drives the
-  // `key` on the editable AI-content fields so they remount with the
-  // freshly generated values — and ONLY then, never on the unrelated
-  // refreshes (autosave, image placement) that also re-fetch the row.
+  // Bumped once each post-enrich refresh has actually landed. Drives
+  // the `key` on the editable AI-content fields so they remount with
+  // the freshly generated values — and ONLY then, never on the
+  // unrelated refreshes (autosave, image placement) that also re-fetch
+  // the row.
   const [contentVersion, setContentVersion] = useState(0);
+  // Set when we kick off a post-enrich `router.refresh()`; cleared once
+  // the refreshed `product` prop arrives. The version bump is deferred
+  // to that moment because `router.refresh()` is async: bumping the key
+  // synchronously here would remount the fields against the STALE
+  // (pre-refresh) product and seed them empty, and the later data
+  // arrival wouldn't reseed them (same key). See the `product` effect.
+  const pendingRefresh = useRef(false);
   useEffect(() => {
     if (enrichStatus !== "succeeded" || !enrichFinishedAt) return;
     if (lastRefreshedFinishedAt.current === enrichFinishedAt) return;
@@ -79,9 +87,20 @@ export function useEnrichmentStatus({
     // regenerate, or the initial enrich on a fresh draft) should pull
     // fresh content and remount the fields.
     if (isFirstObservation && enteredEnriched.current) return;
-    setContentVersion((v) => v + 1);
+    pendingRefresh.current = true;
     router.refresh();
   }, [enrichStatus, enrichFinishedAt, router]);
+
+  // Remount the editable fields only after the refreshed product prop
+  // has propagated from the server render. `product` identity changes
+  // on every `router.refresh()`, but the `pendingRefresh` gate ensures
+  // we bump exclusively for post-enrich refreshes, not autosave/image
+  // ones (which also change the prop).
+  useEffect(() => {
+    if (!pendingRefresh.current) return;
+    pendingRefresh.current = false;
+    setContentVersion((v) => v + 1);
+  }, [product]);
 
   // Wall-clock timeout: if we stay in "running" too long, flip to
   // "failed" so the user gets a retry banner rather than an infinite

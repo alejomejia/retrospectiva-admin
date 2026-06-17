@@ -36,7 +36,7 @@ export default async function AdminLayout({
         <SidebarNav />
         <div className="flex items-center justify-center py-3">
           <Badge variant="secondary" className="font-mono text-xs uppercase tracking-widest">
-              v0.1 · {isProd ? "prod" : "dev"}
+              v0.2 · {isProd ? "prod" : "dev"}
           </Badge>
         </div>
         <Logout />

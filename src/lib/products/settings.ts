@@ -16,6 +16,8 @@ export type ProductSettings = {
   /** Shop-wide care/legal boilerplate appended to every listing. "" = none. */
   listingFooterEs: string;
   listingFooterEn: string;
+  /** Default sale % written to a product when its discount toggle goes on. */
+  defaultDiscountPercent: number;
 };
 
 const DEFAULTS: ProductSettings = {
@@ -28,6 +30,7 @@ const DEFAULTS: ProductSettings = {
   aiDefaultImageQuality: "low",
   listingFooterEs: "",
   listingFooterEn: "",
+  defaultDiscountPercent: 25,
 };
 
 /**
@@ -47,6 +50,7 @@ export async function getProductSettings(): Promise<ProductSettings> {
       aiDefaultImageQuality: productSettings.aiDefaultImageQuality,
       listingFooterEs: productSettings.listingFooterEs,
       listingFooterEn: productSettings.listingFooterEn,
+      defaultDiscountPercent: productSettings.defaultDiscountPercent,
     })
     .from(productSettings)
     .limit(1);
