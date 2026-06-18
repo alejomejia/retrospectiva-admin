@@ -18,30 +18,33 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { m } from "@/lib/i18n/messages.es";
+import type { StoryVariantKey } from "@/lib/products/instagram-story-variants";
 
 import { InstagramStoryImagePicker } from "./instagram-story-dialog-image-picker";
 import { InstagramStoryPreview } from "./instagram-story-dialog-preview";
+import { InstagramStoryVariantPicker } from "./instagram-story-dialog-variant-picker";
 import { useInstagramStory } from "./use-instagram-story";
 
 /**
  * Button + dialog to generate and download a 1080×1920 Instagram-story
- * image from one of the product's photos. Disabled until the product is
- * published (only then does the English title/copy the design needs
- * exist); a tooltip explains the disabled state.
+ * image. The user picks a template (when more than one applies to the
+ * product) and a background photo, previews, and downloads. Disabled
+ * when no template applies to the product's current status; a tooltip
+ * explains why.
  */
 export function InstagramStoryDialog({
   productId,
   images,
-  disabled = false,
+  variants,
 }: {
   productId: string;
   images: ImageListItem[];
-  /** True until the product is published (no English copy to render). */
-  disabled?: boolean;
+  /** Templates available for this product (by status). Empty = disabled. */
+  variants: readonly StoryVariantKey[];
 }) {
-  const story = useInstagramStory({ productId, images });
+  const story = useInstagramStory({ productId, images, variants });
   const hasImages = images.length > 0;
-  const isDisabled = disabled || !hasImages;
+  const isDisabled = variants.length === 0 || !hasImages;
 
   const triggerButton = (
     <Button type="button" variant="outline" disabled={isDisabled}>
@@ -77,6 +80,19 @@ export function InstagramStoryDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {variants.length > 1 ? (
+          <div className="flex flex-col gap-2">
+            <span className="text-caplet text-muted-foreground">
+              {m.products.instagramStory.selectVariantLabel}
+            </span>
+            <InstagramStoryVariantPicker
+              variants={variants}
+              selected={story.selectedVariant}
+              onSelect={story.setSelectedVariant}
+            />
+          </div>
+        ) : null}
+
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="flex flex-1 flex-col gap-2">
             <span className="text-caplet text-muted-foreground">
@@ -89,7 +105,7 @@ export function InstagramStoryDialog({
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex-1 flex flex-col gap-2">
             <span className="text-caplet text-muted-foreground">
               {m.products.instagramStory.previewLabel}
             </span>

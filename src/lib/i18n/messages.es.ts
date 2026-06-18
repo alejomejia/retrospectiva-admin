@@ -212,7 +212,12 @@ export const m = {
         "Disponible cuando el producto esté publicado en Etsy.",
       dialogTitle: "Historia de Instagram",
       dialogDescription:
-        "Elige una foto y descarga la imagen 1080×1920 lista para publicar.",
+        "Elige una plantilla y una foto, y descarga la imagen 1080×1920 lista para publicar.",
+      selectVariantLabel: "Plantilla",
+      // Template labels (admin UI, Spanish). One per `StoryVariantKey`.
+      variants: {
+        new: "Novedad",
+      },
       selectImageLabel: "Foto de fondo",
       previewLabel: "Vista previa",
       previewLoading: "Generando…",

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-import { STORY_FONTS } from "./story-template.const";
+import { STORY_FONTS } from "./story.const";
 
 /** A font descriptor in the shape `ImageResponse` expects. */
 type StoryFont = {

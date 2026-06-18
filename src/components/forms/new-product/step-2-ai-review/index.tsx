@@ -5,6 +5,7 @@ import type { ImageListItem } from "@/components/products/image-list";
 import { InstagramStoryDialog } from "@/components/products/instagram-story-dialog";
 import type { Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
+import { variantsForStatus } from "@/lib/products/instagram-story-variants";
 
 import type { GeneratedAiImage } from "../ai-image-section";
 import { FeatureImage } from "./step-2-ai-review-feature-image";
@@ -95,7 +96,7 @@ export function Step2AiReview({
             <InstagramStoryDialog
               productId={product.id}
               images={images}
-              disabled={product.status !== "published"}
+              variants={variantsForStatus(product.status).map((v) => v.key)}
             />
           </div>
         )}

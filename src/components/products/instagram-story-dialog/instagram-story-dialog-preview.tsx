@@ -15,7 +15,7 @@ export function InstagramStoryPreview({ previewUrl }: { previewUrl: string }) {
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[240px] overflow-hidden rounded-lg border border-border bg-brand-paper"
+      className="relative w-full overflow-hidden rounded-lg border border-border bg-brand-paper"
       style={{ aspectRatio: 9 / 16 }}
     >
       {!loaded ? (

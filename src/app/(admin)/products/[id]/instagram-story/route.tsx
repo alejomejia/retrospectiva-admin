@@ -5,28 +5,28 @@ import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
-import { m } from "@/lib/i18n/messages.es";
 import { getProduct } from "@/lib/products/actions";
 import { listProductImages } from "@/lib/products/images-actions";
-import {
-  storyEyebrow,
-  storyPriceLabel,
-} from "@/lib/products/instagram-story";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 
 import { loadStoryFonts, loadStoryLogo } from "./load-fonts";
-import { StoryTemplate } from "./story-template";
-import { STORY_HEIGHT, STORY_WIDTH } from "./story-template.const";
+import { STORY_HEIGHT, STORY_WIDTH } from "./story.const";
+import { STORY_RENDERERS } from "./templates";
+import {
+  DEFAULT_VARIANT_KEY,
+  isVariantKey,
+  variantsForStatus,
+} from "@/lib/products/instagram-story-variants";
 
 // We read vendored font + logo files from disk, so this must run on Node.
 export const runtime = "nodejs";
 
 /**
- * Renders the 1080×1920 Instagram-story PNG for a product. Gated on the
- * product being PUBLISHED — only then does the English title (`titleEn`,
- * translated at the publish boundary) exist, and the asset is meant for
- * live listings. Requesting it earlier is a 409 (the client also
- * disables the trigger, but never trust that alone).
+ * Renders a 1080×1920 Instagram-story PNG for a product, picking the
+ * template from `?variant=` (default `new`). Each template declares which
+ * product statuses it applies to (`variants.ts`); requesting one the
+ * product isn't eligible for is a 409 (the dialog also gates this, but
+ * never trust the client alone). `?imageId=` chooses the background photo.
  */
 export async function GET(
   request: Request,
@@ -39,16 +39,25 @@ export async function GET(
   if (!product) {
     return new Response("Not found", { status: 404 });
   }
-  // Server-side gate (mirrors the disabled trigger in the UI).
-  if (product.status !== "published") {
-    return new Response("Product is not published", { status: 409 });
+
+  const url = new URL(request.url);
+  const variant = url.searchParams.get("variant") ?? DEFAULT_VARIANT_KEY;
+  if (!isVariantKey(variant)) {
+    return new Response("Unknown template", { status: 400 });
+  }
+  const eligible = variantsForStatus(product.status).some(
+    (v) => v.key === variant,
+  );
+  if (!eligible) {
+    return new Response("Template not available for this product", {
+      status: 409,
+    });
   }
 
   const images = await listProductImages(id);
   if (images.length === 0) {
     return new Response("No photos", { status: 404 });
   }
-  const url = new URL(request.url);
   const imageId = url.searchParams.get("imageId");
   // Featured photo (order 0, already first) is the default; fall back to
   // it when the requested id is missing or unknown.
@@ -65,23 +74,10 @@ export async function GET(
     loadStoryFonts(),
     loadStoryLogo(),
   ]);
-  // Published products carry the English title (translated at publish);
-  // fall back to the Spanish title only defensively.
-  const title = product.titleEn?.trim() || product.titleEs?.trim() || "";
 
+  const render = STORY_RENDERERS[variant];
   return new ImageResponse(
-    (
-      <StoryTemplate
-        photoUrl={photoUrl}
-        eyebrow={storyEyebrow(product)}
-        title={title}
-        priceLabel={storyPriceLabel(product, shopMarkupPercent)}
-        ctaLabel={m.products.instagramStory.ctaEtsy}
-        footerHandle={m.products.instagramStory.footerHandle}
-        footerTagline={m.products.instagramStory.footerTagline}
-        logoUrl={logoUrl}
-      />
-    ),
+    render({ product, photoUrl, logoUrl, shopMarkupPercent }),
     {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,
