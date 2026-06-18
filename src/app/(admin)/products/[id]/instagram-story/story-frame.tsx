@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import {
   STORY_COLORS,
+  STORY_DIM_FLAT,
   STORY_FONTS,
   STORY_GRADIENT_BOTTOM,
   STORY_GRADIENT_TOP,
@@ -20,19 +21,29 @@ import {
  */
 
 /**
- * The constant chrome shared by all templates: background photo, the two
- * legibility gradients, the top-left logo, and the bottom content column.
- * Pass the variant-specific content as `children` — they stack with a
- * 32px gap, left-aligned, anchored 72px from the bottom.
+ * The constant chrome shared by all templates: background photo, the
+ * legibility dim, the top-left logo, and the bottom content column. Pass
+ * the variant-specific content as `children` — they stack with a 32px
+ * gap, left-aligned, anchored 72px from the bottom.
+ *
+ * `dim` chooses the photo treatment: `"split"` (default) is the two
+ * gradients used by the "new" template; `"flat"` is the uniform ink veil
+ * the "sold" template wants behind a centred seal. `overlay` is optional
+ * absolutely-positioned art drawn over the photo but under the copy
+ * (e.g. `StorySeal`).
  */
 export function StoryFrame({
   photoUrl,
   logoUrl,
   children,
+  dim = "split",
+  overlay,
 }: {
   photoUrl: string;
   logoUrl: string;
   children: ReactNode;
+  dim?: "split" | "flat";
+  overlay?: ReactNode;
 }) {
   return (
     <div
@@ -61,30 +72,50 @@ export function StoryFrame({
         }}
       />
 
-      {/* Top gradient (darkens behind the logo) */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          display: "flex",
-          width: STORY_WIDTH,
-          height: 360,
-          backgroundImage: STORY_GRADIENT_TOP,
-        }}
-      />
-      {/* Bottom gradient (carries the copy) */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          display: "flex",
-          width: STORY_WIDTH,
-          height: 1080,
-          backgroundImage: STORY_GRADIENT_BOTTOM,
-        }}
-      />
+      {dim === "flat" ? (
+        /* Uniform ink veil over the whole photo */
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            display: "flex",
+            width: STORY_WIDTH,
+            height: STORY_HEIGHT,
+            backgroundColor: STORY_DIM_FLAT,
+          }}
+        />
+      ) : (
+        <>
+          {/* Top gradient (darkens behind the logo) */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              display: "flex",
+              width: STORY_WIDTH,
+              height: 360,
+              backgroundImage: STORY_GRADIENT_TOP,
+            }}
+          />
+          {/* Bottom gradient (carries the copy) */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              display: "flex",
+              width: STORY_WIDTH,
+              height: 1080,
+              backgroundImage: STORY_GRADIENT_BOTTOM,
+            }}
+          />
+        </>
+      )}
+
+      {/* Optional centred art (e.g. the sold seal) over the photo */}
+      {overlay}
 
       {/* Logo — top-left */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -211,6 +242,59 @@ export function StoryTitlePrice({
   );
 }
 
+/**
+ * Playfair title on the left, an italic Playfair accent word on the
+ * right (e.g. the "sold" template's "Gone"). Same row geometry as
+ * `StoryTitlePrice`; the accent is upright-italic and always shown.
+ */
+export function StoryTitleAccent({
+  title,
+  accent,
+}: {
+  title: string;
+  accent: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flex: 1,
+          paddingRight: 32,
+          fontFamily: STORY_FONTS.serif,
+          fontWeight: 500,
+          fontSize: 92,
+          lineHeight: "90.16px",
+          color: STORY_COLORS.cream,
+        }}
+      >
+        {title}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexShrink: 0,
+          fontFamily: STORY_FONTS.serif,
+          fontStyle: "italic",
+          fontWeight: 500,
+          fontSize: 96,
+          lineHeight: "100.3px",
+          color: STORY_COLORS.mustardPrice,
+        }}
+      >
+        {accent}
+      </div>
+    </div>
+  );
+}
+
 /** Full-width terracotta CTA pill with the trailing up-right arrow. */
 export function StoryCta({ children }: { children: ReactNode }) {
   return (
@@ -292,5 +376,23 @@ export function StoryFooter({
         {tagline}
       </div>
     </div>
+  );
+}
+
+/**
+ * The centred SOLD stamp seal, an `overlay` passed to `StoryFrame`.
+ * 726×726, positioned by its Figma top-left (the frame's
+ * `left calc(50%+10px) / top calc(50%-125px)` centre).
+ */
+export function StorySeal({ sealUrl }: { sealUrl: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      alt=""
+      src={sealUrl}
+      width={726}
+      height={726}
+      style={{ position: "absolute", left: 187, top: 472, width: 726, height: 726 }}
+    />
   );
 }

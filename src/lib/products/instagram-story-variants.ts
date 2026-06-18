@@ -12,7 +12,7 @@ import type { Product } from "@/lib/db/schema";
  *   3. add a label under `products.instagramStory.variants.<key>` (i18n),
  *   4. add a renderer in `templates/index.ts`.
  */
-export type StoryVariantKey = "new";
+export type StoryVariantKey = "new" | "sold";
 
 type ProductStatus = Product["status"];
 
@@ -25,8 +25,8 @@ export type StoryVariant = {
 export const STORY_VARIANTS: readonly StoryVariant[] = [
   // "New today" — live listings only (the English title exists at publish).
   { key: "new", statuses: ["published"] },
-  // Example for the future:
-  // { key: "sold", statuses: ["sold"] },
+  // "Sold" — a just-sold showcase post, offered once the listing sells.
+  { key: "sold", statuses: ["sold"] },
 ];
 
 export const DEFAULT_VARIANT_KEY: StoryVariantKey = "new";

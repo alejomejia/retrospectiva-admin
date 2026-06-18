@@ -42,3 +42,11 @@ export const STORY_FONTS = {
  */
 export const STORY_GRADIENT_TOP = `linear-gradient(180deg, rgba(42,42,37,0.6) 0%, rgba(42,42,37,0) 100%)`;
 export const STORY_GRADIENT_BOTTOM = `linear-gradient(0deg, rgba(26,25,20,0.94) 0%, rgba(26,25,20,0.94) 42%, rgba(26,25,20,0.55) 72%, rgba(26,25,20,0) 100%)`;
+
+/**
+ * Flat full-frame dim used by the "sold" template instead of the split
+ * gradients — a uniform 80% ink veil so the centred SOLD seal and the
+ * bottom copy both read over the whole photo. (Figma `gradient-top` on
+ * the `instagram-post-sold` frame.)
+ */
+export const STORY_DIM_FLAT = `rgba(26,25,20,0.8)`;

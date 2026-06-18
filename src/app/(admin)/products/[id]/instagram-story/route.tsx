@@ -9,7 +9,7 @@ import { getProduct } from "@/lib/products/actions";
 import { listProductImages } from "@/lib/products/images-actions";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 
-import { loadStoryFonts, loadStoryLogo } from "./load-fonts";
+import { loadStoryFonts, loadStoryLogo, loadStorySeal } from "./load-fonts";
 import { STORY_HEIGHT, STORY_WIDTH } from "./story.const";
 import { STORY_RENDERERS } from "./templates";
 import {
@@ -70,14 +70,17 @@ export async function GET(
     .limit(1);
   const shopMarkupPercent = oauth?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
 
-  const [fonts, logoUrl] = await Promise.all([
+  // Shared assets, module-cached, so loading the seal for every variant
+  // (only `sold` draws it) costs one disk read total.
+  const [fonts, logoUrl, sealUrl] = await Promise.all([
     loadStoryFonts(),
     loadStoryLogo(),
+    loadStorySeal(),
   ]);
 
   const render = STORY_RENDERERS[variant];
   return new ImageResponse(
-    render({ product, photoUrl, logoUrl, shopMarkupPercent }),
+    render({ product, photoUrl, logoUrl, sealUrl, shopMarkupPercent }),
     {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,

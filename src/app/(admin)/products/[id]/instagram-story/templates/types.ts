@@ -14,6 +14,8 @@ export type StoryRenderContext = {
   photoUrl: string;
   /** Brand logo as a data URI (transparent SVG). */
   logoUrl: string;
+  /** SOLD stamp seal as a data URI (transparent PNG) — used by `sold`. */
+  sealUrl: string;
   /** Shop-wide markup percent, for price computation. */
   shopMarkupPercent: number;
 };

@@ -1,6 +1,7 @@
 import type { StoryVariantKey } from "@/lib/products/instagram-story-variants";
 
 import { renderNewStory } from "./new-story";
+import { renderSoldStory } from "./sold-story";
 import type { StoryRenderer } from "./types";
 
 /**
@@ -10,6 +11,7 @@ import type { StoryRenderer } from "./types";
  */
 export const STORY_RENDERERS: Record<StoryVariantKey, StoryRenderer> = {
   new: renderNewStory,
+  sold: renderSoldStory,
 };
 
 export type { StoryRenderContext, StoryRenderer } from "./types";

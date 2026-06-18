@@ -222,6 +222,7 @@ export const m = {
       // Template labels (admin UI, Spanish). One per `StoryVariantKey`.
       variants: {
         new: "Novedad",
+        sold: "Vendido",
       },
       selectImageLabel: "Foto de fondo",
       previewLabel: "Vista previa",
@@ -232,8 +233,9 @@ export const m = {
       // Copy baked into the rendered image — ENGLISH on purpose: the
       // generated story is an English-only asset, so these are not
       // translated to Spanish even though they live in the ES bundle.
-      // Wording matches the Figma `instagram-post-new` frame.
+      // Wording matches the Figma `instagram-post-new` / `-sold` frames.
       ctaEtsy: "Shop on Etsy",
+      ctaShop: "More clothes in our shop",
       footerHandle: "@retrospectiva.preloved",
       footerTagline: "One of a kind",
     },
