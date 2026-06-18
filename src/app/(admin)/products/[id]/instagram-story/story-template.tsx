@@ -166,6 +166,7 @@ export function StoryTemplate({
             width: "100%",
             alignItems: "flex-end",
             justifyContent: "space-between",
+            marginBottom: 8
           }}
         >
           <div

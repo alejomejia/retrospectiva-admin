@@ -48,12 +48,13 @@ export async function loadStoryFonts(): Promise<StoryFont[]> {
 
 /**
  * The Retrospectiva circular stamp logo (exported from the same Figma
- * frame) as a base64 data URI, so satori embeds it without a network
- * round-trip. Cached on the module.
+ * frame, transparent background) as a base64 data URI, so satori embeds
+ * it without a network round-trip. SVG keeps the cream linework crisp at
+ * any size. Cached on the module.
  */
 export async function loadStoryLogo(): Promise<string> {
   if (logoCache) return logoCache;
-  const png = await readFile(join(ROUTE_DIR, "assets", "logo.png"));
-  logoCache = `data:image/png;base64,${png.toString("base64")}`;
+  const svg = await readFile(join(ROUTE_DIR, "assets", "logo.svg"));
+  logoCache = `data:image/svg+xml;base64,${svg.toString("base64")}`;
   return logoCache;
 }
