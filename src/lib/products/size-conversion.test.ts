@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { formatSizeHeader, prependSizeHeader } from "./size-conversion";
+import {
+  formatSizeBadge,
+  formatSizeHeader,
+  prependSizeHeader,
+} from "./size-conversion";
+
+describe("formatSizeBadge", () => {
+  it("joins size + regional conversions with the default dot separator", () => {
+    expect(formatSizeBadge("S")).toBe("S · EU 36 · UK 8 · US 4");
+    expect(formatSizeBadge("2X")).toBe("2X · EU 50 · UK 22 · US 18");
+  });
+
+  it("honours a custom separator", () => {
+    expect(formatSizeBadge("S", " | ")).toBe("S | EU 36 | UK 8 | US 4");
+  });
+
+  it("returns null for missing or unrecognized sizes", () => {
+    expect(formatSizeBadge(null)).toBeNull();
+    expect(formatSizeBadge("not-a-size")).toBeNull();
+  });
+});
 
 describe("formatSizeHeader", () => {
   it("formats the English header for a letter size", () => {

@@ -206,6 +206,27 @@ export const m = {
         id: "ID",
       },
     },
+    instagramStory: {
+      buttonLabel: "Generar historia de Instagram",
+      disabledTooltip:
+        "Disponible cuando el producto esté publicado en Etsy.",
+      dialogTitle: "Historia de Instagram",
+      dialogDescription:
+        "Elige una foto y descarga la imagen 1080×1920 lista para publicar.",
+      selectImageLabel: "Foto de fondo",
+      previewLabel: "Vista previa",
+      previewLoading: "Generando…",
+      downloadLabel: "Descargar imagen",
+      downloadedToast: "Historia descargada",
+      errorToast: "No se pudo generar la historia",
+      // Copy baked into the rendered image — ENGLISH on purpose: the
+      // generated story is an English-only asset, so these are not
+      // translated to Spanish even though they live in the ES bundle.
+      // Wording matches the Figma `instagram-post-new` frame.
+      ctaEtsy: "Shop on Etsy",
+      footerHandle: "@retrospectiva.preloved",
+      footerTagline: "One of a kind",
+    },
     form: {
       name: "Nombre",
       namePlaceholder: "Abrigo italiano de lana de los 70",

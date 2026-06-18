@@ -65,6 +65,25 @@ const SIZE_CONVERSIONS: Record<EtsySize, RegionSizes> = {
 };
 
 /**
+ * Label-less size + regional conversions joined by `separator`, e.g.
+ * `S · EU 36 · UK 8 · US 4`. Same numbers as `formatSizeHeader` but
+ * without the locale `Size:`/`Talla:` prefix — for compact surfaces
+ * like the Instagram-story eyebrow. Returns `null` when the size is
+ * missing/unrecognized so callers can omit the segment.
+ *
+ * @param size - the product's stored size value (US-letter scale)
+ * @param separator - joiner between segments (default ` · `)
+ */
+export function formatSizeBadge(
+  size: string | null | undefined,
+  separator = " · ",
+): string | null {
+  if (!isEtsySize(size)) return null;
+  const { eu, uk, us } = SIZE_CONVERSIONS[size];
+  return [size, `EU ${eu}`, `UK ${uk}`, `US ${us}`].join(separator);
+}
+
+/**
  * Builds the localized size header for a product, e.g.
  * `Size: S | EU 36 | UK 8 | US 4 | Condition: Perfect`. The condition
  * segment is appended only when a condition is supplied. Returns `null`

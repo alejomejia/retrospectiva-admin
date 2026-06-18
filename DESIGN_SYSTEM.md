@@ -58,6 +58,17 @@ Type scale (mirrors `design-system.html`):
 The `.text-caplet` utility is the tiny uppercase receipt-style label used on
 form fields, table headers, and tag pills throughout the design.
 
+> **Sanctioned exception — Instagram-story export.** The generated
+> 1080×1920 social image
+> (`src/app/(admin)/products/[id]/instagram-story/`) is a marketing asset
+> rendered server-side via `next/og` (satori), not app UI. It deliberately
+> uses **Playfair Display** for the title + euro price to match the
+> storefront's editorial look, with **DM Sans** for the CTA and **DM Mono**
+> for the eyebrow/badge/footer. All three are vendored as static `.ttf`
+> buffers under that route's `fonts/` dir because satori needs raw font
+> bytes (it can't read `theme.css` vars). This exception is scoped to the
+> exported PNG only — the admin chrome stays DM Sans / DM Mono / Caveat.
+
 ## 3. Shape
 
 - **Buttons:** pill (`rounded-full`). Default = terracotta on cream. Hover
