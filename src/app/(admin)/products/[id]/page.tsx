@@ -4,6 +4,7 @@ import { NewProductStepper } from "@/components/forms/new-product/new-product-st
 import { PageHeader } from "@/components/layout/page-header";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
+import { CopyListingLinkButton } from "@/components/products/copy-listing-link-button";
 import { Badge } from "@/components/ui/badge";
 import { listActiveAiModels } from "@/lib/ai-models/actions";
 import { db } from "@/lib/db/client";
@@ -138,6 +139,9 @@ export default async function ProductDetailPage({
             >
               {m.products.statuses[product.status]}
             </Badge>
+            {product.etsyListingId != null && (
+              <CopyListingLinkButton etsyListingId={product.etsyListingId} />
+            )}
           </div>
         </PageHeader.Column>
       </PageHeader>

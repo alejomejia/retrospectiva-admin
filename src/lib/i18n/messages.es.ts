@@ -187,6 +187,11 @@ export const m = {
     detail: {
       backLink: "Productos",
       untitled: "Sin título",
+      copyLink: {
+        label: "Copiar enlace de Etsy",
+        copiedToast: "Enlace copiado al portapapeles",
+        failedToast: "No se pudo copiar el enlace",
+      },
       detailsTitle: "Detalles",
       detailsDescription:
         "La Fase 4 publica en Etsy, la Fase 6 genera la descripción + colocación en modelo.",
