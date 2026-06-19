@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 import {
   STORY_COLORS,
+  STORY_DIM_BLUR,
+  STORY_DIM_BLUR_OVERSCAN,
   STORY_DIM_FLAT,
   STORY_FONTS,
   STORY_GRADIENT_BOTTOM,
@@ -27,8 +29,9 @@ import {
  * gap, left-aligned, anchored 72px from the bottom.
  *
  * `dim` chooses the photo treatment: `"split"` (default) is the two
- * gradients used by the "new" template; `"flat"` is the uniform ink veil
- * the "sold" template wants behind a centred seal. `overlay` is optional
+ * gradients used by the "new" template; `"flat"` blurs the photo and lays
+ * a uniform ink veil over it — what the "sold" template wants behind a
+ * centred seal. `overlay` is optional
  * absolutely-positioned art drawn over the photo but under the copy
  * (e.g. `StorySeal`).
  */
@@ -55,22 +58,58 @@ export function StoryFrame({
         backgroundColor: STORY_COLORS.ink,
       }}
     >
-      {/* Full-bleed product photo */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        alt=""
-        src={photoUrl}
-        width={STORY_WIDTH}
-        height={STORY_HEIGHT}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: STORY_WIDTH,
-          height: STORY_HEIGHT,
-          objectFit: "cover",
-        }}
-      />
+      {dim === "flat" ? (
+        /* Blurred photo. satori ignores `backdrop-filter` and `filter` on
+           an <img>, but DOES apply `filter` to a parent's whole subtree —
+           so the blur lives on this clipping wrapper. The photo bleeds
+           `OVERSCAN`px past every edge so the blur samples real pixels
+           instead of feathering to transparent. */
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            display: "flex",
+            width: STORY_WIDTH,
+            height: STORY_HEIGHT,
+            overflow: "hidden",
+            filter: `blur(${STORY_DIM_BLUR}px)`,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt=""
+            src={photoUrl}
+            width={STORY_WIDTH + STORY_DIM_BLUR_OVERSCAN * 2}
+            height={STORY_HEIGHT + STORY_DIM_BLUR_OVERSCAN * 2}
+            style={{
+              position: "absolute",
+              top: -STORY_DIM_BLUR_OVERSCAN,
+              left: -STORY_DIM_BLUR_OVERSCAN,
+              width: STORY_WIDTH + STORY_DIM_BLUR_OVERSCAN * 2,
+              height: STORY_HEIGHT + STORY_DIM_BLUR_OVERSCAN * 2,
+              objectFit: "cover",
+            }}
+          />
+        </div>
+      ) : (
+        /* Full-bleed sharp product photo */
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          src={photoUrl}
+          width={STORY_WIDTH}
+          height={STORY_HEIGHT}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: STORY_WIDTH,
+            height: STORY_HEIGHT,
+            objectFit: "cover",
+          }}
+        />
+      )}
 
       {dim === "flat" ? (
         /* Uniform ink veil over the whole photo */

@@ -59,6 +59,17 @@ place of `StoryTitlePrice`.
 6. **Register** — add it to `STORY_RENDERERS` in `templates/index.ts`. The
    `Record<StoryVariantKey, …>` makes a missing renderer a type error.
 
+### Blurred photo (the SOLD frame's `flat` dim)
+
+The Figma `instagram-post-sold` overlay layer uses a 50px **background blur**
+(backdrop-filter) under an 80% ink fill. satori supports neither
+`backdrop-filter` nor `filter` on an `<img>`, but it _does_ apply `filter` to
+a parent element's whole subtree — so `StoryFrame`'s `flat` branch wraps the
+photo in a clipping `<div>` carrying `filter: blur(STORY_DIM_BLUR)`, with the
+photo oversized by `STORY_DIM_BLUR_OVERSCAN` per edge so the blur samples real
+pixels instead of feathering to transparent. The sharp 0.8 ink veil sits on
+top. Re-tune both constants in `story.const.ts`, not the JSX.
+
 ### Transparent stamp assets (the SOLD seal)
 
 The Figma seal is an opaque ink box composited with a blend mode, so an
