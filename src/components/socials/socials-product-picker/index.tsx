@@ -84,12 +84,11 @@ function SocialsProductPickerRoot({
                 <Link href={hrefFor(item.id)} className="group flex flex-col gap-1.5">
                   <div
                     className={cn(
-                      "relative w-full overflow-hidden rounded-lg border-2 bg-brand-paper transition-colors",
+                      "relative w-full aspect-square overflow-hidden rounded-lg border bg-brand-paper transition-colors",
                       isSelected
                         ? "border-brand-terracotta"
-                        : "border-transparent group-hover:border-border",
+                        : "border-transparent",
                     )}
-                    style={{ aspectRatio: 9 / 16 }}
                   >
                     {item.thumbnailUrl ? (
                       <Image
@@ -101,7 +100,7 @@ function SocialsProductPickerRoot({
                         unoptimized
                       />
                     ) : null}
-                    <span className="absolute left-1.5 top-1.5 rounded-full bg-brand-ink/70 px-1.5 py-0.5 text-caplet text-brand-cream">
+                    <span className="absolute top-2 left-2 w-fit inline-flex items-center gap-1 rounded-sm px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] bg-brand-terracotta text-brand-cream">
                       {STATUS_LABEL[item.status] ?? item.status}
                     </span>
                     {isSelected ? (
@@ -110,9 +109,6 @@ function SocialsProductPickerRoot({
                       </span>
                     ) : null}
                   </div>
-                  <span className="line-clamp-2 text-xs text-foreground">
-                    {item.title}
-                  </span>
                 </Link>
               </li>
             );

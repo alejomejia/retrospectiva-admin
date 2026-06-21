@@ -45,7 +45,7 @@ export default async function SocialsPage() {
             <li key={key}>
               <Link
                 href={`/socials/${key}`}
-                className="group flex flex-col gap-3 rounded-lg border border-border bg-brand-paper p-6 transition-colors hover:border-brand-terracotta"
+                className="group flex flex-col gap-3 rounded-lg border border-border bg-brand-cream p-6 transition-colors hover:border-brand-terracotta"
               >
                 <span className="flex size-10 items-center justify-center rounded-full bg-brand-ink/5 text-brand-terracotta">
                   <Icon className="size-5" />

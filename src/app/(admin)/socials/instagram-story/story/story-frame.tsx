@@ -138,7 +138,7 @@ export function StoryFrame({
               left: 0,
               display: "flex",
               width: STORY_WIDTH,
-              height: 1080,
+              height: 1200,
               backgroundImage: STORY_GRADIENT_BOTTOM,
             }}
           />

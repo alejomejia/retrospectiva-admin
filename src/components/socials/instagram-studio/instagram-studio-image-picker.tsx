@@ -30,12 +30,11 @@ export function InstagramStudioImagePicker({
               onClick={() => onSelect(image.id)}
               aria-pressed={isSelected}
               className={cn(
-                "relative block w-full overflow-hidden rounded-md border-2 bg-brand-paper transition-colors",
+                "relative aspect-square block w-full overflow-hidden rounded-md border-2 bg-brand-paper transition-colors",
                 isSelected
                   ? "border-brand-terracotta"
                   : "border-transparent hover:border-border",
               )}
-              style={{ aspectRatio: 9 / 16 }}
             >
               <Image
                 src={image.url}

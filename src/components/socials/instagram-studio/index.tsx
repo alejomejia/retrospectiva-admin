@@ -25,7 +25,7 @@ function InstagramStudioRoot(props: InstagramStudioProps) {
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,360px)]">
       <div className="flex flex-col gap-6 py-6">
-        <section className="flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
           <span className="text-caplet text-muted-foreground">
             {m.socials.studio.selectImageLabel}
           </span>
