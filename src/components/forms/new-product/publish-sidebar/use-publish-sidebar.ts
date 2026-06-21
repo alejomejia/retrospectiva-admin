@@ -76,6 +76,7 @@ export function usePublishSidebar({
       ? product.scheduledPublishAt.toISOString()
       : null,
   );
+  const [soldDialogOpen, setSoldDialogOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const onSaveDraft = () => {
@@ -158,15 +159,17 @@ export function usePublishSidebar({
   };
 
   const onMarkSold = () => {
-    if (!window.confirm(m.products.editForm.etsy.markSoldConfirm)) {
-      return;
-    }
+    setSoldDialogOpen(true);
+  };
+
+  const onConfirmSold = (soldPriceCents: number) => {
     startTransition(async () => {
-      const result = await markAsSold(product.id);
+      const result = await markAsSold(product.id, soldPriceCents);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
+      setSoldDialogOpen(false);
       toast.success(m.products.editForm.etsy.soldToast);
       router.push("/products");
     });
@@ -220,11 +223,14 @@ export function usePublishSidebar({
     setScheduledIso,
     pending,
     enrichmentRunning,
+    soldDialogOpen,
+    setSoldDialogOpen,
     onSaveDraft,
     onSchedule,
     onPublishNow,
     onCancelSchedule,
     onMarkSold,
+    onConfirmSold,
     onArchive,
     onRestoreToDraft,
     onUpdateWebsite,

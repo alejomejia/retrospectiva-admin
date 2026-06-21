@@ -255,6 +255,12 @@ export const products = pgTable(
     // (`https://www.etsy.com/listing/{id}`).
     etsyListingId: bigint("etsy_listing_id", { mode: "number" }),
     soldAt: timestamp("sold_at", { withTimezone: true }),
+    // Actual sale proceeds in EUR cents, captured when the operator
+    // marks the product sold. The Etsy/website list price is NOT the
+    // earnings (manual discounts, fees, offline sales), so this is the
+    // clean figure for earnings reporting. Required at the mark-sold
+    // boundary; null for products sold before this column existed.
+    soldPriceCents: integer("sold_price_cents"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),

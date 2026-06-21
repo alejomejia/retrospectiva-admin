@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { MarkSoldDialog } from "@/components/products/mark-sold-dialog";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
@@ -126,6 +127,13 @@ export function PublishSidebar({
             )}
           </div>
         </header>
+
+        <MarkSoldDialog
+          open={vm.soldDialogOpen}
+          onOpenChange={vm.setSoldDialogOpen}
+          onConfirm={vm.onConfirmSold}
+          pending={vm.pending}
+        />
       </aside>
     );
   }

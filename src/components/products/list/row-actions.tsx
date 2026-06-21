@@ -15,6 +15,7 @@ import {
 import { deleteProduct } from "@/lib/products/actions";
 import { markAsPublished, markAsSold } from "@/lib/products/draft-actions";
 import { m } from "@/lib/i18n/messages.es";
+import { MarkSoldDialog } from "@/components/products/mark-sold-dialog";
 
 import type { ProductListItem } from "./types";
 
@@ -46,6 +47,7 @@ export function RowActions({ row }: { row: ProductListItem }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
+  const [soldDialogOpen, setSoldDialogOpen] = useState(false);
 
   const canDelete = DELETABLE.has(row.status);
   const canMarkSold = SELLABLE.has(row.status);
@@ -66,17 +68,16 @@ export function RowActions({ row }: { row: ProductListItem }) {
     });
   };
 
-  const onMarkSold = () => {
-    if (!window.confirm(m.products.rowActions.confirmMarkSold)) return;
+  const onConfirmSold = (soldPriceCents: number) => {
     startTransition(async () => {
-      const result = await markAsSold(row.id);
+      const result = await markAsSold(row.id, soldPriceCents);
       if (result.ok) {
         toast.success(m.products.rowActions.soldToast);
+        setSoldDialogOpen(false);
         router.refresh();
       } else {
         toast.error(result.error);
       }
-      setOpen(false);
     });
   };
 
@@ -95,56 +96,68 @@ export function RowActions({ row }: { row: ProductListItem }) {
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={m.products.rowActions.menuLabel}
-          disabled={isPending}
-        >
-          <MoreVertical className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {canMarkPublished && (
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              onMarkPublished();
-            }}
+    <>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={m.products.rowActions.menuLabel}
             disabled={isPending}
           >
-            <CheckCircle />
-            {m.products.rowActions.markPublished}
-          </DropdownMenuItem>
-        )}
-        {canMarkSold && (
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
-              onMarkSold();
-            }}
-            disabled={isPending}
-          >
-            <Tag />
-            {m.products.rowActions.markSold}
-          </DropdownMenuItem>
-        )}
-        {canDelete && (
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(e) => {
-              e.preventDefault();
-              onDelete();
-            }}
-            disabled={isPending}
-          >
-            <Trash2 />
-            {m.products.rowActions.delete}
-          </DropdownMenuItem>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {canMarkPublished && (
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                onMarkPublished();
+              }}
+              disabled={isPending}
+            >
+              <CheckCircle />
+              {m.products.rowActions.markPublished}
+            </DropdownMenuItem>
+          )}
+          {canMarkSold && (
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                setOpen(false);
+                setSoldDialogOpen(true);
+              }}
+              disabled={isPending}
+            >
+              <Tag />
+              {m.products.rowActions.markSold}
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={(e) => {
+                e.preventDefault();
+                onDelete();
+              }}
+              disabled={isPending}
+            >
+              <Trash2 />
+              {m.products.rowActions.delete}
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {canMarkSold && (
+        <MarkSoldDialog
+          open={soldDialogOpen}
+          onOpenChange={setSoldDialogOpen}
+          onConfirm={onConfirmSold}
+          pending={isPending}
+        />
+      )}
+    </>
   );
 }

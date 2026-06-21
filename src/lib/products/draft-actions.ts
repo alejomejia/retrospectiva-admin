@@ -228,13 +228,28 @@ async function notifyWebsite(
 }
 
 /**
+ * Actual sale proceeds, in EUR cents. A positive integer — the operator
+ * types a money string in the UI and the client converts to cents.
+ */
+const SoldPriceCentsSchema = z.number().int().positive();
+
+/**
  * Manually mark a product as sold. Distinct from archive: a sold
  * garment stays visible on the store (flagged sold), an archived one
- * is pulled. Sets `sold_at` and fires the `sold` website webhook.
- * Allowed from `published` / `scheduled` / `archived`.
+ * is pulled. Persists the actual sale proceeds (`sold_price_cents`) —
+ * the list price sent to Etsy is not the earnings, so this is the clean
+ * figure for reporting — then sets `sold_at` and fires the `sold`
+ * website webhook. Allowed from `published` / `scheduled` / `archived`.
  */
-export async function markAsSold(id: string): Promise<DraftActionResult> {
+export async function markAsSold(
+  id: string,
+  soldPriceCents: number,
+): Promise<DraftActionResult> {
   await requireSession();
+  const parsedPrice = SoldPriceCentsSchema.safeParse(soldPriceCents);
+  if (!parsedPrice.success) {
+    return { ok: false, error: m.errors.invalidForm };
+  }
   try {
     const [row] = await db
       .select({ status: products.status })
@@ -250,7 +265,12 @@ export async function markAsSold(id: string): Promise<DraftActionResult> {
 
     await db
       .update(products)
-      .set({ status: "sold", soldAt: sql`now()`, updatedAt: sql`now()` })
+      .set({
+        status: "sold",
+        soldPriceCents: parsedPrice.data,
+        soldAt: sql`now()`,
+        updatedAt: sql`now()`,
+      })
       .where(eq(products.id, id));
     dev.log("status → sold", id);
 

@@ -314,31 +314,49 @@ describe("archiveProduct", () => {
     expect(webhookAddMock).toHaveBeenCalledWith(
       "archive",
       { productId: "p1", kind: "archive" },
-      { jobId: "archive:p1" },
+      { jobId: "archive-p1" },
     );
   });
 });
 
 describe("markAsSold", () => {
-  it("sets status=sold + soldAt and fires the sold webhook from a sellable status", async () => {
+  it("sets status=sold + soldPriceCents + soldAt and fires the sold webhook from a sellable status", async () => {
     dbState.selectRow = { status: "published" };
-    const res = await markAsSold("p1");
+    const res = await markAsSold("p1", 4200);
     expect(res.ok).toBe(true);
-    expect(dbState.updateCalls[0]?.values).toMatchObject({ status: "sold" });
+    expect(dbState.updateCalls[0]?.values).toMatchObject({
+      status: "sold",
+      soldPriceCents: 4200,
+    });
     expect(dbState.updateCalls[0]?.values.soldAt).toBeDefined();
     expect(webhookAddMock).toHaveBeenCalledWith(
       "sold",
       { productId: "p1", kind: "sold" },
-      { jobId: "sold:p1" },
+      { jobId: "sold-p1" },
     );
   });
 
   it("rejects a non-sellable status without writing or notifying", async () => {
     dbState.selectRow = { status: "draft" };
-    const res = await markAsSold("p1");
+    const res = await markAsSold("p1", 4200);
     expect(res.ok).toBe(false);
     expect(dbState.updateCalls).toHaveLength(0);
     expect(webhookAddMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-positive sold price without touching the DB", async () => {
+    dbState.selectRow = { status: "published" };
+    const res = await markAsSold("p1", 0);
+    expect(res.ok).toBe(false);
+    expect(dbState.updateCalls).toHaveLength(0);
+    expect(webhookAddMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-integer sold price (cents must be whole)", async () => {
+    dbState.selectRow = { status: "published" };
+    const res = await markAsSold("p1", 42.5);
+    expect(res.ok).toBe(false);
+    expect(dbState.updateCalls).toHaveLength(0);
   });
 });
 
@@ -352,7 +370,7 @@ describe("markAsPublished", () => {
     expect(webhookAddMock).toHaveBeenCalledWith(
       "publish",
       { productId: "p1", kind: "publish" },
-      { jobId: "publish:p1" },
+      { jobId: "publish-p1" },
     );
   });
 

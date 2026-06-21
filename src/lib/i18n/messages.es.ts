@@ -178,11 +178,20 @@ export const m = {
       confirmDelete: "¿Eliminar este producto? Se borrarán las fotos y videos asociados. No se puede deshacer.",
       deletedToast: "Producto eliminado",
       markSold: "Marcar como vendido",
-      confirmMarkSold: "¿Marcar este producto como vendido? Seguirá visible en la web, marcado como vendido.",
       soldToast: "Producto marcado como vendido",
       markPublished: "Marcar como publicado",
       confirmMarkPublished: "¿Marcar este producto como publicado? Úsalo solo si el anuncio ya está activo en Etsy. No se enviará nada a Etsy; solo se actualiza el estado local y se notifica a la web.",
       publishedToast: "Producto marcado como publicado",
+    },
+    markSold: {
+      dialogTitle: "Marcar como vendido",
+      dialogDescription:
+        "Seguirá visible en la web, marcado como vendido. Indica el precio real de venta para llevar las ganancias.",
+      priceLabel: "Precio de venta real (€)",
+      priceHint:
+        "Lo que ingresaste de verdad por la venta, no el precio de Etsy. Se usa para el cálculo de ganancias.",
+      confirm: "Marcar como vendido",
+      cancel: "Cancelar",
     },
     detail: {
       backLink: "Productos",
@@ -427,8 +436,6 @@ export const m = {
         updateWebRunning: "Actualizando en la web…",
         updateWebDone: "Producto actualizado en la web",
         markSold: "Marcar como vendido",
-        markSoldConfirm:
-          "¿Marcar este producto como vendido? Seguirá visible en la web, marcado como vendido.",
         soldToast: "Producto marcado como vendido",
         archive: "Archivar",
         archivedToast: "Producto archivado",

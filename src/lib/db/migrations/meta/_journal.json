@@ -43,6 +43,13 @@
       "when": 1781689946071,
       "tag": "0005_green_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782030471147,
+      "tag": "0006_mature_bullseye",
+      "breakpoints": true
     }
   ]
 }
