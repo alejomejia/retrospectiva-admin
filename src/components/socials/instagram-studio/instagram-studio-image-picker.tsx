@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils/helpers";
  * Single-select thumbnail grid for choosing the story background photo.
  * The currently selected tile gets a ring + check badge.
  */
-export function InstagramStoryImagePicker({
+export function InstagramStudioImagePicker({
   images,
   selectedId,
   onSelect,

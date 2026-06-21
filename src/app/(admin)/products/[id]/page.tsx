@@ -135,7 +135,6 @@ export default async function ProductDetailPage({
             </PageHeader.Title>
             <Badge
               variant={product.status === "draft" ? "outline" : "default"}
-              className="text-caplet"
             >
               {m.products.statuses[product.status]}
             </Badge>

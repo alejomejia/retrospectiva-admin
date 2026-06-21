@@ -13,7 +13,7 @@ type StoryFont = {
 
 const ROUTE_DIR = join(
   process.cwd(),
-  "src/app/(admin)/products/[id]/instagram-story",
+  "src/app/(admin)/socials/instagram-story",
 );
 const FONT_DIR = join(ROUTE_DIR, "fonts");
 

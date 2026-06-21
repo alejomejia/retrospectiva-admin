@@ -59,5 +59,5 @@ export const STORY_DIM_FLAT = `rgba(26,25,20,0.8)`;
  * how far the photo bleeds past each clipped edge so the blur samples real
  * pixels rather than feathering to transparent (must exceed the radius).
  */
-export const STORY_DIM_BLUR = 50;
+export const STORY_DIM_BLUR = 20;
 export const STORY_DIM_BLUR_OVERSCAN = 80;

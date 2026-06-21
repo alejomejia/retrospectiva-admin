@@ -127,7 +127,6 @@ export function NewProductStepper({
                     initialAiImage={aiGeneratedImage}
                     shopListingFooterEs={shopListingFooterEs}
                     featureImage={imageItems[0] ?? null}
-                    images={imageItems}
                   />
                 )}
               </div>

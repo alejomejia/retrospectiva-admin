@@ -2,10 +2,8 @@
 
 import { AiContentSection } from "@/components/products/ai-content-section";
 import type { ImageListItem } from "@/components/products/image-list";
-import { InstagramStoryDialog } from "@/components/products/instagram-story-dialog";
 import type { Product } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
-import { variantsForStatus } from "@/lib/products/instagram-story-variants";
 
 import type { GeneratedAiImage } from "../ai-image-section";
 import { FeatureImage } from "./step-2-ai-review-feature-image";
@@ -29,7 +27,6 @@ export function Step2AiReview({
   initialAiImage,
   shopListingFooterEs,
   featureImage,
-  images,
 }: {
   product: Product;
   initialAiImage: GeneratedAiImage;
@@ -37,8 +34,6 @@ export function Step2AiReview({
   /** Primary product photo (first in the ordered list), for side-by-side
    *  comparison against the AI-generated copy. Null when no photos. */
   featureImage: ImageListItem | null;
-  /** All original product photos, for the Instagram-story picker. */
-  images: ImageListItem[];
 }) {
   const { phase, error, kick, kickPending, contentVersion } =
     useStep2AiReview();
@@ -90,15 +85,6 @@ export function Step2AiReview({
             shopFooterDefaultEs={shopListingFooterEs}
             initialOverrideEs={product.listingFooterEsOverride}
           />
-        )}
-        {phase !== "running" && (
-          <div className="flex">
-            <InstagramStoryDialog
-              productId={product.id}
-              images={images}
-              variants={variantsForStatus(product.status).map((v) => v.key)}
-            />
-          </div>
         )}
       </div>
 

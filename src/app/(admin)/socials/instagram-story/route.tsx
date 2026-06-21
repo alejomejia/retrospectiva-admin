@@ -9,38 +9,44 @@ import { getProduct } from "@/lib/products/actions";
 import { listProductImages } from "@/lib/products/images-actions";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 
-import { loadStoryFonts, loadStoryLogo, loadStorySeal } from "./load-fonts";
-import { STORY_HEIGHT, STORY_WIDTH } from "./story.const";
-import { STORY_RENDERERS } from "./templates";
+import { resolveStoryFields } from "@/lib/products/instagram-story-fields";
 import {
   DEFAULT_VARIANT_KEY,
   isVariantKey,
   variantsForStatus,
 } from "@/lib/products/instagram-story-variants";
 
+import { loadStoryFonts, loadStoryLogo, loadStorySeal } from "./load-fonts";
+import { STORY_HEIGHT, STORY_WIDTH } from "./story.const";
+import { STORY_RENDERERS } from "./templates";
+
 // We read vendored font + logo files from disk, so this must run on Node.
 export const runtime = "nodejs";
 
 /**
- * Renders a 1080×1920 Instagram-story PNG for a product, picking the
- * template from `?variant=` (default `new`). Each template declares which
- * product statuses it applies to (`variants.ts`); requesting one the
- * product isn't eligible for is a 409 (the dialog also gates this, but
- * never trust the client alone). `?imageId=` chooses the background photo.
+ * Renders a 1080×1920 Instagram-story PNG for a product. The product is
+ * identified by `?productId=` and the template by `?variant=` (default
+ * `new`). Each template declares which product statuses it applies to
+ * (`variants.ts`); requesting one the product isn't eligible for is a 409
+ * (the studio also gates this, but never trust the client alone).
+ * `?imageId=` chooses the background photo; per-field `?<key>=` params
+ * override the template copy (defaults computed from the product — see
+ * `instagram-story-fields.ts`).
  */
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request) {
   await requireSession();
-  const { id } = await params;
+
+  const url = new URL(request.url);
+  const id = url.searchParams.get("productId");
+  if (!id) {
+    return new Response("Missing productId", { status: 400 });
+  }
 
   const product = await getProduct(id);
   if (!product) {
     return new Response("Not found", { status: 404 });
   }
 
-  const url = new URL(request.url);
   const variant = url.searchParams.get("variant") ?? DEFAULT_VARIANT_KEY;
   if (!isVariantKey(variant)) {
     return new Response("Unknown template", { status: 400 });
@@ -78,9 +84,16 @@ export async function GET(
     loadStorySeal(),
   ]);
 
+  const fields = resolveStoryFields(
+    variant,
+    product,
+    shopMarkupPercent,
+    url.searchParams,
+  );
+
   const render = STORY_RENDERERS[variant];
   return new ImageResponse(
-    render({ product, photoUrl, logoUrl, sealUrl, shopMarkupPercent }),
+    render({ fields, photoUrl, logoUrl, sealUrl }),
     {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,

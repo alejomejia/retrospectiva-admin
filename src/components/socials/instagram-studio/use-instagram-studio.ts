@@ -1,0 +1,130 @@
+"use client";
+
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+
+import { m } from "@/lib/i18n/messages.es";
+import {
+  STORY_FIELDS,
+  type StoryFields,
+} from "@/lib/products/instagram-story-fields";
+import type { StoryVariantKey } from "@/lib/products/instagram-story-variants";
+
+import type { InstagramStudioProps } from "./instagram-studio.types";
+
+/** Builds the render-route URL for a variant + product + photo + edited copy. */
+function buildStoryUrl(
+  productId: string,
+  variant: StoryVariantKey,
+  imageId: string | null,
+  fields: StoryFields,
+): string {
+  const params = new URLSearchParams();
+  params.set("variant", variant);
+  params.set("productId", productId);
+  if (imageId) params.set("imageId", imageId);
+  // Every field is sent (including cleared ones, which the route reads as
+  // an intentional "hide" for nullable slots).
+  for (const [key, value] of Object.entries(fields)) {
+    params.set(key, value);
+  }
+  return `/socials/instagram-story?${params.toString()}`;
+}
+
+/**
+ * State + actions for the Instagram studio: the background photo, the
+ * editable copy, the preview URL they map to, and the fetch→blob→anchor
+ * download.
+ *
+ * The preview regenerates only on *commit* points — choosing a photo, or a
+ * text field losing focus (blur) — never per keystroke. The satori render is
+ * CPU-bound, so this keeps it to one render per finished edit (no debounce
+ * or throttle needed). Downloads always use the freshest copy, so a download
+ * right after typing (without blurring) still carries the edit.
+ */
+export function useInstagramStudio({
+  productId,
+  variant,
+  images,
+  defaultFields,
+}: InstagramStudioProps) {
+  const featuredId = images[0]?.id ?? null;
+  const fieldDefs = STORY_FIELDS[variant];
+
+  const [selectedId, setSelectedId] = useState<string | null>(featuredId);
+  const [fields, setFields] = useState<StoryFields>(() => ({
+    ...defaultFields,
+  }));
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(() =>
+    buildStoryUrl(productId, variant, featuredId, defaultFields),
+  );
+
+  // Repoint the preview at the current selections. Called at commit points
+  // only (photo pick, field blur, reset) — not on every keystroke.
+  const commitPreview = useCallback(
+    (imageId: string | null, nextFields: StoryFields) => {
+      setPreviewUrl(buildStoryUrl(productId, variant, imageId, nextFields));
+    },
+    [productId, variant],
+  );
+
+  function selectImage(id: string) {
+    setSelectedId(id);
+    commitPreview(id, fields);
+  }
+
+  function setField(key: string, value: string) {
+    setFields((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // Field inputs call this on blur; `fields` is already up to date from the
+  // onChange that preceded losing focus.
+  function commitFields() {
+    commitPreview(selectedId, fields);
+  }
+
+  function resetFields() {
+    const next = { ...defaultFields };
+    setFields(next);
+    commitPreview(selectedId, next);
+  }
+
+  async function download() {
+    // Build from current state, not the (possibly older) preview URL, so a
+    // download right after an un-blurred edit still carries it.
+    const targetUrl = buildStoryUrl(productId, variant, selectedId, fields);
+    setIsDownloading(true);
+    try {
+      const res = await fetch(targetUrl);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `retrospectiva-${variant}-${productId}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      toast.success(m.socials.studio.downloadedToast);
+    } catch {
+      toast.error(m.socials.studio.errorToast);
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
+  return {
+    selectedId,
+    selectImage,
+    fields,
+    fieldDefs,
+    setField,
+    commitFields,
+    resetFields,
+    previewUrl,
+    isDownloading,
+    download,
+  };
+}

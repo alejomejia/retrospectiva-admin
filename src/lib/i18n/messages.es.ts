@@ -32,6 +32,7 @@ export const m = {
     dashboard: "Panel",
     products: "Productos",
     models: "Modelos",
+    socials: "Redes",
     settings: "Ajustes",
     settingsIntegrations: "Integraciones",
     settingsProducts: "Productos",
@@ -41,6 +42,59 @@ export const m = {
   appShell: {
     versionBadge: "v0.2 · dev",
     signedInAs: "Sesión iniciada como",
+  },
+
+  socials: {
+    pageTitle: "Redes",
+    // Eyebrow shown on every Socials screen.
+    eyebrow: "Herramientas para publicar",
+    // Landing: pick which kind of post to generate.
+    landing: {
+      heading: "¿Qué quieres publicar?",
+      description: "Elige el tipo de publicación para generar su imagen.",
+      new: {
+        title: "Producto nuevo",
+        description: "Historia para un producto recién publicado.",
+      },
+      sold: {
+        title: "Producto vendido",
+        description: "Historia para celebrar un producto vendido.",
+      },
+    },
+    // Per-variant page: search/pick a product, then the studio appears.
+    select: {
+      back: "Volver a Redes",
+      newHeading: "Publicación · Producto nuevo",
+      soldHeading: "Publicación · Producto vendido",
+      searchPlaceholder: "Buscar producto…",
+      latestLabel: "Últimos productos",
+      resultsLabel: "Resultados",
+      noResults: "No se encontraron productos.",
+      empty: "Aún no hay productos para este tipo de publicación.",
+      changeProduct: "Cambiar producto",
+      statusPublished: "Publicado",
+      statusSold: "Vendido",
+    },
+    studio: {
+      selectImageLabel: "Foto de fondo",
+      fieldsLabel: "Texto",
+      resetLabel: "Restablecer",
+      previewLabel: "Vista previa",
+      previewLoading: "Generando…",
+      downloadLabel: "Descargar imagen",
+      downloadedToast: "Imagen descargada",
+      errorToast: "No se pudo generar la imagen",
+    },
+    // UI labels for each editable text slot. The slot content stays English
+    // (the asset is English-only); only these labels are Spanish.
+    fields: {
+      badge: "Etiqueta",
+      eyebrow: "Línea superior (época · talla)",
+      title: "Título",
+      price: "Precio",
+      accent: "Palabra destacada",
+      footerTagline: "Lema (pie)",
+    },
   },
 
   login: {
@@ -221,32 +275,14 @@ export const m = {
       },
     },
     instagramStory: {
-      buttonLabel: "Generar historia de Instagram",
-      disabledTooltip:
-        "Disponible cuando el producto esté publicado en Etsy.",
-      dialogTitle: "Historia de Instagram",
-      dialogDescription:
-        "Elige una plantilla y una foto, y descarga la imagen 1080×1920 lista para publicar.",
-      selectVariantLabel: "Plantilla",
       // Template labels (admin UI, Spanish). One per `StoryVariantKey`.
+      // The studio's template picker reads these. (Generation UI copy lives
+      // under the top-level `socials` block; the English baked-in defaults
+      // live in `lib/products/instagram-story-fields.ts`.)
       variants: {
         new: "Novedad",
         sold: "Vendido",
       },
-      selectImageLabel: "Foto de fondo",
-      previewLabel: "Vista previa",
-      previewLoading: "Generando…",
-      downloadLabel: "Descargar imagen",
-      downloadedToast: "Historia descargada",
-      errorToast: "No se pudo generar la historia",
-      // Copy baked into the rendered image — ENGLISH on purpose: the
-      // generated story is an English-only asset, so these are not
-      // translated to Spanish even though they live in the ES bundle.
-      // Wording matches the Figma `instagram-post-new` / `-sold` frames.
-      ctaEtsy: "Shop on Etsy",
-      ctaShop: "More clothes in our shop",
-      footerHandle: "@retrospectiva.preloved",
-      footerTagline: "One of a kind",
     },
     form: {
       name: "Nombre",

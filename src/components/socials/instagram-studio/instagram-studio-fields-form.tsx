@@ -1,0 +1,61 @@
+"use client";
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { m } from "@/lib/i18n/messages.es";
+import type {
+  StoryFieldDef,
+  StoryFields,
+} from "@/lib/products/instagram-story-fields";
+
+/**
+ * One labelled input per editable text slot of the current template, in
+ * `STORY_FIELDS` order. Multiline slots get a textarea. Values are the
+ * resolved copy (defaults until the user edits); the labels are Spanish
+ * UI even though the field content stays English.
+ *
+ * `onChange` keeps local state current (so downloads carry the edit); the
+ * preview regenerates on `onCommit`, fired when an input loses focus.
+ */
+export function InstagramStudioFieldsForm({
+  fieldDefs,
+  fields,
+  onChange,
+  onCommit,
+}: {
+  fieldDefs: readonly StoryFieldDef[];
+  fields: StoryFields;
+  onChange: (key: string, value: string) => void;
+  onCommit: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {fieldDefs.map((def) => {
+        const id = `story-field-${def.key}`;
+        const value = fields[def.key] ?? "";
+        return (
+          <div key={def.key} className="flex flex-col gap-1.5">
+            <Label htmlFor={id}>{m.socials.fields[def.key]}</Label>
+            {def.multiline ? (
+              <Textarea
+                id={id}
+                value={value}
+                rows={2}
+                onChange={(event) => onChange(def.key, event.target.value)}
+                onBlur={onCommit}
+              />
+            ) : (
+              <Input
+                id={id}
+                value={value}
+                onChange={(event) => onChange(def.key, event.target.value)}
+                onBlur={onCommit}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
