@@ -18,11 +18,13 @@ function buildStoryUrl(
   variant: StoryVariantKey,
   imageId: string | null,
   fields: StoryFields,
+  transparent: boolean,
 ): string {
   const params = new URLSearchParams();
   params.set("variant", variant);
   params.set("productId", productId);
   if (imageId) params.set("imageId", imageId);
+  if (transparent) params.set("transparent", "1");
   // Every field is sent (including cleared ones, which the route reads as
   // an intentional "hide" for nullable slots).
   for (const [key, value] of Object.entries(fields)) {
@@ -55,23 +57,33 @@ export function useInstagramStudio({
   const [fields, setFields] = useState<StoryFields>(() => ({
     ...defaultFields,
   }));
+  // Background photo on by default; toggling off emits a transparent PNG.
+  const [transparent, setTransparent] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(() =>
-    buildStoryUrl(productId, variant, featuredId, defaultFields),
+    buildStoryUrl(productId, variant, featuredId, defaultFields, false),
   );
 
   // Repoint the preview at the current selections. Called at commit points
-  // only (photo pick, field blur, reset) — not on every keystroke.
+  // only (photo pick, field blur, reset, transparency toggle) — not on every
+  // keystroke.
   const commitPreview = useCallback(
-    (imageId: string | null, nextFields: StoryFields) => {
-      setPreviewUrl(buildStoryUrl(productId, variant, imageId, nextFields));
+    (imageId: string | null, nextFields: StoryFields, isTransparent: boolean) => {
+      setPreviewUrl(
+        buildStoryUrl(productId, variant, imageId, nextFields, isTransparent),
+      );
     },
     [productId, variant],
   );
 
   function selectImage(id: string) {
     setSelectedId(id);
-    commitPreview(id, fields);
+    commitPreview(id, fields, transparent);
+  }
+
+  function toggleTransparent(next: boolean) {
+    setTransparent(next);
+    commitPreview(selectedId, fields, next);
   }
 
   function setField(key: string, value: string) {
@@ -81,19 +93,25 @@ export function useInstagramStudio({
   // Field inputs call this on blur; `fields` is already up to date from the
   // onChange that preceded losing focus.
   function commitFields() {
-    commitPreview(selectedId, fields);
+    commitPreview(selectedId, fields, transparent);
   }
 
   function resetFields() {
     const next = { ...defaultFields };
     setFields(next);
-    commitPreview(selectedId, next);
+    commitPreview(selectedId, next, transparent);
   }
 
   async function download() {
     // Build from current state, not the (possibly older) preview URL, so a
     // download right after an un-blurred edit still carries it.
-    const targetUrl = buildStoryUrl(productId, variant, selectedId, fields);
+    const targetUrl = buildStoryUrl(
+      productId,
+      variant,
+      selectedId,
+      fields,
+      transparent,
+    );
     setIsDownloading(true);
     try {
       const res = await fetch(targetUrl);
@@ -123,6 +141,8 @@ export function useInstagramStudio({
     setField,
     commitFields,
     resetFields,
+    transparent,
+    toggleTransparent,
     previewUrl,
     isDownloading,
     download,

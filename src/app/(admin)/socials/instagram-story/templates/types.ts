@@ -17,6 +17,12 @@ export type StoryRenderContext = {
   logoUrl: string;
   /** SOLD stamp seal as a data URI (transparent PNG) — used by `sold`. */
   sealUrl: string;
+  /**
+   * Drop the opaque frame background and product photo, emitting a PNG with
+   * a transparent canvas — gradients, copy, logo and seal only. For
+   * overlaying the story chrome on top of a video. Defaults to `false`.
+   */
+  transparent: boolean;
 };
 
 /** A template: pure function from context to satori JSX. */

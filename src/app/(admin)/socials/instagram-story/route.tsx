@@ -91,9 +91,14 @@ export async function GET(request: Request) {
     url.searchParams,
   );
 
+  // `?transparent=1` drops the frame background + product photo, emitting a
+  // PNG with a transparent canvas (gradients/copy/logo/seal only) for
+  // overlaying the story chrome on top of a video.
+  const transparent = url.searchParams.get("transparent") === "1";
+
   const render = STORY_RENDERERS[variant];
   return new ImageResponse(
-    render({ fields, photoUrl, logoUrl, sealUrl }),
+    render({ fields, photoUrl, logoUrl, sealUrl, transparent }),
     {
       width: STORY_WIDTH,
       height: STORY_HEIGHT,

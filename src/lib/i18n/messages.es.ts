@@ -81,6 +81,8 @@ export const m = {
       resetLabel: "Restablecer",
       previewLabel: "Vista previa",
       previewLoading: "Generando…",
+      transparentLabel: "Fondo transparente",
+      transparentHint: "Sin foto del producto — PNG para superponer en vídeo",
       downloadLabel: "Descargar imagen",
       downloadedToast: "Imagen descargada",
       errorToast: "No se pudo generar la imagen",

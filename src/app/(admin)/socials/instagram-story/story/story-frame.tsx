@@ -33,12 +33,19 @@ export function StoryFrame({
   children,
   dim = "split",
   overlay,
+  transparent = false,
 }: {
   photoUrl: string;
   logoUrl: string;
   children: ReactNode;
   dim?: "split" | "flat";
   overlay?: ReactNode;
+  /**
+   * Omit the opaque frame background + product photo so the PNG keeps a
+   * transparent canvas (gradients/copy/logo/seal only) — for overlaying on
+   * a video. The gradients already fade to `rgba(...,0)`, so they survive.
+   */
+  transparent?: boolean;
 }) {
   return (
     <div
@@ -47,10 +54,10 @@ export function StoryFrame({
         display: "flex",
         width: STORY_WIDTH,
         height: STORY_HEIGHT,
-        backgroundColor: STORY_COLORS.ink,
+        backgroundColor: transparent ? "transparent" : STORY_COLORS.ink,
       }}
     >
-      {dim === "flat" ? (
+      {transparent ? null : dim === "flat" ? (
         /* Blurred photo. satori ignores `backdrop-filter` and `filter` on
            an <img>, but DOES apply `filter` to a parent's whole subtree —
            so the blur lives on this clipping wrapper. The photo bleeds

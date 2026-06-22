@@ -14,6 +14,7 @@ export function renderSoldStory({
   photoUrl,
   logoUrl,
   sealUrl,
+  transparent,
 }: StoryRenderContext) {
   return (
     <Story.Frame
@@ -21,6 +22,7 @@ export function renderSoldStory({
       logoUrl={logoUrl}
       dim="flat"
       overlay={<Story.Seal sealUrl={sealUrl} />}
+      transparent={transparent}
     >
       <Story.TitleAccent title={fields.title} accent={fields.accent} />
       <Story.Cta />

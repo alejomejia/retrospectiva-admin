@@ -12,9 +12,10 @@ export function renderNewStory({
   fields,
   photoUrl,
   logoUrl,
+  transparent,
 }: StoryRenderContext) {
   return (
-    <Story.Frame photoUrl={photoUrl} logoUrl={logoUrl}>
+    <Story.Frame photoUrl={photoUrl} logoUrl={logoUrl} transparent={transparent}>
       <Story.Pill>{fields.badge}</Story.Pill>
       <Story.Eyebrow>{fields.eyebrow || null}</Story.Eyebrow>
       <Story.TitlePrice title={fields.title} priceLabel={fields.price || null} />

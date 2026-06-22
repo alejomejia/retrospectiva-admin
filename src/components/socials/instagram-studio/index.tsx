@@ -3,6 +3,8 @@
 import { Download, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { m } from "@/lib/i18n/messages.es";
 
 import { InstagramStudioFieldsForm } from "./instagram-studio-fields-form";
@@ -34,6 +36,21 @@ function InstagramStudioRoot(props: InstagramStudioProps) {
             selectedId={studio.selectedId}
             onSelect={studio.selectImage}
           />
+          <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
+            <div className="flex flex-col gap-0.5">
+              <Label htmlFor="story-transparent">
+                {m.socials.studio.transparentLabel}
+              </Label>
+              <span className="text-caplet text-muted-foreground">
+                {m.socials.studio.transparentHint}
+              </span>
+            </div>
+            <Switch
+              id="story-transparent"
+              checked={studio.transparent}
+              onCheckedChange={studio.toggleTransparent}
+            />
+          </div>
         </section>
 
         <section className="flex flex-col gap-3">
