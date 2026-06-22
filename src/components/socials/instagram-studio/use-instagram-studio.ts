@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { m } from "@/lib/i18n/messages.es";
+import { devError } from "@/lib/utils/dev";
 import {
   STORY_FIELDS,
   type StoryFields,
@@ -34,6 +35,27 @@ function buildStoryUrl(
 }
 
 /**
+ * Builds the video-render URL: same copy as the still, composited over the
+ * chosen product video. The route forces the chrome transparent (the video is
+ * the background), so no `imageId`/`transparent` here.
+ */
+function buildStoryVideoUrl(
+  productId: string,
+  variant: StoryVariantKey,
+  videoId: string | null,
+  fields: StoryFields,
+): string {
+  const params = new URLSearchParams();
+  params.set("variant", variant);
+  params.set("productId", productId);
+  if (videoId) params.set("videoId", videoId);
+  for (const [key, value] of Object.entries(fields)) {
+    params.set(key, value);
+  }
+  return `/socials/instagram-story/video?${params.toString()}`;
+}
+
+/**
  * State + actions for the Instagram studio: the background photo, the
  * editable copy, the preview URL they map to, and the fetch→blob→anchor
  * download.
@@ -48,18 +70,24 @@ export function useInstagramStudio({
   productId,
   variant,
   images,
+  videos,
   defaultFields,
 }: InstagramStudioProps) {
   const featuredId = images[0]?.id ?? null;
+  const featuredVideoId = videos[0]?.id ?? null;
   const fieldDefs = STORY_FIELDS[variant];
 
   const [selectedId, setSelectedId] = useState<string | null>(featuredId);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(
+    featuredVideoId,
+  );
   const [fields, setFields] = useState<StoryFields>(() => ({
     ...defaultFields,
   }));
   // Background photo on by default; toggling off emits a transparent PNG.
   const [transparent, setTransparent] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingVideo, setIsDownloadingVideo] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(() =>
     buildStoryUrl(productId, variant, featuredId, defaultFields, false),
   );
@@ -133,6 +161,53 @@ export function useInstagramStudio({
     }
   }
 
+  // Composites the chrome over the selected product video (server-side ffmpeg)
+  // and downloads the mp4. Slow relative to the still — the button shows a
+  // pending state for the whole encode.
+  async function downloadVideo() {
+    if (!selectedVideoId) return;
+    const targetUrl = buildStoryVideoUrl(
+      productId,
+      variant,
+      selectedVideoId,
+      fields,
+    );
+    setIsDownloadingVideo(true);
+    try {
+      const res = await fetch(targetUrl);
+      if (!res.ok) {
+        // The route returns the underlying error text in the body — log the
+        // full thing to the browser console (greppable, copy-pasteable) and
+        // show a trimmed version in the toast.
+        const detail = await res.text().catch(() => "");
+        devError("video generation failed", {
+          status: res.status,
+          url: targetUrl,
+          detail,
+        });
+        throw new Error(detail || `status ${res.status}`);
+      }
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `retrospectiva-${variant}-${productId}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      toast.success(m.socials.studio.downloadedToast);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      devError("video download error", err);
+      toast.error(m.socials.studio.videoErrorToast, {
+        description: detail.slice(0, 300),
+      });
+    } finally {
+      setIsDownloadingVideo(false);
+    }
+  }
+
   return {
     selectedId,
     selectImage,
@@ -146,5 +221,11 @@ export function useInstagramStudio({
     previewUrl,
     isDownloading,
     download,
+    hasVideos: videos.length > 0,
+    videos,
+    selectedVideoId,
+    selectVideo: setSelectedVideoId,
+    isDownloadingVideo,
+    downloadVideo,
   };
 }

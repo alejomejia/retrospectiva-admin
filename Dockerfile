@@ -31,6 +31,9 @@ RUN pnpm build
 
 # ---------- runner ----------
 FROM base AS runner
+# ffmpeg: the socials studio composites the story chrome over a product video
+# (src/app/(admin)/socials/instagram-story/video) by shelling out to it.
+RUN apk add --no-cache ffmpeg
 ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=builder /app/.next ./.next

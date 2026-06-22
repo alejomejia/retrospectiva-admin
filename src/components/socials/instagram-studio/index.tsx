@@ -1,11 +1,12 @@
 "use client";
 
-import { Download, RotateCcw } from "lucide-react";
+import { Download, Film, Loader2, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { m } from "@/lib/i18n/messages.es";
+import { cn } from "@/lib/utils/helpers";
 
 import { InstagramStudioFieldsForm } from "./instagram-studio-fields-form";
 import { InstagramStudioImagePicker } from "./instagram-studio-image-picker";
@@ -93,6 +94,60 @@ function InstagramStudioRoot(props: InstagramStudioProps) {
           <Download className="size-4" />
           {m.socials.studio.downloadLabel}
         </Button>
+
+        {studio.hasVideos ? (
+          <>
+            {studio.videos.length > 1 ? (
+              <div className="flex flex-col gap-2">
+                <span className="text-caplet text-muted-foreground">
+                  {m.socials.studio.selectVideoLabel}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {studio.videos.map((video, i) => (
+                    <button
+                      key={video.id}
+                      type="button"
+                      onClick={() => studio.selectVideo(video.id)}
+                      className={cn(
+                        "relative size-14 overflow-hidden rounded-md border bg-muted",
+                        studio.selectedVideoId === video.id
+                          ? "border-primary ring-2 ring-primary/40"
+                          : "border-border",
+                      )}
+                    >
+                      {video.posterUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          alt={`${i + 1}`}
+                          src={video.posterUrl}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <Film className="absolute inset-0 m-auto size-5 text-muted-foreground" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={studio.downloadVideo}
+              disabled={studio.isDownloadingVideo}
+            >
+              {studio.isDownloadingVideo ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Film className="size-4" />
+              )}
+              {studio.isDownloadingVideo
+                ? m.socials.studio.downloadVideoPending
+                : m.socials.studio.downloadVideoLabel}
+            </Button>
+          </>
+        ) : null}
       </div>
     </div>
   );

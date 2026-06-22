@@ -84,8 +84,12 @@ export const m = {
       transparentLabel: "Fondo transparente",
       transparentHint: "Sin foto del producto — PNG para superponer en vídeo",
       downloadLabel: "Descargar imagen",
-      downloadedToast: "Imagen descargada",
+      downloadVideoLabel: "Descargar vídeo",
+      downloadVideoPending: "Generando vídeo…",
+      selectVideoLabel: "Vídeo de fondo",
+      downloadedToast: "Descarga lista",
       errorToast: "No se pudo generar la imagen",
+      videoErrorToast: "No se pudo generar el vídeo",
     },
     // UI labels for each editable text slot. The slot content stays English
     // (the asset is English-only); only these labels are Spanish.

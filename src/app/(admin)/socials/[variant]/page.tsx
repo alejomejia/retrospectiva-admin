@@ -23,6 +23,7 @@ import {
   type StoryVariantKey,
 } from "@/lib/products/instagram-story-variants";
 import { listProductImages } from "@/lib/products/images-actions";
+import { listProductVideos } from "@/lib/products/videos-actions";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 
 /** How many products the no-search "latest" row shows vs. a search returns. */
@@ -137,6 +138,7 @@ export default async function SocialsVariantPage({
             productId={studio.productId}
             variant={variant}
             images={studio.images}
+            videos={studio.videos}
             defaultFields={studio.defaultFields}
           />
         ) : null}
@@ -167,6 +169,14 @@ async function loadStudioData(
     height: img.height,
   }));
 
+  const videoRows = await listProductVideos(productId);
+  const videos = videoRows.map((v) => ({
+    id: v.id,
+    posterUrl: v.posterR2Key
+      ? publicUrlFor(v.posterR2Key, R2_PUBLIC_BASE_URL)
+      : null,
+  }));
+
   const [oauth] = await db
     .select({ markupPercent: etsyOauth.markupPercent })
     .from(etsyOauth)
@@ -176,6 +186,7 @@ async function loadStudioData(
   return {
     productId,
     images,
+    videos,
     defaultFields: defaultStoryFields(variant, product, shopMarkupPercent),
   };
 }
