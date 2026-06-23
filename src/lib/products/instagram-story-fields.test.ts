@@ -39,6 +39,7 @@ describe("defaultStoryFields", () => {
       accent: "Gone",
       title: "Wool Coat",
       footerTagline: "One of a kind",
+      country: "",
     });
   });
 

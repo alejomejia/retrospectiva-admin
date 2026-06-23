@@ -74,6 +74,7 @@ function InstagramStudioRoot(props: InstagramStudioProps) {
             fields={studio.fields}
             onChange={studio.setField}
             onCommit={studio.commitFields}
+            onCommitField={studio.commitField}
           />
         </section>
       </div>

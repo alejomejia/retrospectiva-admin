@@ -9,6 +9,8 @@ import type {
   StoryFields,
 } from "@/lib/products/instagram-story-fields";
 
+import { InstagramStudioCountryField } from "./instagram-studio-country-field";
+
 /**
  * One labelled input per editable text slot of the current template, in
  * `STORY_FIELDS` order. Multiline slots get a textarea. Values are the
@@ -23,11 +25,14 @@ export function InstagramStudioFieldsForm({
   fields,
   onChange,
   onCommit,
+  onCommitField,
 }: {
   fieldDefs: readonly StoryFieldDef[];
   fields: StoryFields;
   onChange: (key: string, value: string) => void;
   onCommit: () => void;
+  /** Set + commit a single field atomically — for the country combobox. */
+  onCommitField: (key: string, value: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -37,7 +42,13 @@ export function InstagramStudioFieldsForm({
         return (
           <div key={def.key} className="flex flex-col gap-1.5">
             <Label htmlFor={id}>{m.socials.fields[def.key]}</Label>
-            {def.multiline ? (
+            {def.country ? (
+              <InstagramStudioCountryField
+                id={id}
+                value={value}
+                onChange={(code) => onCommitField(def.key, code)}
+              />
+            ) : def.multiline ? (
               <Textarea
                 id={id}
                 value={value}

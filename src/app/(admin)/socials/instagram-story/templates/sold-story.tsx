@@ -1,3 +1,5 @@
+import { composeSoldTagline } from "@/lib/products/instagram-story-countries";
+
 import { Story } from "../story";
 import type { StoryRenderContext } from "./types";
 
@@ -26,7 +28,9 @@ export function renderSoldStory({
     >
       <Story.TitleAccent title={fields.title} accent={fields.accent} />
       <Story.Cta />
-      <Story.Footer tagline={fields.footerTagline} />
+      <Story.Footer
+        tagline={composeSoldTagline(fields.footerTagline, fields.country ?? "")}
+      />
     </Story.Frame>
   );
 }

@@ -118,6 +118,15 @@ export function useInstagramStudio({
     setFields((prev) => ({ ...prev, [key]: value }));
   }
 
+  // Sets a field and commits the preview in one step, with the new value —
+  // for controls that change and commit in the same tick (e.g. the country
+  // combobox), where `commitFields` would otherwise read a stale `fields`.
+  function commitField(key: string, value: string) {
+    const next = { ...fields, [key]: value };
+    setFields(next);
+    commitPreview(selectedId, next, transparent);
+  }
+
   // Field inputs call this on blur; `fields` is already up to date from the
   // onChange that preceded losing focus.
   function commitFields() {
@@ -214,6 +223,7 @@ export function useInstagramStudio({
     fields,
     fieldDefs,
     setField,
+    commitField,
     commitFields,
     resetFields,
     transparent,

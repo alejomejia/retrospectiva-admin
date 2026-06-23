@@ -30,7 +30,8 @@ export type StoryFieldKey =
   | "title"
   | "price"
   | "accent"
-  | "footerTagline";
+  | "footerTagline"
+  | "country";
 
 export type StoryFieldDef = {
   key: StoryFieldKey;
@@ -38,6 +39,11 @@ export type StoryFieldDef = {
   multiline?: boolean;
   /** Empty value hides the element (vs. rendering an empty box). */
   nullable?: boolean;
+  /**
+   * Render a searchable country combobox (value is an ISO alpha-2 code)
+   * rather than a free-text input. See `instagram-story-countries.ts`.
+   */
+  country?: boolean;
 };
 
 /**
@@ -57,6 +63,7 @@ export const STORY_FIELDS: Record<StoryVariantKey, readonly StoryFieldDef[]> = {
     { key: "accent" },
     { key: "title", multiline: true },
     { key: "footerTagline" },
+    { key: "country", country: true, nullable: true },
   ],
 };
 
@@ -88,6 +95,7 @@ export function defaultStoryFields(
       accent: SOLD_ACCENT,
       title,
       footerTagline: FOOTER_TAGLINE,
+      country: "",
     };
   }
 

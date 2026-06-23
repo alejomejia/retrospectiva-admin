@@ -90,6 +90,10 @@ export const m = {
       downloadedToast: "Descarga lista",
       errorToast: "No se pudo generar la imagen",
       videoErrorToast: "No se pudo generar el vídeo",
+      countryPlaceholder: "Sin país",
+      countrySearchPlaceholder: "Buscar país…",
+      countryEmpty: "No se encontró ningún país.",
+      countryClear: "Quitar país",
     },
     // UI labels for each editable text slot. The slot content stays English
     // (the asset is English-only); only these labels are Spanish.
@@ -100,6 +104,7 @@ export const m = {
       price: "Precio",
       accent: "Palabra destacada",
       footerTagline: "Lema (pie)",
+      country: "País de destino",
     },
   },
 
