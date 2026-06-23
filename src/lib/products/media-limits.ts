@@ -5,8 +5,10 @@
  *   - `src/lib/products/videos-actions.ts` — server-side validation
  *     (defense in depth)
  *   - `src/components/forms/media-uploader.tsx` — client-side
- *     pre-checks, so oversize / over-length files are rejected in the
- *     browser BEFORE bytes hit the wire
+ *     pre-checks BEFORE bytes hit the wire: over-length videos are
+ *     rejected, but OVERSIZE videos are auto-trimmed (tail cut, in-
+ *     browser ffmpeg.wasm — see `src/lib/utils/trim-video.ts`) to fit
+ *     VIDEO_MAX_BYTES, then uploaded
  *   - `src/lib/i18n/messages.es.ts` — error + hint strings interpolate
  *     these values, so changing the limit auto-updates the UI copy
  *   - `next.config.ts` — the proxy/server-action body caps are sized

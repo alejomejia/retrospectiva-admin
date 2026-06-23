@@ -55,7 +55,8 @@ function isVideo(file: File): boolean {
  *
  *   - images → browser-side JPEG compression + EXIF strip + lazy HEIC
  *     decode, then `uploadProductImage`
- *   - videos → browser-side poster extraction (Canvas @ 1s), then
+ *   - videos → auto-trim to fit the size cap if oversize (ffmpeg.wasm,
+ *     tail cut), browser-side poster extraction (Canvas @ 1s), then
  *     `uploadProductVideo`
  *
  * The two pipelines stay distinct internally (different size budgets,
@@ -92,21 +93,42 @@ export function MediaUploader({ productId }: { productId: string }) {
               }
               imagesOk += 1;
             } else if (isVideo(raw)) {
-              // Client-side pre-checks: reject oversize / over-length
-              // BEFORE uploading anything. Same caps as the server
-              // (defense in depth) but with instant UX feedback and
-              // zero wasted bandwidth.
-              if (raw.size > VIDEO_MAX_BYTES) {
-                toast.error(
-                  `${raw.name}: ${m.errors.videoTooLarge(
-                    (raw.size / 1024 / 1024).toFixed(1),
-                    VIDEO_MAX_MB,
-                  )}`,
-                );
-                continue;
+              // Client-side pre-checks run BEFORE uploading anything —
+              // same caps as the server (defense in depth) but with
+              // instant UX feedback and zero wasted bandwidth.
+              //
+              // Oversize videos aren't rejected outright: we trim
+              // seconds off the end (in-browser, ffmpeg.wasm) until the
+              // file fits the cap, then upload the trimmed result. The
+              // oversize bytes never leave the browser. Only if trimming
+              // fails do we fall back to the "too large" rejection.
+              let video = raw;
+              if (video.size > VIDEO_MAX_BYTES) {
+                toast.info(`${raw.name}: ${m.toasts.videoTrimming(VIDEO_MAX_MB)}`);
+                try {
+                  const { trimVideoToFit } = await import(
+                    "@/lib/utils/trim-video"
+                  );
+                  const trimmed = await trimVideoToFit(video);
+                  video = trimmed.file;
+                  toast.success(
+                    `${raw.name}: ${m.toasts.videoTrimmed(
+                      trimmed.originalSeconds.toFixed(1),
+                      trimmed.keptSeconds.toFixed(1),
+                    )}`,
+                  );
+                } catch {
+                  toast.error(
+                    `${raw.name}: ${m.errors.videoTrimFailed(
+                      (raw.size / 1024 / 1024).toFixed(1),
+                      VIDEO_MAX_MB,
+                    )}`,
+                  );
+                  continue;
+                }
               }
               const { poster, durationMs, width, height } =
-                await extractVideoPoster(raw);
+                await extractVideoPoster(video);
               if (
                 durationMs !== null &&
                 durationMs > VIDEO_MAX_DURATION_MS
@@ -121,7 +143,7 @@ export function MediaUploader({ productId }: { productId: string }) {
               }
               const result = await uploadProductVideo({
                 productId,
-                video: raw,
+                video,
                 poster,
                 durationMs,
                 width,
