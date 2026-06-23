@@ -20,7 +20,7 @@ export function StoryFooter({ tagline }: { tagline: string }) {
           fontSize: 24,
           letterSpacing: 3,
           textTransform: "uppercase",
-          opacity: 0.6,
+          opacity: 0.9,
         }}
       >
         {tagline}
