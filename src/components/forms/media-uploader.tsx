@@ -93,31 +93,31 @@ export function MediaUploader({ productId }: { productId: string }) {
               }
               imagesOk += 1;
             } else if (isVideo(raw)) {
-              // Client-side pre-checks run BEFORE uploading anything —
-              // same caps as the server (defense in depth) but with
-              // instant UX feedback and zero wasted bandwidth.
-              //
-              // Oversize videos aren't rejected outright: we trim
-              // seconds off the end (in-browser, ffmpeg.wasm) until the
-              // file fits the cap, then upload the trimmed result. The
-              // oversize bytes never leave the browser. Only if trimming
-              // fails do we fall back to the "too large" rejection.
+              // Client-side preprocessing runs BEFORE uploading anything
+              // (in-browser, ffmpeg.wasm) so nothing wasteful hits the
+              // wire. Every video has its audio stripped — product clips
+              // never need sound — and an oversize clip then has its tail
+              // trimmed until it fits the cap (the oversize bytes never
+              // leave the browser). On failure we fall back: reject if the
+              // original is over the cap, otherwise upload it untouched.
               let video = raw;
-              if (video.size > VIDEO_MAX_BYTES) {
-                toast.info(`${raw.name}: ${m.toasts.videoTrimming(VIDEO_MAX_MB)}`);
-                try {
-                  const { trimVideoToFit } = await import(
-                    "@/lib/utils/trim-video"
-                  );
-                  const trimmed = await trimVideoToFit(video);
-                  video = trimmed.file;
+              toast.info(`${raw.name}: ${m.toasts.videoProcessing}`);
+              try {
+                const { prepareVideoForUpload } = await import(
+                  "@/lib/utils/trim-video"
+                );
+                const processed = await prepareVideoForUpload(video);
+                video = processed.file;
+                if (processed.trimmed) {
                   toast.success(
                     `${raw.name}: ${m.toasts.videoTrimmed(
-                      trimmed.originalSeconds.toFixed(1),
-                      trimmed.keptSeconds.toFixed(1),
+                      processed.originalSeconds.toFixed(1),
+                      processed.keptSeconds.toFixed(1),
                     )}`,
                   );
-                } catch {
+                }
+              } catch {
+                if (raw.size > VIDEO_MAX_BYTES) {
                   toast.error(
                     `${raw.name}: ${m.errors.videoTrimFailed(
                       (raw.size / 1024 / 1024).toFixed(1),
@@ -126,6 +126,9 @@ export function MediaUploader({ productId }: { productId: string }) {
                   );
                   continue;
                 }
+                // Under the cap but preprocessing failed (e.g. unreadable
+                // duration): upload the original as-is, audio included.
+                video = raw;
               }
               const { poster, durationMs, width, height } =
                 await extractVideoPoster(video);

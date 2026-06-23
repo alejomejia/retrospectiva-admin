@@ -87,7 +87,7 @@ describe("formatMeasurementBlock", () => {
     expect(block).toBe(
       [
         "Medidas:",
-        "- Hombro: 40cm",
+        "- Hombro a hombro: 40cm",
         "- Ancho de manga: Plano 18cm - Contorno 36cm",
         "- Pecho: Plano 50cm - Contorno 100cm",
         "- Largo: 70cm",

@@ -901,6 +901,7 @@ export const m = {
       const v = videos === 1 ? "1 video" : `${videos} videos`;
       return `Subido: ${i} y ${v}`;
     },
+    videoProcessing: "Procesando video (quitando audio)…",
     videoTrimming: (capMB: number) =>
       `El video supera ${capMB} MB; recortándolo para que quepa…`,
     videoTrimmed: (fromSec: string, toSec: string) =>
