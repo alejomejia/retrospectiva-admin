@@ -60,9 +60,13 @@ export function StoryFrame({
       {transparent ? null : dim === "flat" ? (
         /* Blurred photo. satori ignores `backdrop-filter` and `filter` on
            an <img>, but DOES apply `filter` to a parent's whole subtree —
-           so the blur lives on this clipping wrapper. The photo bleeds
-           `OVERSCAN`px past every edge so the blur samples real pixels
-           instead of feathering to transparent. */
+           so the blur lives on this wrapper. The photo bleeds `OVERSCAN`px
+           past every edge; deliberately NO `overflow: hidden` here — clipping
+           would crop the photo to the canvas *before* the blur runs, so the
+           blur would feather those hard edges to transparent and the ink
+           background would read through as a dark inner-shadow vignette on
+           all sides. Leaving it un-clipped keeps the feathered edges off the
+           visible canvas (the root crops to size), so the fill stays flat. */
         <div
           style={{
             position: "absolute",
@@ -71,7 +75,6 @@ export function StoryFrame({
             display: "flex",
             width: STORY_WIDTH,
             height: STORY_HEIGHT,
-            overflow: "hidden",
             filter: `blur(${STORY_DIM_BLUR}px)`,
           }}
         >

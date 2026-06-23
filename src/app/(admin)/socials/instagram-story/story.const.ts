@@ -52,12 +52,13 @@ export const STORY_GRADIENT_BOTTOM = `linear-gradient(0deg, rgba(26,25,20,0.94) 
 export const STORY_DIM_FLAT = `rgba(26,25,20,0.8)`;
 
 /**
- * Background-blur radius for the "sold" template's photo (px). Mirrors the
- * Figma `instagram-post-sold` overlay layer's 50px background blur. satori
- * can NOT render `backdrop-filter`, so the photo itself is blurred behind
- * the (sharp) flat veil instead — same look. `STORY_DIM_BLUR_OVERSCAN` is
- * how far the photo bleeds past each clipped edge so the blur samples real
- * pixels rather than feathering to transparent (must exceed the radius).
+ * Background-blur radius for the "sold" template's photo (px). satori can
+ * NOT render `backdrop-filter`, so the photo itself is blurred behind the
+ * (sharp) flat veil instead — same look. `STORY_DIM_BLUR_OVERSCAN` is how
+ * far the photo bleeds past every edge so its feathered blur edges land
+ * off the visible canvas (must comfortably exceed the radius — a Gaussian
+ * tail reaches ~3× the radius — and the wrapper must stay un-clipped, see
+ * `story-frame.tsx`).
  */
-export const STORY_DIM_BLUR = 30;
-export const STORY_DIM_BLUR_OVERSCAN = 60;
+export const STORY_DIM_BLUR = 18;
+export const STORY_DIM_BLUR_OVERSCAN = 96;
