@@ -60,21 +60,23 @@ export function StoryFrame({
       {transparent ? null : dim === "flat" ? (
         /* Blurred photo. satori ignores `backdrop-filter` and `filter` on
            an <img>, but DOES apply `filter` to a parent's whole subtree —
-           so the blur lives on this wrapper. The photo bleeds `OVERSCAN`px
-           past every edge; deliberately NO `overflow: hidden` here — clipping
-           would crop the photo to the canvas *before* the blur runs, so the
-           blur would feather those hard edges to transparent and the ink
-           background would read through as a dark inner-shadow vignette on
-           all sides. Leaving it un-clipped keeps the feathered edges off the
-           visible canvas (the root crops to size), so the fill stays flat. */
+           so the blur lives on this wrapper. A `blur()` feathers the
+           filtered element's *box* edges to transparent (satori sizes the
+           filter region from the wrapper box, not its overflowing children),
+           which would let the ink background read through as a dark
+           inner-shadow vignette. So the WRAPPER itself is overscanned —
+           offset `-OVERSCAN` on each side and `+2·OVERSCAN` in size — so its
+           feathered edges fall off the visible canvas (the root crops to
+           size) and the fill stays flat. The photo fills the oversized
+           wrapper. */
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
+            top: -STORY_DIM_BLUR_OVERSCAN,
+            left: -STORY_DIM_BLUR_OVERSCAN,
             display: "flex",
-            width: STORY_WIDTH,
-            height: STORY_HEIGHT,
+            width: STORY_WIDTH + STORY_DIM_BLUR_OVERSCAN * 2,
+            height: STORY_HEIGHT + STORY_DIM_BLUR_OVERSCAN * 2,
             filter: `blur(${STORY_DIM_BLUR}px)`,
           }}
         >
@@ -85,9 +87,6 @@ export function StoryFrame({
             width={STORY_WIDTH + STORY_DIM_BLUR_OVERSCAN * 2}
             height={STORY_HEIGHT + STORY_DIM_BLUR_OVERSCAN * 2}
             style={{
-              position: "absolute",
-              top: -STORY_DIM_BLUR_OVERSCAN,
-              left: -STORY_DIM_BLUR_OVERSCAN,
               width: STORY_WIDTH + STORY_DIM_BLUR_OVERSCAN * 2,
               height: STORY_HEIGHT + STORY_DIM_BLUR_OVERSCAN * 2,
               objectFit: "cover",
