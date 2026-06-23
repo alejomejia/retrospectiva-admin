@@ -47,7 +47,17 @@ export function derivePhase(
     return "running";
   }
 
-  if (!enrich) return "running"; // no row yet (e.g. just-deleted on retry)
+  // No enrich row. After a kick (handled above) this means the worker
+  // hasn't inserted the new row yet → running. Otherwise it's a product
+  // that simply never had an enrich run (e.g. an older/edited listing);
+  // fall back to the content snapshot like the pre-first-poll branch so
+  // we don't pin to "running" and poll `/ai-status` forever.
+  if (!enrich) {
+    if (kickedAt > 0) return "running"; // new run kicked, row not visible yet
+    return product.titleEs && product.titleEs.trim() !== ""
+      ? "succeeded"
+      : "running";
+  }
   if (enrich.status === "succeeded") return "succeeded";
   if (enrich.status === "failed") return "failed";
   return "running";
