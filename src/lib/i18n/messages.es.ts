@@ -901,11 +901,8 @@ export const m = {
       const v = videos === 1 ? "1 video" : `${videos} videos`;
       return `Subido: ${i} y ${v}`;
     },
-    videoProcessing: "Procesando video (quitando audio)…",
-    videoTrimming: (capMB: number) =>
-      `El video supera ${capMB} MB; recortándolo para que quepa…`,
-    videoTrimmed: (fromSec: string, toSec: string) =>
-      `Video recortado de ${fromSec}s a ${toSec}s para no superar el límite de tamaño.`,
+    videoProcessing:
+      "Procesando video (optimizando calidad y tamaño)… puede tardar unos segundos.",
   },
 
   errors: {
@@ -933,8 +930,8 @@ export const m = {
       `Tipo de archivo "${type}" no admitido. Usa JPEG, PNG, WebP o AVIF.`,
     videoTooLarge: (mb: string, capMB: number) =>
       `El video pesa ${mb} MB; máx. ${capMB} MB. Recórtalo o comprímelo externamente.`,
-    videoTrimFailed: (mb: string, capMB: number) =>
-      `El video pesa ${mb} MB; máx. ${capMB} MB. No se pudo recortar automáticamente; recórtalo o comprímelo externamente.`,
+    videoProcessingFailed:
+      "No se pudo procesar el video. Verifica que el archivo no esté dañado e inténtalo con otro.",
     videoTooLong: (s: string, capSec: number) =>
       `El video dura ${s}s; máx. ${capSec}s. Recórtalo más.`,
     unsupportedVideoType: (type: string) =>

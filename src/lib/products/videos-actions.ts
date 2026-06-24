@@ -19,11 +19,16 @@ import { uploadToR2 } from "@/lib/integrations/r2/upload";
 import { devGroup } from "@/lib/utils/dev";
 
 import {
-  VIDEO_MAX_BYTES,
   VIDEO_MAX_DURATION_MS,
   VIDEO_MAX_DURATION_SECONDS,
-  VIDEO_MAX_MB,
+  VIDEO_SOURCE_MAX_BYTES,
+  VIDEO_SOURCE_MAX_MB,
 } from "./media-limits";
+import {
+  TRANSCODED_EXTENSION,
+  TRANSCODED_MIME,
+  transcodeProductVideo,
+} from "./transcode-video";
 
 const dev = devGroup("videos");
 const EXT_FOR_MIME: Record<string, AllowedVideoExtension> = {
@@ -48,13 +53,13 @@ export type UploadVideoResult =
   | { ok: false; error: string };
 
 /**
- * Validates a video upload, pushes the video + (optional) poster to R2,
- * and inserts a `product_videos` row.
+ * Validates a video upload, transcodes the raw source to a size-optimized
+ * 1080p H.264/MP4 (synchronously — see `transcode-video.ts`), pushes the
+ * result + (optional) poster to R2, and inserts a `product_videos` row.
  *
- * No transcoding here — for a 2-user shop the storage savings of a
- * WASM/ffmpeg pipeline don't justify the dependency weight or the
- * server CPU spend. Phase 4 will trim/transcode for Etsy if their
- * compatibility ceiling forces our hand.
+ * The browser sends the RAW clip (up to VIDEO_SOURCE_MAX_BYTES); the row
+ * always records the TRANSCODED file's mime/size/dimensions, since that's
+ * what actually lives in R2 and gets served.
  */
 export async function uploadProductVideo(
   input: UploadVideoInput,
@@ -62,12 +67,12 @@ export async function uploadProductVideo(
   const session = await requireSession();
   const { productId, video, poster, durationMs, width, height } = input;
 
-  if (video.size > VIDEO_MAX_BYTES) {
+  if (video.size > VIDEO_SOURCE_MAX_BYTES) {
     return {
       ok: false,
       error: m.errors.videoTooLarge(
         (video.size / 1024 / 1024).toFixed(1),
-        VIDEO_MAX_MB,
+        VIDEO_SOURCE_MAX_MB,
       ),
     };
   }
@@ -99,11 +104,13 @@ export async function uploadProductVideo(
   if (!product) return { ok: false, error: m.errors.productNotFound };
 
   const uuid = randomUUID();
+  // The stored file is always the transcoded MP4, so the key carries the
+  // output extension — not the source container's (`ext`, validated above).
   const videoKey = generateVideoKey({
     productId,
     createdAt: product.createdAt,
     uuid,
-    extension: ext,
+    extension: TRANSCODED_EXTENSION,
   });
   const posterKey = poster
     ? generateVideoPosterKey({
@@ -113,12 +120,26 @@ export async function uploadProductVideo(
       })
     : null;
 
+  // Transcode the raw source to a size-optimized 1080p H.264/MP4 before
+  // anything touches R2. ffmpeg failures (undecodable file, etc.) abort
+  // the upload with a user-facing message rather than storing the raw.
+  let transcoded: Awaited<ReturnType<typeof transcodeProductVideo>>;
   try {
-    const videoBuffer = Buffer.from(await video.arrayBuffer());
+    const rawBuffer = Buffer.from(await video.arrayBuffer());
+    transcoded = await transcodeProductVideo(rawBuffer, ext, {
+      width: width ?? null,
+      height: height ?? null,
+    });
+  } catch (err) {
+    dev.error("transcode failed:", err);
+    return { ok: false, error: m.errors.videoProcessingFailed };
+  }
+
+  try {
     await uploadToR2({
       key: videoKey,
-      body: videoBuffer,
-      contentType: video.type,
+      body: transcoded.buffer,
+      contentType: TRANSCODED_MIME,
     });
 
     if (poster && posterKey) {
@@ -151,11 +172,11 @@ export async function uploadProductVideo(
       productId,
       r2Key: videoKey,
       posterR2Key: posterKey,
-      mimeType: video.type,
-      sizeBytes: video.size,
+      mimeType: TRANSCODED_MIME,
+      sizeBytes: transcoded.sizeBytes,
       durationMs: durationMs ?? null,
-      width: width ?? null,
-      height: height ?? null,
+      width: transcoded.width,
+      height: transcoded.height,
       order: nextOrder,
     })
     .returning({ id: productVideos.id });
@@ -172,7 +193,8 @@ export async function uploadProductVideo(
       videoId: row.id,
       key: videoKey,
       posterKey,
-      sizeBytes: video.size,
+      sizeBytes: transcoded.sizeBytes,
+      sourceSizeBytes: video.size,
       durationMs: durationMs ?? null,
     },
   });

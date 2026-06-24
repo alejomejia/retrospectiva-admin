@@ -46,6 +46,3 @@ design-system.html
 
 # docs
 docs/policies
-
-# ffmpeg.wasm core — copied from node_modules by scripts/copy-ffmpeg-core.mjs
-public/ffmpeg

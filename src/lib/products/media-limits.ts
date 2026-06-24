@@ -5,26 +5,34 @@
  *   - `src/lib/products/videos-actions.ts` — server-side validation
  *     (defense in depth)
  *   - `src/components/forms/media-uploader.tsx` — client-side
- *     pre-checks BEFORE bytes hit the wire: over-length videos are
- *     rejected, but OVERSIZE videos are auto-trimmed (tail cut, in-
- *     browser ffmpeg.wasm — see `src/lib/utils/trim-video.ts`) to fit
- *     VIDEO_MAX_BYTES, then uploaded
+ *     pre-checks BEFORE bytes hit the wire: videos over the duration
+ *     cap or over `VIDEO_SOURCE_MAX_BYTES` are rejected; anything that
+ *     passes is uploaded raw and transcoded server-side
+ *     (`src/lib/products/transcode-video.ts`) to a 1080p H.264/MP4
+ *     well under `VIDEO_MAX_BYTES`
  *   - `src/lib/i18n/messages.es.ts` — error + hint strings interpolate
  *     these values, so changing the limit auto-updates the UI copy
  *   - `next.config.ts` — the proxy/server-action body caps are sized
- *     above VIDEO_MAX_MB with a small multipart-overhead cushion (see
- *     comments in that file)
+ *     above VIDEO_SOURCE_MAX_MB with a small multipart-overhead cushion
+ *     (see comments in that file)
  *
- * Why 100 MB / 30 s: matches Etsy's hard cap exactly (their listing-
- * video limit is 100 MB and 60 s; we picked 30 s as a tighter shop-
- * level UX choice while keeping size at the Etsy ceiling). At 30 s
- * this fits everything iPhone produces up to 4K / 30fps comfortably;
- * only 4K / 60fps still rejects, which is fine — that resolution is
- * overkill for a product video and the file size is the giveaway.
+ * Two size limits, because raw and final are now different files:
+ *
+ *   - VIDEO_SOURCE_MAX_MB (400) — the raw upload cap. A 30 s 4K/60 phone
+ *     clip is ~150-350 MB; this leaves room to accept it for transcode.
+ *     The server body limit is sized just above this.
+ *   - VIDEO_MAX_MB (100) — the FINAL (transcoded) ceiling, matching
+ *     Etsy's hard cap exactly (their listing-video limit is 100 MB /
+ *     60 s; we picked 30 s as a tighter shop-level UX choice). The
+ *     1080p CRF-21 transcode lands far below this, but it stays as the
+ *     output sanity bound.
  */
 
 export const VIDEO_MAX_MB = 100;
 export const VIDEO_MAX_BYTES = VIDEO_MAX_MB * 1024 * 1024;
+
+export const VIDEO_SOURCE_MAX_MB = 400;
+export const VIDEO_SOURCE_MAX_BYTES = VIDEO_SOURCE_MAX_MB * 1024 * 1024;
 
 export const VIDEO_MAX_DURATION_SECONDS = 30;
 export const VIDEO_MAX_DURATION_MS = VIDEO_MAX_DURATION_SECONDS * 1000;

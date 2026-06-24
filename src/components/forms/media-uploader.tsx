@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { m } from "@/lib/i18n/messages.es";
 import { uploadProductImage } from "@/lib/products/images-actions";
 import {
-  VIDEO_MAX_BYTES,
   VIDEO_MAX_DURATION_MS,
   VIDEO_MAX_DURATION_SECONDS,
-  VIDEO_MAX_MB,
+  VIDEO_SOURCE_MAX_BYTES,
+  VIDEO_SOURCE_MAX_MB,
 } from "@/lib/products/media-limits";
 import { uploadProductVideo } from "@/lib/products/videos-actions";
 import { compressImage } from "@/lib/utils/compress-image";
@@ -93,45 +93,14 @@ export function MediaUploader({ productId }: { productId: string }) {
               }
               imagesOk += 1;
             } else if (isVideo(raw)) {
-              // Client-side preprocessing runs BEFORE uploading anything
-              // (in-browser, ffmpeg.wasm) so nothing wasteful hits the
-              // wire. Every video has its audio stripped — product clips
-              // never need sound — and an oversize clip then has its tail
-              // trimmed until it fits the cap (the oversize bytes never
-              // leave the browser). On failure we fall back: reject if the
-              // original is over the cap, otherwise upload it untouched.
-              let video = raw;
-              toast.info(`${raw.name}: ${m.toasts.videoProcessing}`);
-              try {
-                const { prepareVideoForUpload } = await import(
-                  "@/lib/utils/trim-video"
-                );
-                const processed = await prepareVideoForUpload(video);
-                video = processed.file;
-                if (processed.trimmed) {
-                  toast.success(
-                    `${raw.name}: ${m.toasts.videoTrimmed(
-                      processed.originalSeconds.toFixed(1),
-                      processed.keptSeconds.toFixed(1),
-                    )}`,
-                  );
-                }
-              } catch {
-                if (raw.size > VIDEO_MAX_BYTES) {
-                  toast.error(
-                    `${raw.name}: ${m.errors.videoTrimFailed(
-                      (raw.size / 1024 / 1024).toFixed(1),
-                      VIDEO_MAX_MB,
-                    )}`,
-                  );
-                  continue;
-                }
-                // Under the cap but preprocessing failed (e.g. unreadable
-                // duration): upload the original as-is, audio included.
-                video = raw;
-              }
+              // Client-side pre-checks run on the RAW clip BEFORE any
+              // bytes hit the wire (poster extraction also hands us the
+              // duration + source dimensions). The raw source is uploaded
+              // as-is and the server transcodes it to a size-optimized
+              // 1080p H.264/MP4 (`transcode-video.ts`) — so we only guard
+              // here against files too long or larger than the source cap.
               const { poster, durationMs, width, height } =
-                await extractVideoPoster(video);
+                await extractVideoPoster(raw);
               if (
                 durationMs !== null &&
                 durationMs > VIDEO_MAX_DURATION_MS
@@ -144,9 +113,21 @@ export function MediaUploader({ productId }: { productId: string }) {
                 );
                 continue;
               }
+              if (raw.size > VIDEO_SOURCE_MAX_BYTES) {
+                toast.error(
+                  `${raw.name}: ${m.errors.videoTooLarge(
+                    (raw.size / 1024 / 1024).toFixed(1),
+                    VIDEO_SOURCE_MAX_MB,
+                  )}`,
+                );
+                continue;
+              }
+              // Transcode happens server-side and takes a few seconds, so
+              // signal it before the (potentially large) upload starts.
+              toast.info(`${raw.name}: ${m.toasts.videoProcessing}`);
               const result = await uploadProductVideo({
                 productId,
-                video,
+                video: raw,
                 poster,
                 durationMs,
                 width,
@@ -209,7 +190,7 @@ export function MediaUploader({ productId }: { productId: string }) {
           {m.uploader.media.hintPhotos}
         </p>
         <p className="text-xs text-muted-foreground">
-          {m.uploader.media.hintVideos(VIDEO_MAX_MB, VIDEO_MAX_DURATION_SECONDS)}
+          {m.uploader.media.hintVideos(VIDEO_SOURCE_MAX_MB, VIDEO_MAX_DURATION_SECONDS)}
         </p>
       </div>
 
