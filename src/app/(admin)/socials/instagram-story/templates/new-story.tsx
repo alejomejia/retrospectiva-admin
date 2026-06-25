@@ -20,9 +20,11 @@ export function renderNewStory({
       <Story.Eyebrow>{fields.eyebrow || null}</Story.Eyebrow>
       <Story.TitlePrice
         title={fields.title}
-        priceLabel={fields.price || null}
+        priceLabel={fields.showPrice ? fields.price || null : null}
         originalPriceLabel={
-          fields.showDiscount ? fields.originalPrice || null : null
+          fields.showPrice && fields.showDiscount
+            ? fields.originalPrice || null
+            : null
         }
       />
       <Story.Cta />

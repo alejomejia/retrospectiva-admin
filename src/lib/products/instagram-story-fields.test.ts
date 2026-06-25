@@ -29,6 +29,7 @@ describe("defaultStoryFields", () => {
       badge: "New today",
       eyebrow: "1980S · S · EU 36 · UK 8 · US 4",
       title: "Wool Coat",
+      showPrice: "",
       price: "€130.99",
       originalPrice: "",
       showDiscount: "",

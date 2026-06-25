@@ -40,9 +40,14 @@ export function InstagramStudioFieldsForm({
       {fieldDefs.map((def) => {
         const id = `story-field-${def.key}`;
         const value = fields[def.key] ?? "";
-        // Hide a dependent control (e.g. the discount toggle) when the field
-        // it gates has no value to show.
-        if (def.dependsOn && !(fields[def.dependsOn] ?? "")) return null;
+        // Hide a dependent control (e.g. the discount toggle) when any field
+        // it depends on has no value to show.
+        if (def.dependsOn) {
+          const deps = Array.isArray(def.dependsOn)
+            ? def.dependsOn
+            : [def.dependsOn];
+          if (deps.some((dep) => !(fields[dep] ?? ""))) return null;
+        }
         if (def.toggle) {
           return (
             <div

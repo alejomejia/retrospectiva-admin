@@ -32,6 +32,7 @@ export type StoryFieldKey =
   | "badge"
   | "eyebrow"
   | "title"
+  | "showPrice"
   | "price"
   | "originalPrice"
   | "showDiscount"
@@ -56,10 +57,11 @@ export type StoryFieldDef = {
    */
   toggle?: boolean;
   /**
-   * Hide this control from the form when the named field is empty — e.g. a
-   * "show discount" toggle is pointless when there is no old price.
+   * Hide this control from the form when a named field is empty — e.g. a
+   * "show discount" toggle is pointless when there is no old price. Pass an
+   * array to require every listed field to be non-empty.
    */
-  dependsOn?: StoryFieldKey;
+  dependsOn?: StoryFieldKey | readonly StoryFieldKey[];
 };
 
 /**
@@ -72,8 +74,15 @@ export const STORY_FIELDS: Record<StoryVariantKey, readonly StoryFieldDef[]> = {
     { key: "badge" },
     { key: "eyebrow", nullable: true },
     { key: "title", multiline: true },
-    { key: "price", nullable: true },
-    { key: "showDiscount", toggle: true, dependsOn: "originalPrice" },
+    // Price is hidden by default; the toggle reveals both the price input
+    // and (when a sale is on) the discount toggle below it.
+    { key: "showPrice", toggle: true },
+    { key: "price", nullable: true, dependsOn: "showPrice" },
+    {
+      key: "showDiscount",
+      toggle: true,
+      dependsOn: ["showPrice", "originalPrice"],
+    },
     { key: "footerTagline" },
   ],
   sold: [
@@ -126,6 +135,9 @@ export function defaultStoryFields(
     badge: NEW_BADGE,
     eyebrow: storyEyebrow(product) ?? "",
     title,
+    // Price is hidden by default — turn on the `showPrice` toggle to reveal
+    // it. `price` is still pre-computed so it's ready the moment it's shown.
+    showPrice: "",
     price: storyPriceLabel(product, shopMarkupPercent) ?? "",
     originalPrice: originalPrice ?? "",
     showDiscount: originalPrice ? "1" : "",

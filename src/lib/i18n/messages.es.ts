@@ -101,6 +101,7 @@ export const m = {
       badge: "Etiqueta",
       eyebrow: "Línea superior (época · talla)",
       title: "Título",
+      showPrice: "Mostrar precio",
       price: "Precio",
       originalPrice: "Precio anterior",
       showDiscount: "Mostrar descuento",
