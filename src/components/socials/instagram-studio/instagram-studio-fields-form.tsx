@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { m } from "@/lib/i18n/messages.es";
 import type {
@@ -39,6 +40,26 @@ export function InstagramStudioFieldsForm({
       {fieldDefs.map((def) => {
         const id = `story-field-${def.key}`;
         const value = fields[def.key] ?? "";
+        // Hide a dependent control (e.g. the discount toggle) when the field
+        // it gates has no value to show.
+        if (def.dependsOn && !(fields[def.dependsOn] ?? "")) return null;
+        if (def.toggle) {
+          return (
+            <div
+              key={def.key}
+              className="flex items-center justify-between gap-2"
+            >
+              <Label htmlFor={id}>{m.socials.fields[def.key]}</Label>
+              <Switch
+                id={id}
+                checked={value === "1"}
+                onCheckedChange={(checked) =>
+                  onCommitField(def.key, checked ? "1" : "")
+                }
+              />
+            </div>
+          );
+        }
         return (
           <div key={def.key} className="flex flex-col gap-1.5">
             <Label htmlFor={id}>{m.socials.fields[def.key]}</Label>

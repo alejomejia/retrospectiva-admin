@@ -13,7 +13,11 @@
 
 import type { Product } from "@/lib/db/schema";
 
-import { storyEyebrow, storyPriceLabel } from "./instagram-story";
+import {
+  storyEyebrow,
+  storyOriginalPriceLabel,
+  storyPriceLabel,
+} from "./instagram-story";
 import type { StoryVariantKey } from "./instagram-story-variants";
 
 /** Static default copy shared across templates (was inline / in i18n). */
@@ -29,6 +33,8 @@ export type StoryFieldKey =
   | "eyebrow"
   | "title"
   | "price"
+  | "originalPrice"
+  | "showDiscount"
   | "accent"
   | "footerTagline"
   | "country";
@@ -44,6 +50,16 @@ export type StoryFieldDef = {
    * rather than a free-text input. See `instagram-story-countries.ts`.
    */
   country?: boolean;
+  /**
+   * Render an on/off Switch. The value is `"1"` (on) or `""` (off); the
+   * template reads it as a boolean gate, not display copy.
+   */
+  toggle?: boolean;
+  /**
+   * Hide this control from the form when the named field is empty — e.g. a
+   * "show discount" toggle is pointless when there is no old price.
+   */
+  dependsOn?: StoryFieldKey;
 };
 
 /**
@@ -57,6 +73,7 @@ export const STORY_FIELDS: Record<StoryVariantKey, readonly StoryFieldDef[]> = {
     { key: "eyebrow", nullable: true },
     { key: "title", multiline: true },
     { key: "price", nullable: true },
+    { key: "showDiscount", toggle: true, dependsOn: "originalPrice" },
     { key: "footerTagline" },
   ],
   sold: [
@@ -99,11 +116,19 @@ export function defaultStoryFields(
     };
   }
 
+  // The pre-discount price is computed, never user-edited (so it stays in
+  // sync with the product) — kept out of STORY_FIELDS and recomputed each
+  // render. The `showDiscount` toggle gates its strike-through; on by
+  // default whenever a sale is active.
+  const originalPrice = storyOriginalPriceLabel(product, shopMarkupPercent);
+
   return {
     badge: NEW_BADGE,
     eyebrow: storyEyebrow(product) ?? "",
     title,
     price: storyPriceLabel(product, shopMarkupPercent) ?? "",
+    originalPrice: originalPrice ?? "",
+    showDiscount: originalPrice ? "1" : "",
     footerTagline: FOOTER_TAGLINE,
   };
 }

@@ -5,6 +5,7 @@ import type { Product } from "@/lib/db/schema";
 import {
   formatEurFromCents,
   storyEyebrow,
+  storyOriginalPriceCents,
   storyPriceCents,
   storyPriceLabel,
 } from "./instagram-story";
@@ -97,6 +98,30 @@ describe("storyPriceCents", () => {
     expect(
       storyPriceCents(priceProduct({ listPriceCentsOverride: 4_800 }), 30),
     ).toBe(4_899);
+  });
+});
+
+describe("storyOriginalPriceCents", () => {
+  it("returns null without an active promotion", () => {
+    expect(
+      storyOriginalPriceCents(priceProduct({ basePriceCents: 10_000 }), 30),
+    ).toBeNull();
+  });
+
+  it("returns the inflated listing price the discount strikes through", () => {
+    // list 13000 → inflated charm 17399 (what storyPriceCents discounts from)
+    expect(
+      storyOriginalPriceCents(
+        priceProduct({ basePriceCents: 10_000, discountPercent: 25 }),
+        30,
+      ),
+    ).toBe(17_399);
+  });
+
+  it("returns null when there is no decided price", () => {
+    expect(
+      storyOriginalPriceCents(priceProduct({ discountPercent: 25 }), 30),
+    ).toBeNull();
   });
 });
 

@@ -18,7 +18,13 @@ export function renderNewStory({
     <Story.Frame photoUrl={photoUrl} logoUrl={logoUrl} transparent={transparent}>
       <Story.Pill>{fields.badge}</Story.Pill>
       <Story.Eyebrow>{fields.eyebrow || null}</Story.Eyebrow>
-      <Story.TitlePrice title={fields.title} priceLabel={fields.price || null} />
+      <Story.TitlePrice
+        title={fields.title}
+        priceLabel={fields.price || null}
+        originalPriceLabel={
+          fields.showDiscount ? fields.originalPrice || null : null
+        }
+      />
       <Story.Cta />
       <Story.Footer tagline={fields.footerTagline} />
     </Story.Frame>

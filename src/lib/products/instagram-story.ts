@@ -109,3 +109,42 @@ export function storyPriceLabel(
   const cents = storyPriceCents(product, shopMarkupPercent);
   return cents === null ? null : formatEurFromCents(cents);
 }
+
+/**
+ * The pre-discount "old" price (in cents) — the charm list price shown
+ * struck-through before the promo lands, i.e. the number
+ * `storyPriceCents` discounts away from. Returns `null` when no sale is
+ * active (so there is no "was" price to advertise) or when the product
+ * has no decided price yet.
+ *
+ * @param product - the product row (base price, overrides, discount)
+ * @param shopMarkupPercent - shop-wide markup, e.g. `etsy_oauth.markupPercent`
+ */
+export function storyOriginalPriceCents(
+  product: StoryPriceFields,
+  shopMarkupPercent: number,
+): number | null {
+  const discount = product.discountPercent;
+  if (discount === null || discount <= 0 || discount >= 100) return null;
+
+  const list = effectiveListCents({
+    basePriceCents: product.basePriceCents,
+    markupPercentOverride: product.markupPercentOverride,
+    listPriceCentsOverride: product.listPriceCentsOverride,
+    shopMarkupPercent: shopMarkupPercent ?? DEFAULT_MARKUP_PERCENT,
+  });
+  if (list === null) return null;
+  return inflatedListCents(list, discount);
+}
+
+/**
+ * Convenience: the formatted pre-discount price label for a product, or
+ * `null` when no sale is active (so the template omits the strike-through).
+ */
+export function storyOriginalPriceLabel(
+  product: StoryPriceFields,
+  shopMarkupPercent: number,
+): string | null {
+  const cents = storyOriginalPriceCents(product, shopMarkupPercent);
+  return cents === null ? null : formatEurFromCents(cents);
+}

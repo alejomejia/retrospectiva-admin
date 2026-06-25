@@ -102,6 +102,8 @@ export const m = {
       eyebrow: "Línea superior (época · talla)",
       title: "Título",
       price: "Precio",
+      originalPrice: "Precio anterior",
+      showDiscount: "Mostrar descuento",
       accent: "Palabra destacada",
       footerTagline: "Lema (pie)",
       country: "País de destino",

@@ -30,8 +30,16 @@ describe("defaultStoryFields", () => {
       eyebrow: "1980S · S · EU 36 · UK 8 · US 4",
       title: "Wool Coat",
       price: "€130.99",
+      originalPrice: "",
+      showDiscount: "",
       footerTagline: "One of a kind",
     });
+  });
+
+  it("fills the old price + show-discount toggle when a sale is active", () => {
+    const fields = defaultStoryFields("new", product({ discountPercent: 20 }), 30);
+    expect(fields.originalPrice).not.toBe("");
+    expect(fields.showDiscount).toBe("1");
   });
 
   it("computes the 'sold' field set (accent, no price/eyebrow)", () => {

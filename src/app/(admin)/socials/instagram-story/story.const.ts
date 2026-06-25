@@ -24,6 +24,8 @@ export const STORY_COLORS = {
   mustardEyebrow: "#e8c989",
   /** mustard-200 — price. */
   mustardPrice: "#d4a44f",
+  /** White at 30% — struck-through pre-discount "old" price. */
+  oldPrice: "rgba(255,255,255,0.3)",
   /** Frame background behind the photo. */
   ink: "#2a2a25",
 } as const;
