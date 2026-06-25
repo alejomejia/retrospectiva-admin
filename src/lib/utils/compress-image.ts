@@ -16,8 +16,8 @@ import imageCompression from "browser-image-compression";
  * meaningful.
  *
  * HEIC handling: iPhones shoot HEIC by default. `Canvas.drawImage`
- * can't decode HEIC in Chrome / Firefox, so we lazy-load `heic2any`
- * (libheif WASM) to convert HEIC → JPEG blob first, then run the
+ * can't decode HEIC in Chrome / Firefox, so we lazy-load `heic-to`
+ * (current libheif-js WASM) to convert HEIC → JPEG blob first, then run the
  * compression pipeline as normal. Loading is lazy so the WASM only
  * ships when someone actually drops a `.heic` file in.
  */
@@ -47,7 +47,7 @@ export type CompressedImage = {
  * preserves the filename stem but switches the extension to `.jpg`.
  *
  * Throws on:
- * - HEIC files when `heic2any` fails to load (network)
+ * - HEIC files when `heic-to` fails to load (network)
  * - Files the browser can't decode at all (corrupt, exotic formats)
  */
 export async function compressImage(input: File): Promise<CompressedImage> {
@@ -81,15 +81,14 @@ async function decodeHeicIfNeeded(input: File): Promise<File> {
     /\.heif$/i.test(input.name);
   if (!looksLikeHeic) return input;
 
-  // Dynamic import keeps the ~150KB libheif WASM out of the initial
-  // bundle for users who never upload HEIC.
-  const heic2any = (await import("heic2any")).default;
-  const converted = await heic2any({
+  // Dynamic import keeps the libheif WASM out of the initial bundle for
+  // users who never upload HEIC.
+  const { heicTo } = await import("heic-to");
+  const blob = await heicTo({
     blob: input,
-    toType: "image/jpeg",
+    type: "image/jpeg",
     quality: 0.95, // High quality for the intermediate; final pass re-encodes.
   });
-  const blob = Array.isArray(converted) ? converted[0]! : converted;
   return new File([blob], stripExtension(input.name) + ".jpg", {
     type: "image/jpeg",
     lastModified: Date.now(),
