@@ -70,6 +70,20 @@ export async function composeStoryVideo({
       "-c:v", "libx264",
       "-preset", "veryfast",
       "-crf", "23",
+      // Colour tags (container colr atom + matching H.264 VUI) so colour-
+      // managed players don't guess. The brand-coloured story chrome is
+      // authored in sRGB (CSS), so the transfer is tagged sRGB
+      // (iec61966-2-1), NOT bt709 — otherwise macOS QuickTime/Preview/
+      // Safari apply the bt709 gamma and shift the overlay's tones away
+      // from how it looks in the browser. Primaries + matrix stay bt709
+      // (sRGB shares bt709 primaries); the product video underneath is
+      // true bt709 but its photographic content is imperceptibly affected
+      // by the sRGB transfer, whereas the flat overlay colours are not.
+      "-color_primaries", "bt709",
+      "-color_trc", "iec61966-2-1",
+      "-colorspace", "bt709",
+      "-x264-params",
+      "colorprim=bt709:transfer=iec61966-2-1:colormatrix=bt709",
       "-movflags", "+faststart",
       outPath,
     ]);
