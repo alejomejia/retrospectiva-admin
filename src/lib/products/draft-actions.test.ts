@@ -42,6 +42,27 @@ vi.mock("@/lib/integrations/openai/ai-runs-log", () => ({
   latestRunForKind: latestRunForKindMock,
 }));
 
+// `runTranslation` writes the EN column to the DB in real code. The
+// mock simulates that side effect by stamping `titleEn` onto the row the
+// db mock returns, so the slug-freeze re-read in `markAsPublished` sees
+// the freshly-translated English title.
+const runTranslationMock = vi.fn(async (_id: string, field: string) => {
+  if (field === "titleEs") {
+    dbState.selectRow.titleEn = "Blue dress";
+  }
+});
+
+vi.mock("@/lib/integrations/openai/translate", () => ({
+  TRANSLATABLE_FIELDS: [
+    "titleEs",
+    "descriptionEs",
+    "etsyTagsEs",
+    "etsyMaterialsEs",
+  ],
+  runTranslation: runTranslationMock,
+  translateText: vi.fn().mockResolvedValue(""),
+}));
+
 const buyPriceDefaultMock = vi.fn().mockResolvedValue(null);
 vi.mock("./buy-price-defaults", () => ({
   getBuyPriceDefaultForClothingType: buyPriceDefaultMock,
@@ -185,6 +206,7 @@ beforeEach(() => {
   latestRunForKindMock.mockResolvedValue(null);
   featuredSlotFullForProductMock.mockReset();
   featuredSlotFullForProductMock.mockResolvedValue(false);
+  runTranslationMock.mockClear();
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-06-01T10:00:00.000Z"));
 });
@@ -394,7 +416,7 @@ describe("markAsPublished", () => {
     expect(dbState.updateCalls[0]?.values.slug).toMatch(/^blue-dress-/);
   });
 
-  it("falls back to the Spanish title when there is no English title", async () => {
+  it("translates the title before freezing the slug when there is no English title", async () => {
     dbState.selectRow = {
       status: "scheduled",
       slug: null,
@@ -403,7 +425,9 @@ describe("markAsPublished", () => {
     };
     const res = await markAsPublished("p1");
     expect(res.ok).toBe(true);
-    expect(dbState.updateCalls[0]?.values.slug).toMatch(/^vestido-azul-/);
+    // Translation must run so the slug is English, never the Spanish title.
+    expect(runTranslationMock).toHaveBeenCalledWith("p1", "titleEs");
+    expect(dbState.updateCalls[0]?.values.slug).toMatch(/^blue-dress-/);
   });
 
   it("keeps an existing frozen slug unchanged", async () => {

@@ -329,8 +329,22 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
 
     // Freeze the public store slug on first publish — once set it never
     // changes so shared / indexed URLs stay valid (mirrors `publish`).
-    // Prefer the English title; fall back to Spanish if untranslated.
-    const slug = row.slug ?? buildSlug(row.titleEn ?? row.titleEs, id);
+    // The slug MUST be English. Translation normally runs at the publish
+    // boundary (`runScheduledPublish`); a manual reconcile skips the
+    // worker, so a product that never ran through it can still have an
+    // empty `titleEn`. Translate the title here before freezing rather
+    // than fall back to Spanish — a Spanish slug would be permanent.
+    let titleEn = row.titleEn;
+    if (!row.slug && !titleEn?.trim()) {
+      await runTranslation(id, "titleEs");
+      const [fresh] = await db
+        .select({ titleEn: products.titleEn })
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1);
+      titleEn = fresh?.titleEn ?? null;
+    }
+    const slug = row.slug ?? buildSlug(titleEn ?? row.titleEs, id);
 
     await db
       .update(products)
