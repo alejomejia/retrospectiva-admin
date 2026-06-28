@@ -21,6 +21,7 @@
     "worker:log": "LOG_IMAGE_PLACEMENT_PROMPT=1 NODE_OPTIONS=--conditions=react-server tsx watch src/lib/queue/worker.ts",
     "hash-password": "tsx scripts/hash-password.ts",
     "etsy:taxonomy": "tsx scripts/fetch-etsy-taxonomy.ts",
+    "backfill:published-at": "tsx scripts/backfill-published-at.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

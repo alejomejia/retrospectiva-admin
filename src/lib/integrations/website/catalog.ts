@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { products } from "@/lib/db/schema";
@@ -10,11 +10,17 @@ const dev = devGroup("website.catalog");
 
 /**
  * Read side of the public store API (`/api/public/products`). Serves the
- * frozen `website_snapshot` each product last pushed to the storefront,
- * so the website sees exactly what the revalidation webhook delivered —
- * and per-field autosave edits stay invisible until an explicit action
- * re-pushes. Visibility is still gated on the LIVE status so a
- * sold/archived transition takes effect immediately on the next webhook.
+ * frozen `website_snapshot` each product last pushed to the storefront
+ * for all CONTENT (title/description/price/images/…), so per-field
+ * autosave edits stay invisible until an explicit action re-pushes.
+ *
+ * Publish METADATA (`status`, `published_at`, `sold_at`) is read LIVE from
+ * the row and overlaid on the snapshot — these only change through
+ * explicit publish/sold/archive actions (never autosave), so reading them
+ * live is safe AND avoids a subtle staleness bug: ordering + the NEW
+ * badge key off `published_at`, and if they were frozen in the snapshot a
+ * publish/backfill wouldn't take effect until every snapshot was rebuilt.
+ * Visibility is likewise gated on the LIVE status.
  *
  * Visibility model (mirrors the storefront):
  *   - `published` → live & purchasable ("available").
@@ -27,6 +33,32 @@ const dev = devGroup("website.catalog");
 
 /** Statuses surfaced on the public storefront, newest first. */
 const VISIBLE_STATUSES = ["published", "sold"] as const;
+
+/** Live publish metadata overlaid onto a served snapshot. */
+type LiveMeta = {
+  status: WebsitePayload["status"];
+  publishedAt: Date | null;
+  soldAt: Date | null;
+  createdAt: Date;
+};
+
+/**
+ * Overlay live publish metadata onto the frozen snapshot. Mirrors the
+ * `publishedAt` rule in `payload-mapper` (non-null only while published,
+ * fallback to creation date) but sourced from the LIVE row so order +
+ * NEW-badge reflect the current `published_at` without a snapshot rebuild.
+ */
+function withLiveMeta(snapshot: WebsitePayload, meta: LiveMeta): WebsitePayload {
+  return {
+    ...snapshot,
+    status: meta.status,
+    publishedAt:
+      meta.status === "published"
+        ? (meta.publishedAt ?? meta.createdAt).toISOString()
+        : null,
+    soldAt: meta.soldAt ? meta.soldAt.toISOString() : null,
+  };
+}
 
 export type CatalogList = {
   /** Every visible product (published + sold). */
@@ -61,23 +93,32 @@ async function resolveSnapshot(
 }
 
 /**
- * Returns all visible products as their frozen snapshot payloads plus
- * counts. A single malformed/unbuildable row is skipped with a dev
- * warning rather than failing the whole list.
+ * Returns all visible products as their frozen snapshot payloads (with
+ * live publish metadata overlaid) plus counts, ordered newest-published
+ * first by the LIVE `published_at`. A single malformed/unbuildable row is
+ * skipped with a dev warning rather than failing the whole list.
  */
 export async function getCatalog(): Promise<CatalogList> {
   const rows = await db
     .select({
       id: products.id,
       status: products.status,
+      publishedAt: products.publishedAt,
+      soldAt: products.soldAt,
+      createdAt: products.createdAt,
       snapshot: products.websiteSnapshot,
     })
     .from(products)
     .where(inArray(products.status, [...VISIBLE_STATUSES]))
-    .orderBy(desc(products.createdAt));
+    // Newest-published first. `published_at` is null only transiently
+    // (pre-backfill); push those last, then break ties by creation date.
+    .orderBy(
+      sql`${products.publishedAt} desc nulls last`,
+      desc(products.createdAt),
+    );
 
   const settled = await Promise.allSettled(
-    rows.map((r) => resolveSnapshot(r.id, r.snapshot)),
+    rows.map(async (r) => withLiveMeta(await resolveSnapshot(r.id, r.snapshot), r)),
   );
 
   const built: WebsitePayload[] = [];
@@ -101,7 +142,8 @@ export async function getCatalog(): Promise<CatalogList> {
 /**
  * Returns a single visible product by its frozen slug, or `null` when no
  * visible product matches (unpublished/archived slugs resolve to null so
- * the website can 404 cleanly). Serves the frozen snapshot.
+ * the website can 404 cleanly). Serves the frozen snapshot with live
+ * publish metadata overlaid.
  */
 export async function getCatalogProductBySlug(
   slug: string,
@@ -110,6 +152,9 @@ export async function getCatalogProductBySlug(
     .select({
       id: products.id,
       status: products.status,
+      publishedAt: products.publishedAt,
+      soldAt: products.soldAt,
+      createdAt: products.createdAt,
       snapshot: products.websiteSnapshot,
     })
     .from(products)
@@ -119,7 +164,7 @@ export async function getCatalogProductBySlug(
   if (!row || !VISIBLE_STATUSES.includes(row.status as never)) return null;
 
   try {
-    return await resolveSnapshot(row.id, row.snapshot);
+    return withLiveMeta(await resolveSnapshot(row.id, row.snapshot), row);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     dev.warn("catalog: product unbuildable", row.id, msg);
