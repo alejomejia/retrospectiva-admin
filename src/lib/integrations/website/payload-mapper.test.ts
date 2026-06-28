@@ -161,6 +161,18 @@ describe("buildWebsitePayload", () => {
     expect(out.kind).toBe("publish");
   });
 
+  it("derives publishedAt from createdAt, NOT updatedAt (NEW-badge stability)", async () => {
+    // Autosave bumps updatedAt; publishedAt must stay anchored to the
+    // immutable creation date so edits never re-flag a product as new.
+    state.products = [baseProduct()];
+    const out = await buildWebsitePayload({
+      productId: "prod-1",
+      kind: "publish",
+    });
+    expect(out.publishedAt).toBe("2026-05-01T00:00:00.000Z");
+    expect(out.publishedAt).not.toBe("2026-05-10T12:00:00.000Z");
+  });
+
   it("doubles boundary-doubled measurements (shirt → chest only)", async () => {
     state.products = [baseProduct()];
     state.images = [

@@ -50,6 +50,13 @@
       "when": 1782030471147,
       "tag": "0006_mature_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782643342681,
+      "tag": "0007_futuristic_guardian",
+      "breakpoints": true
     }
   ]
 }

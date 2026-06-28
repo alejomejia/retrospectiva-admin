@@ -32,6 +32,7 @@ export function StoryTitleAccent({
           fontSize: 92,
           lineHeight: "90.16px",
           color: STORY_COLORS.cream,
+          textWrap: "balance",
         }}
       >
         {title}

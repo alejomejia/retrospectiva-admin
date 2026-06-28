@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { WebsitePayload } from "@/lib/integrations/website/payload-mapper";
 import {
   boolean,
   pgEnum,
@@ -261,6 +262,14 @@ export const products = pgTable(
     // clean figure for earnings reporting. Required at the mark-sold
     // boundary; null for products sold before this column existed.
     soldPriceCents: integer("sold_price_cents"),
+    // Frozen copy of the last payload pushed to the public website
+    // (via the `website-webhook` worker). The public catalog API
+    // serves THIS — never the live columns — so per-field autosave
+    // edits to a published product stay invisible to the storefront
+    // until an explicit publish / update-website / sold / archive
+    // action re-pushes and re-freezes the snapshot. Null until a
+    // product has been pushed to the website at least once.
+    websiteSnapshot: jsonb("website_snapshot").$type<WebsitePayload>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),

@@ -1,5 +1,8 @@
 import { Worker } from "bullmq";
+import { eq } from "drizzle-orm";
 
+import { db } from "@/lib/db/client";
+import { products } from "@/lib/db/schema";
 import { logJobEvent } from "@/lib/queue/events-log";
 import type { WebsiteWebhookJob } from "@/lib/queue/queues";
 import { redis } from "@/lib/queue/redis";
@@ -10,9 +13,17 @@ import { buildWebsitePayload } from "./payload-mapper";
 /**
  * BullMQ worker for the `website-webhook` queue (Phase 7).
  *
- * Reads the product row, builds the bilingual payload, posts it
- * signed to `WEBSITE_WEBHOOK_URL`. Failures throw — BullMQ retries
- * per `DEFAULT_JOB_OPTIONS` (3 attempts, exponential backoff).
+ * Reads the product row, builds the bilingual payload, freezes it into
+ * `products.website_snapshot` (the public catalog API serves THAT, not
+ * the live columns — so autosaved edits never reach the storefront
+ * until an explicit action re-fires a webhook), then posts it signed to
+ * `WEBSITE_WEBHOOK_URL`. Failures throw — BullMQ retries per
+ * `DEFAULT_JOB_OPTIONS` (3 attempts, exponential backoff).
+ *
+ * Order matters: the snapshot is persisted BEFORE the POST. The POST is
+ * only a cache-bust signal; once the website re-pulls the catalog it
+ * must already see the fresh snapshot. A POST failure (retried) leaves
+ * the snapshot updated but the website serving its cached copy — safe.
  *
  * Event types written to `events`:
  *   - `website_webhook.started`
@@ -40,6 +51,10 @@ new Worker<WebsiteWebhookJob>(
 
     try {
       const payload = await buildWebsitePayload({ productId, kind });
+      await db
+        .update(products)
+        .set({ websiteSnapshot: payload })
+        .where(eq(products.id, productId));
       const result = await sendWebsiteWebhook(payload);
       const ms = Date.now() - t0;
       log(`completed · product=${productId} · kind=${kind} · ${ms}ms`);

@@ -338,7 +338,12 @@ export async function buildWebsitePayload(input: {
     },
     images: ordered,
     video,
-    publishedAt: row.status === "published" ? row.updatedAt.toISOString() : null,
+    // NEW-badge + arrivals order on the storefront key off this. It MUST
+    // be a stable timestamp: `updatedAt` moves on every autosave, which
+    // wrongly re-flagged edited products as "new" — so we use the
+    // immutable creation date instead. Null for sold pieces so they sink
+    // to the bottom of the publish-ordered grid.
+    publishedAt: row.status === "published" ? row.createdAt.toISOString() : null,
     soldAt: row.soldAt ? row.soldAt.toISOString() : null,
   };
 }
