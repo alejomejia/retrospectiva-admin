@@ -327,7 +327,11 @@ export const ENRICH_SYSTEM = fromEnv(
 
 // ----- Translation (Task 8) -----
 
-const TRANSLATE_ES_EN_DEFAULT = `Translate to English. Same tone, same length. Return only the translation.`;
+const TRANSLATE_ES_EN_DEFAULT = `Translate to English. Same tone, same length. Return only the translation.
+
+TITLE RULES (apply when translating a product title/name):
+- Never end the title with a period or any trailing punctuation.
+- If the title starts with a decade or year (e.g. "90s", "1990s", "70s"), the word right after it stays lowercase. Example: "90s red floral dress", not "90s Red floral dress".`;
 
 export const TRANSLATE_ES_EN = fromEnv(
   "TRANSLATE_ES_EN_PROMPT",
