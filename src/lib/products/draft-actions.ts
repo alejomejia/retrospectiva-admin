@@ -334,7 +334,15 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
 
     await db
       .update(products)
-      .set({ status: "published", slug, updatedAt: sql`now()` })
+      .set({
+        status: "published",
+        slug,
+        // Freeze the first-publish timestamp once (COALESCE) — a manual
+        // reconcile of an already-published-then-archived row must not
+        // reset its "new" age. Mirrors the publish worker.
+        publishedAt: sql`coalesce(${products.publishedAt}, now())`,
+        updatedAt: sql`now()`,
+      })
       .where(eq(products.id, id));
     dev.log("status → published (manual reconcile)", id);
 

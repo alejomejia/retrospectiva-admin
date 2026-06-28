@@ -262,6 +262,14 @@ export const products = pgTable(
     // clean figure for earnings reporting. Required at the mark-sold
     // boundary; null for products sold before this column existed.
     soldPriceCents: integer("sold_price_cents"),
+    // First-publish timestamp. Set ONCE when the product is first
+    // published (via the publish worker / manual reconcile) and never
+    // touched again — editing a live product must not move it. Drives
+    // the storefront "NEW" badge + "this week's arrivals" (recently
+    // *listed*, not recently created or edited). Null until first
+    // publish; backfilled for legacy rows from the earliest
+    // `etsy-publish.completed` event (fallback `created_at`).
+    publishedAt: timestamp("published_at", { withTimezone: true }),
     // Frozen copy of the last payload pushed to the public website
     // (via the `website-webhook` worker). The public catalog API
     // serves THIS — never the live columns — so per-field autosave

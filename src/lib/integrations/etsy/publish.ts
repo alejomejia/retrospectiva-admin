@@ -425,6 +425,10 @@ export async function runScheduledPublish(
     .set({
       status: "published",
       slug,
+      // Stamp the first-publish timestamp only once: COALESCE keeps any
+      // existing value so re-publishing an archived/re-listed product
+      // doesn't reset its "new" age. Drives the storefront NEW badge.
+      publishedAt: sql`coalesce(${products.publishedAt}, now())`,
       updatedAt: sql`now()`,
     })
     .where(eq(products.id, productId));
