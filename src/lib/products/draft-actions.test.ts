@@ -333,11 +333,10 @@ describe("archiveProduct", () => {
     expect(dbState.updateCalls[0]?.values).toMatchObject({
       status: "archived",
     });
-    expect(webhookAddMock).toHaveBeenCalledWith(
-      "archive",
-      { productId: "p1", kind: "archive" },
-      { jobId: "archive-p1" },
-    );
+    expect(webhookAddMock).toHaveBeenCalledWith("archive", {
+      productId: "p1",
+      kind: "archive",
+    });
   });
 });
 
@@ -351,11 +350,10 @@ describe("markAsSold", () => {
       soldPriceCents: 4200,
     });
     expect(dbState.updateCalls[0]?.values.soldAt).toBeDefined();
-    expect(webhookAddMock).toHaveBeenCalledWith(
-      "sold",
-      { productId: "p1", kind: "sold" },
-      { jobId: "sold-p1" },
-    );
+    expect(webhookAddMock).toHaveBeenCalledWith("sold", {
+      productId: "p1",
+      kind: "sold",
+    });
   });
 
   it("rejects a non-sellable status without writing or notifying", async () => {
@@ -389,11 +387,10 @@ describe("markAsPublished", () => {
     expect(res.ok).toBe(true);
     expect(dbState.updateCalls[0]?.values).toMatchObject({ status: "published" });
     expect(publishRemoveMock).toHaveBeenCalledWith("p1");
-    expect(webhookAddMock).toHaveBeenCalledWith(
-      "publish",
-      { productId: "p1", kind: "publish" },
-      { jobId: "publish-p1" },
-    );
+    expect(webhookAddMock).toHaveBeenCalledWith("publish", {
+      productId: "p1",
+      kind: "publish",
+    });
   });
 
   it("freezes a slug when the row has none", async () => {

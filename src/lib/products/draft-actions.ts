@@ -209,18 +209,21 @@ const SELLABLE_STATUSES: ReadonlySet<string> = new Set([
 /**
  * Best-effort website revalidation. Mirrors the publish path: a Redis
  * hiccup here must not fail the user's action, since the DB status is
- * already committed. jobId scopes coalescing per-product per-kind.
+ * already committed.
+ *
+ * NOTE: deliberately NO custom `jobId`. A `${kind}-${productId}` jobId
+ * coalesces — but BullMQ ignores `add()` for a jobId that still exists in
+ * Redis, INCLUDING a completed job retained by `removeOnComplete` (24 h).
+ * That silently dropped every repeat action on the same product within the
+ * window (a second "update website" did nothing). These are explicit,
+ * idempotent user actions, so each must enqueue its own job and run.
  */
 async function notifyWebsite(
   productId: string,
   kind: WebsiteWebhookKind,
 ): Promise<void> {
   try {
-    await websiteWebhookQueue.add(
-      kind,
-      { productId, kind },
-      { jobId: `${kind}-${productId}` },
-    );
+    await websiteWebhookQueue.add(kind, { productId, kind });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     dev.warn("website webhook enqueue failed (non-fatal)", productId, kind, msg);

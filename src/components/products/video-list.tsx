@@ -134,7 +134,7 @@ function VideoTile({
                 alt=""
                 className={cn(
                   "h-full w-full object-cover",
-                  isProcessing && "opacity-50",
+                  isProcessing && "opacity-05",
                 )}
               />
             ) : null}

@@ -89,11 +89,13 @@ export type AiImagePlacementJob = { productId: string };
  *                 on the store, flagged sold).
  *   - `archive` — operator pulls a product that wasn't sold.
  *
- * jobId = `${kind}-${productId}` so re-pushes of the same kind for
- * the same product coalesce — BullMQ ignores adds for an existing
- * jobId, which matches the desired "latest wins" semantics for
- * idempotent revalidation. NOTE: BullMQ forbids `:` in custom job
- * ids (key separator), so the parts join with `-`, not `:`.
+ * Each enqueue uses an auto-generated jobId (no custom id). An earlier
+ * `${kind}-${productId}` jobId coalesced re-pushes, but BullMQ ignores
+ * `add()` for a jobId still present in Redis — including a COMPLETED job
+ * retained by `removeOnComplete` (24 h). That silently dropped every
+ * repeat action on a product within the window (a second "update website"
+ * did nothing). The webhook rebuilds its payload from current state and is
+ * idempotent, so a fresh job per action is both correct and safe.
  */
 export const websiteWebhookQueue = new Queue("website-webhook", {
   connection: redis,

@@ -451,14 +451,13 @@ export async function runScheduledPublish(
   // best-effort: a Redis hiccup here must not flip the publish back
   // to failed, because the listing is already live on Etsy. The
   // BullMQ retry policy covers transient website failures inside
-  // the worker. jobId scopes coalescing per-product per-kind so a
-  // double-publish doesn't enqueue twice.
+  // the worker. NOTE: no custom jobId — a `publish-${productId}` jobId
+  // gets deduped against the retained completed job (removeOnComplete
+  // 24 h), which would silently drop a re-publish. The webhook rebuilds
+  // the payload from current state and is idempotent, so a fresh job
+  // each time is correct.
   try {
-    await websiteWebhookQueue.add(
-      "publish",
-      { productId, kind: "publish" },
-      { jobId: `publish-${productId}` },
-    );
+    await websiteWebhookQueue.add("publish", { productId, kind: "publish" });
   } catch (e) {
     const m = e instanceof Error ? e.message : String(e);
     dev.warn("website webhook enqueue failed (non-fatal)", productId, m);
