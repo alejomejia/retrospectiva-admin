@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import { etsyOauth, productVideos, products } from "@/lib/db/schema";
@@ -328,9 +328,16 @@ export async function runScheduledPublish(
   const [video] = await db
     .select()
     .from(productVideos)
-    .where(eq(productVideos.productId, productId))
+    .where(
+      and(
+        eq(productVideos.productId, productId),
+        // Only a transcoded video has bytes at `r2Key` to upload; skip
+        // rows still processing or that failed transcode.
+        eq(productVideos.status, "ready"),
+      ),
+    )
     .limit(1);
-  if (video) {
+  if (video?.r2Key) {
     const existingVideos =
       row.etsyListingId != null
         ? await getListingVideos(shop.shopId, listingId)

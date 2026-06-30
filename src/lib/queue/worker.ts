@@ -42,6 +42,8 @@ async function main() {
   await import("@/lib/integrations/openai/model-generate-worker"); // Task 8 (Model Studio)
   await import("@/lib/integrations/openai/image-placement-worker"); // Task 11 (per-product on-model image)
   await import("@/lib/integrations/website/webhook-worker"); // Phase 7 (outbound website webhook)
+  await import("@/lib/products/transcode-worker"); // Product video transcode (raw R2 → 1080p MP4)
+  await import("@/lib/products/video-reaper-worker"); // Reaps abandoned processing-video rows
 
   log("ready");
 

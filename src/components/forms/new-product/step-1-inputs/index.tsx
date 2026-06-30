@@ -113,7 +113,7 @@ export function Step1Inputs({
             {m.products.detail.videosTitle}
             {videoItems.length > 0 ? ` · ${videoItems.length}` : ""}
           </h3>
-          <VideoList videos={videoItems} />
+          <VideoList productId={product.id} videos={videoItems} />
         </div>
       </div>
 

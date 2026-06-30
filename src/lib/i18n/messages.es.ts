@@ -720,6 +720,10 @@ export const m = {
     moveDown: "Bajar",
     delete: "Eliminar",
     confirmDelete: "¿Eliminar este video? No se puede deshacer.",
+    processing: "Procesando…",
+    processingHint: "Optimizando el video. Puede tardar un momento.",
+    failed: "Error al procesar",
+    failedHint: "No se pudo procesar el video. Elimínalo e inténtalo de nuevo.",
   },
 
   settings: {

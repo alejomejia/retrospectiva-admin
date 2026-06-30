@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import { isDev } from "@/lib/utils/config";
 
 import {
+  deriveTranscodedVideoKey,
   formatDatePrefix,
   generateImageKey,
+  generateRawVideoKey,
   generateVideoKey,
   generateVideoPosterKey,
   productPrefix,
@@ -140,6 +142,61 @@ describe("generateVideoKey", () => {
       ).toThrow(/Unsupported video extension/);
     },
   );
+});
+
+describe("generateRawVideoKey", () => {
+  it("puts the raw source under its own video_raw bucket, keeping the source ext", () => {
+    expect(
+      generateRawVideoKey({
+        productId: "abc",
+        createdAt: CREATED_AT,
+        uuid: "uuid-1",
+        extension: "mov",
+      }),
+    ).toBe(`${PREFIX}/products/2026/05/15/abc/video_raw/uuid-1.mov`);
+  });
+
+  it.each(["avi", "mkv", "webp"])("rejects %s as a video", (ext) => {
+    expect(() =>
+      generateRawVideoKey({
+        productId: "p",
+        createdAt: CREATED_AT,
+        uuid: "u",
+        extension: ext,
+      }),
+    ).toThrow(/Unsupported video extension/);
+  });
+});
+
+describe("deriveTranscodedVideoKey", () => {
+  it("maps a raw key to the matching transcoded .mp4 key, preserving the stem", () => {
+    const rawKey = generateRawVideoKey({
+      productId: "abc",
+      createdAt: CREATED_AT,
+      uuid: "uuid-1",
+      extension: "mov",
+    });
+    expect(deriveTranscodedVideoKey(rawKey)).toBe(
+      generateVideoKey({
+        productId: "abc",
+        createdAt: CREATED_AT,
+        uuid: "uuid-1",
+        extension: "mp4",
+      }),
+    );
+  });
+
+  it("forces the .mp4 output extension regardless of source container", () => {
+    expect(
+      deriveTranscodedVideoKey(`${PREFIX}/products/2026/05/15/p/video_raw/u.webm`),
+    ).toBe(`${PREFIX}/products/2026/05/15/p/video/u.mp4`);
+  });
+
+  it("throws when handed a non-raw key (guards against overwriting the wrong object)", () => {
+    expect(() =>
+      deriveTranscodedVideoKey(`${PREFIX}/products/2026/05/15/p/video/u.mp4`),
+    ).toThrow(/Not a raw video key/);
+  });
 });
 
 describe("generateVideoPosterKey", () => {

@@ -1,3 +1,6 @@
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+
 import { PutObjectCommand, type S3Client } from "@aws-sdk/client-s3";
 
 import { R2_BUCKET, r2 } from "./client";
@@ -71,6 +74,51 @@ export async function uploadToR2({
       CacheControl: cacheControl,
       // NOTE: bucket is public via a custom domain (R2_PUBLIC_BASE_URL),
       // so we don't need to set ACL here — R2 ignores ACLs anyway.
+    }),
+  );
+  return key;
+}
+
+export type UploadFileToR2Input = {
+  key: string;
+  /** Absolute path to the local file to stream up. */
+  filePath: string;
+  contentType: string;
+  /** See {@link UploadToR2Input.cacheControl}. */
+  cacheControl?: string;
+  client?: S3Client;
+  bucket?: string;
+};
+
+/**
+ * Streams a local file to R2, never loading the whole file into memory.
+ * This is the upload half of the video transcode pipeline — the worker
+ * streams ffmpeg's MP4 output straight from disk to R2, so a large
+ * transcode result doesn't add a full-file Buffer copy on top of ffmpeg's
+ * own footprint. Use {@link uploadToR2} for small, already-in-memory
+ * payloads (posters, images).
+ *
+ * `Content-Length` is read from the file up front: a single PUT needs the
+ * length, and providing it lets the SDK stream the body straight through
+ * rather than buffering it to discover the size.
+ */
+export async function uploadFileToR2({
+  key,
+  filePath,
+  contentType,
+  cacheControl = CACHE_CONTROL_ONE_YEAR_IMMUTABLE,
+  client = r2,
+  bucket = R2_BUCKET,
+}: UploadFileToR2Input): Promise<string> {
+  const { size } = await stat(filePath);
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: createReadStream(filePath),
+      ContentLength: size,
+      ContentType: contentType,
+      CacheControl: cacheControl,
     }),
   );
   return key;

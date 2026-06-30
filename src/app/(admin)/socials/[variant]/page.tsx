@@ -23,7 +23,7 @@ import {
   type StoryVariantKey,
 } from "@/lib/products/instagram-story-variants";
 import { listProductImages } from "@/lib/products/images-actions";
-import { listProductVideos } from "@/lib/products/videos-actions";
+import { listReadyProductVideos } from "@/lib/products/videos-actions";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 
 /** How many products the no-search "latest" row shows vs. a search returns. */
@@ -169,7 +169,7 @@ async function loadStudioData(
     height: img.height,
   }));
 
-  const videoRows = await listProductVideos(productId);
+  const videoRows = await listReadyProductVideos(productId);
   const videos = videoRows.map((v) => ({
     id: v.id,
     posterUrl: v.posterR2Key

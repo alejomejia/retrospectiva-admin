@@ -34,6 +34,25 @@ const r2AccountId = requireEnv("R2_ACCOUNT_ID");
 const r2AccessKeyId = requireEnv("R2_ACCESS_KEY_ID");
 const r2SecretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY");
 
+/**
+ * R2's S3 API endpoint for this account. Exported so the presigner
+ * (`presign.ts`) can build/sign upload URLs against the same host the
+ * client talks to.
+ */
+export const R2_ENDPOINT = `https://${r2AccountId}.r2.cloudflarestorage.com`;
+
+/**
+ * Raw R2 credentials. Exported ONLY for `presign.ts`, which needs them to
+ * construct a standalone SigV4 signer (the `@aws-sdk/s3-request-presigner`
+ * package is unbuildable in this registry, so we sign with
+ * `@smithy/signature-v4` directly). Server-only module — these never reach
+ * a client bundle. NOTE: treat as secret; do not log.
+ */
+export const r2Credentials = {
+  accessKeyId: r2AccessKeyId,
+  secretAccessKey: r2SecretAccessKey,
+};
+
 const globalForR2 = globalThis as unknown as {
   __retrospectivaR2?: S3Client;
 };
@@ -42,11 +61,8 @@ export const r2 =
   globalForR2.__retrospectivaR2 ??
   new S3Client({
     region: "auto", // R2 ignores region but the SDK requires one.
-    endpoint: `https://${r2AccountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: r2AccessKeyId,
-      secretAccessKey: r2SecretAccessKey,
-    },
+    endpoint: R2_ENDPOINT,
+    credentials: r2Credentials,
     // NOTE: the SDK's default socket has NO timeout — a half-open
     // connection to R2 (network blip on the VPS / Cloudflare hiccup)
     // leaves `client.send()` awaiting forever. That stalls the video

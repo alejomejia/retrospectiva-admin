@@ -106,3 +106,37 @@ export type WebsiteWebhookJob = {
   productId: string;
   kind: WebsiteWebhookKind;
 };
+
+/**
+ * Product-video transcode. The browser uploads the RAW clip straight to
+ * R2 (presigned PUT — the app server never buffers it), then enqueues a
+ * job here. The worker (`src/lib/products/transcode-worker.ts`) streams
+ * the raw object to disk, runs ffmpeg → 1080p H.264/MP4, streams the
+ * result back to R2, flips the `product_videos` row to `ready`, and
+ * sweeps the raw temp object.
+ *
+ * jobId = `product_videos.id` so a re-finalize of the same row coalesces
+ * onto one job instead of stacking duplicate transcodes.
+ */
+export const videoTranscodeQueue = new Queue("video-transcode", {
+  connection: redis,
+  defaultJobOptions: DEFAULT_JOB_OPTIONS,
+});
+
+export type VideoTranscodeJob = { videoId: string };
+
+/**
+ * Periodic reaper for abandoned video uploads. A row stuck `processing`
+ * well past a normal transcode means the browser uploaded the raw clip to
+ * R2 but never called `finalizeVideoUpload` (e.g. the tab closed between
+ * the PUT and the finalize), so no transcode job exists and the row + its
+ * raw R2 object would linger forever. The worker
+ * (`video-reaper-worker.ts`) registers a repeatable job on this queue and
+ * sweeps them on a schedule.
+ */
+export const videoReaperQueue = new Queue("video-reaper", {
+  connection: redis,
+  defaultJobOptions: DEFAULT_JOB_OPTIONS,
+});
+
+export type VideoReaperJob = Record<string, never>;

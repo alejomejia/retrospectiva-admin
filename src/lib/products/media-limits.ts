@@ -7,20 +7,21 @@
  *   - `src/components/forms/media-uploader.tsx` — client-side
  *     pre-checks BEFORE bytes hit the wire: videos over the duration
  *     cap or over `VIDEO_SOURCE_MAX_BYTES` are rejected; anything that
- *     passes is uploaded raw and transcoded server-side
- *     (`src/lib/products/transcode-video.ts`) to a 1080p H.264/MP4
+ *     passes is uploaded RAW directly to R2 (presigned PUT — the app
+ *     server never sees it) and transcoded in the worker
+ *     (`src/lib/products/transcode-worker.ts`) to a 1080p H.264/MP4
  *     well under `VIDEO_MAX_BYTES`
  *   - `src/lib/i18n/messages.es.ts` — error + hint strings interpolate
  *     these values, so changing the limit auto-updates the UI copy
- *   - `next.config.ts` — the proxy/server-action body caps are sized
- *     above VIDEO_SOURCE_MAX_MB with a small multipart-overhead cushion
- *     (see comments in that file)
+ *   - `src/lib/products/videos-actions.ts` — `createVideoUpload`
+ *     enforces `VIDEO_SOURCE_MAX_BYTES` before minting the presigned URL
  *
  * Two size limits, because raw and final are now different files:
  *
  *   - VIDEO_SOURCE_MAX_MB (400) — the raw upload cap. A 30 s 4K/60 phone
  *     clip is ~150-350 MB; this leaves room to accept it for transcode.
- *     The server body limit is sized just above this.
+ *     Enforced client-side and in `createVideoUpload`; the bytes go
+ *     straight to R2 via presigned PUT, never through the app server.
  *   - VIDEO_MAX_MB (100) — the FINAL (transcoded) ceiling, matching
  *     Etsy's hard cap exactly (their listing-video limit is 100 MB /
  *     60 s; we picked 30 s as a tighter shop-level UX choice). The

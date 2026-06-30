@@ -23,6 +23,15 @@ importers:
       '@hookform/resolvers':
         specifier: 5.2.2
         version: 5.2.2(react-hook-form@7.75.0(react@19.2.4))
+      '@smithy/hash-node':
+        specifier: 4.3.0
+        version: 4.3.0
+      '@smithy/protocol-http':
+        specifier: 5.4.0
+        version: 5.4.0
+      '@smithy/signature-v4':
+        specifier: 5.4.0
+        version: 5.4.0
       '@tanstack/react-table':
         specifier: 8.21.3
         version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -2197,6 +2206,7 @@ packages:
   '@smithy/core@3.24.1':
     resolution: {integrity: sha512-3mT7o4qQyUWttYnVK3A0Z/u3Xha3E81tXn32Tz6vjZiUXhBrkEivpw1hBYfh84iFF9CSzkBU9Y1DJ3Q6RQ231g==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to bug in browser bundling instructions https://github.com/smithy-lang/smithy-typescript/issues/2025
 
   '@smithy/credential-provider-imds@4.3.0':
     resolution: {integrity: sha512-5gi+28FH+RurB2+tcRH1CK7KiLJ0dVnabjWLY3DgeFLiU45dbyrsq7NOYvMUcHgu9LVZH5F7G+Qk1GdXF0y6jg==}
@@ -4947,7 +4957,7 @@ snapshots:
       '@smithy/node-config-provider': 4.4.0
       '@smithy/property-provider': 4.3.0
       '@smithy/protocol-http': 5.4.0
-      '@smithy/signature-v4': 5.4.0
+      '@smithy/signature-v4': 5.4.1
       '@smithy/smithy-client': 4.13.0
       '@smithy/types': 4.14.1
       '@smithy/util-base64': 4.4.0
@@ -5176,7 +5186,7 @@ snapshots:
       '@aws-sdk/util-user-agent-browser': 3.972.10
       '@aws-sdk/util-user-agent-node': 3.973.24
       '@smithy/config-resolver': 4.5.0
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       '@smithy/fetch-http-handler': 5.4.0
       '@smithy/hash-node': 4.3.0
       '@smithy/invalid-dependency': 4.3.0
@@ -5217,7 +5227,7 @@ snapshots:
       '@aws-sdk/middleware-sdk-s3': 3.972.37
       '@aws-sdk/types': 3.973.8
       '@smithy/protocol-http': 5.4.0
-      '@smithy/signature-v4': 5.4.0
+      '@smithy/signature-v4': 5.4.1
       '@smithy/types': 4.14.1
       tslib: 2.8.1
 
@@ -6841,7 +6851,7 @@ snapshots:
 
   '@smithy/credential-provider-imds@4.3.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       '@smithy/types': 4.14.1
       tslib: 2.8.1
 
@@ -6873,7 +6883,7 @@ snapshots:
 
   '@smithy/hash-node@4.3.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       tslib: 2.8.1
 
   '@smithy/hash-stream-node@4.3.0':
@@ -6892,7 +6902,7 @@ snapshots:
 
   '@smithy/is-array-buffer@4.3.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       tslib: 2.8.1
 
   '@smithy/md5-js@4.3.0':
@@ -6938,22 +6948,22 @@ snapshots:
 
   '@smithy/property-provider@4.3.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       tslib: 2.8.1
 
   '@smithy/protocol-http@5.4.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       tslib: 2.8.1
 
   '@smithy/shared-ini-file-loader@4.5.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       tslib: 2.8.1
 
   '@smithy/signature-v4@5.4.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       '@smithy/types': 4.14.1
       tslib: 2.8.1
 
@@ -7000,7 +7010,7 @@ snapshots:
 
   '@smithy/util-config-provider@4.3.0':
     dependencies:
-      '@smithy/core': 3.24.0
+      '@smithy/core': 3.24.1
       tslib: 2.8.1
 
   '@smithy/util-config-provider@4.3.1':

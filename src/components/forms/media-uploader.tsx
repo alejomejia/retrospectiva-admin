@@ -14,10 +14,28 @@ import {
   VIDEO_SOURCE_MAX_BYTES,
   VIDEO_SOURCE_MAX_MB,
 } from "@/lib/products/media-limits";
-import { uploadProductVideo } from "@/lib/products/videos-actions";
+import {
+  createVideoUpload,
+  deleteProductVideo,
+  finalizeVideoUpload,
+} from "@/lib/products/videos-actions";
 import { compressImage } from "@/lib/utils/compress-image";
 import { extractVideoPoster } from "@/lib/utils/extract-video-poster";
 import { cn } from "@/lib/utils/helpers";
+
+/** Map a file extension to the video mime the server expects, used when
+ *  the browser leaves `File.type` empty (common for `.mov` picks). */
+const VIDEO_MIME_BY_EXT: Record<string, string> = {
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
+};
+
+function videoContentType(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return VIDEO_MIME_BY_EXT[ext] ?? "";
+}
 
 const ACCEPT = [
   // images
@@ -55,9 +73,11 @@ function isVideo(file: File): boolean {
  *
  *   - images → browser-side JPEG compression + EXIF strip + lazy HEIC
  *     decode, then `uploadProductImage`
- *   - videos → auto-trim to fit the size cap if oversize (ffmpeg.wasm,
- *     tail cut), browser-side poster extraction (Canvas @ 1s), then
- *     `uploadProductVideo`
+ *   - videos → browser-side poster extraction (Canvas @ 1s), then a
+ *     three-phase direct-to-R2 upload: `createVideoUpload` (presigned
+ *     PUT URL) → PUT the raw bytes straight to R2 → `finalizeVideoUpload`
+ *     (queues the worker transcode). The raw clip never touches the app
+ *     server, so a large video can't OOM it.
  *
  * The two pipelines stay distinct internally (different size budgets,
  * different processing), but the user sees one dropzone. Toast at the
@@ -95,12 +115,11 @@ export function MediaUploader({ productId }: { productId: string }) {
             } else if (isVideo(raw)) {
               // Client-side pre-checks run on the RAW clip BEFORE any
               // bytes hit the wire (poster extraction also hands us the
-              // duration + source dimensions). The raw source is uploaded
-              // as-is and the server transcodes it to a size-optimized
-              // 1080p H.264/MP4 (`transcode-video.ts`) — so we only guard
+              // duration). The raw source uploads DIRECTLY to R2 via a
+              // presigned URL — never through the app server — and the
+              // worker transcodes it to a 1080p H.264/MP4. We only guard
               // here against files too long or larger than the source cap.
-              const { poster, durationMs, width, height } =
-                await extractVideoPoster(raw);
+              const { poster, durationMs } = await extractVideoPoster(raw);
               if (
                 durationMs !== null &&
                 durationMs > VIDEO_MAX_DURATION_MS
@@ -122,21 +141,47 @@ export function MediaUploader({ productId }: { productId: string }) {
                 );
                 continue;
               }
-              // Transcode happens server-side and takes a few seconds, so
-              // signal it before the (potentially large) upload starts.
-              toast.info(`${raw.name}: ${m.toasts.videoProcessing}`);
-              const result = await uploadProductVideo({
+
+              // Phase 1: register the upload + get a presigned R2 PUT URL.
+              const created = await createVideoUpload({
                 productId,
-                video: raw,
+                contentType: videoContentType(raw),
+                sizeBytes: raw.size,
                 poster,
                 durationMs,
-                width,
-                height,
               });
-              if (!result.ok) {
-                toast.error(`${raw.name}: ${result.error}`);
+              if (!created.ok) {
+                toast.error(`${raw.name}: ${created.error}`);
                 continue;
               }
+
+              // Phase 2: upload the raw bytes straight to R2. On failure,
+              // drop the orphaned `processing` row so it doesn't linger.
+              try {
+                const put = await fetch(created.uploadUrl, {
+                  method: "PUT",
+                  body: raw,
+                  headers: { "Content-Type": created.contentType },
+                });
+                if (!put.ok) {
+                  throw new Error(`R2 PUT ${put.status}`);
+                }
+              } catch (putErr) {
+                await deleteProductVideo(created.videoId);
+                toast.error(
+                  `${raw.name}: ${
+                    putErr instanceof Error
+                      ? putErr.message
+                      : m.errors.uploadFailed
+                  }`,
+                );
+                continue;
+              }
+
+              // Phase 3: kick off the transcode. The tile shows as
+              // "processing" until the worker finishes.
+              await finalizeVideoUpload(created.videoId);
+              toast.info(`${raw.name}: ${m.toasts.videoProcessing}`);
               videosOk += 1;
             } else {
               toast.error(m.uploader.media.unsupportedType(raw.name));

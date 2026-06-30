@@ -96,6 +96,22 @@ export const aiRunStatus = pgEnum("ai_run_status", [
   "failed",
 ]);
 
+/**
+ * Lifecycle of a product video. The raw clip is uploaded directly to
+ * R2 (presigned PUT — the app server never buffers it), then a BullMQ
+ * worker transcodes it to a size-optimized 1080p H.264/MP4:
+ *
+ *   processing → ready   (transcode succeeded; `r2_key` now points at
+ *                         the final MP4 and `raw_r2_key` is cleared)
+ *   processing → failed  (ffmpeg/undecodable — `error` carries why;
+ *                         BullMQ already exhausted its retries)
+ */
+export const videoStatus = pgEnum("video_status", [
+  "processing",
+  "ready",
+  "failed",
+]);
+
 export const products = pgTable(
   "products",
   {
@@ -327,17 +343,40 @@ export const productVideos = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    /** The video object key. */
-    r2Key: text("r2_key").notNull(),
+    /**
+     * Transcode lifecycle. Rows start `processing` (raw clip uploaded to
+     * R2, transcode queued) and flip to `ready` or `failed` from the
+     * worker. The UI keys readiness off this column, not off `r2_key`.
+     */
+    status: videoStatus("status").notNull().default("processing"),
+    /**
+     * Final (transcoded) MP4 object key. Null while `processing` — the
+     * worker sets it when the transcode succeeds. The `<video>` player
+     * only renders once a row is `ready`.
+     */
+    r2Key: text("r2_key"),
+    /**
+     * Raw uploaded source key (`video_raw/` prefix), the input the worker
+     * transcodes. Set at upload time, cleared once transcode succeeds and
+     * the temp object is swept. Kept on a `failed` row so the source can
+     * be inspected or the job re-run.
+     */
+    rawR2Key: text("raw_r2_key"),
+    /** Failure reason when `status='failed'`; null otherwise. */
+    error: text("error"),
     /**
      * Browser-extracted poster image (WebP). Stored under the same
      * product prefix so a hard-delete by prefix sweeps both together.
      * Null if the browser couldn't decode the video frame.
      */
     posterR2Key: text("poster_r2_key"),
-    /** e.g. `video/mp4`, `video/quicktime`. Useful for the <video> element. */
-    mimeType: text("mime_type").notNull(),
-    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    /**
+     * Output container mime (always `video/mp4`). Null until the transcode
+     * completes — the raw source's type is intentionally not recorded.
+     */
+    mimeType: text("mime_type"),
+    /** Transcoded file size. Null until the transcode completes. */
+    sizeBytes: bigint("size_bytes", { mode: "number" }),
     /** Null if we couldn't read it during the client-side capture. */
     durationMs: integer("duration_ms"),
     width: integer("width"),

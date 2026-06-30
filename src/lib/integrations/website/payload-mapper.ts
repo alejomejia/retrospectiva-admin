@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db/client";
 import {
@@ -282,24 +282,32 @@ export async function buildWebsitePayload(input: {
     });
   }
 
+  // Storefront only ever gets a fully transcoded video — a `processing`
+  // or `failed` row has no playable bytes, so filter to `ready`.
   const [videoRow] = await db
     .select()
     .from(productVideos)
-    .where(eq(productVideos.productId, productId))
+    .where(
+      and(
+        eq(productVideos.productId, productId),
+        eq(productVideos.status, "ready"),
+      ),
+    )
     .orderBy(asc(productVideos.order))
     .limit(1);
-  const video: WebsiteVideo | null = videoRow
-    ? {
-        url: publicUrlFor(videoRow.r2Key, base),
-        posterUrl: videoRow.posterR2Key
-          ? publicUrlFor(videoRow.posterR2Key, base)
-          : null,
-        mimeType: videoRow.mimeType,
-        width: videoRow.width,
-        height: videoRow.height,
-        durationMs: videoRow.durationMs,
-      }
-    : null;
+  const video: WebsiteVideo | null =
+    videoRow && videoRow.r2Key
+      ? {
+          url: publicUrlFor(videoRow.r2Key, base),
+          posterUrl: videoRow.posterR2Key
+            ? publicUrlFor(videoRow.posterR2Key, base)
+            : null,
+          mimeType: videoRow.mimeType ?? "video/mp4",
+          width: videoRow.width,
+          height: videoRow.height,
+          durationMs: videoRow.durationMs,
+        }
+      : null;
 
   const listCents = effectiveListPriceCents(row);
   const compareAtPriceCents =

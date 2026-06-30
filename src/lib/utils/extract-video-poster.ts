@@ -28,7 +28,7 @@ const SEEK_TARGET_SECONDS = 1.0;
 // Hard ceiling on each browser-decode step. Some files (variable frame
 // rate, certain HEVC/MOV, mis-reported duration) load metadata but then
 // never fire `loadeddata`/`seeked` — leaving the promise pending forever.
-// Without this, `extractVideoPoster` never returns, so `uploadProductVideo`
+// Without this, `extractVideoPoster` never returns, so `createVideoUpload`
 // is never reached and the uploader spinner hangs with zero error client-
 // or server-side. On timeout we degrade to no-poster (the video still
 // uploads) instead of blocking the whole upload.

@@ -37,22 +37,20 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {
-      // Video uploads run through a server action (browser → Next → R2),
-      // and the RAW source is now sent for server-side transcode — a 30 s
-      // 4K/60 phone clip is ~150-350 MB. The user-facing source cap is
-      // 400 MB (VIDEO_SOURCE_MAX_MB in `src/lib/products/media-limits.ts`);
-      // 420 MB here gives ~20 MB of headroom for the multipart envelope.
-      // A client-side pre-check at 400 MB is the primary user-facing
-      // guard — this is the framework safety net.
-      bodySizeLimit: "420mb",
+      // Raw video clips NO LONGER transit the app server — the browser
+      // uploads them directly to R2 via a presigned PUT (see
+      // `createVideoUpload` + `r2/presign.ts`), and the worker transcodes
+      // them. So server-action bodies are now only small payloads
+      // (compressed images, the tiny WebP video poster). 8 MB is ample
+      // headroom; keeping it low means a large body can't buffer in — and
+      // OOM — the Next.js process, which is the failure this pipeline
+      // exists to prevent.
+      bodySizeLimit: "8mb",
     },
-    // Next 16 buffers every request body so proxy.ts and the route
-    // handler can both read it. Default is 10 MB; we need it ≥ the
-    // server-action cap, otherwise the proxy clips the body and the
-    // action parses a torn multipart payload (the "Unexpected end of
-    // form" failure). Kept identical to bodySizeLimit so the two
-    // guards agree.
-    proxyClientMaxBodySize: "420mb",
+    // Next 16 buffers every request body so proxy.ts and the route handler
+    // can both read it. Kept in lockstep with `bodySizeLimit` so the two
+    // guards agree; both are small now that the big upload bypasses the app.
+    proxyClientMaxBodySize: "8mb",
   },
 };
 

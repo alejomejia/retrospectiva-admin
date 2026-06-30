@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 import { requireSession } from "@/lib/auth/require-session";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
-import { listProductVideos } from "@/lib/products/videos-actions";
+import { listReadyProductVideos } from "@/lib/products/videos-actions";
 import { devGroup } from "@/lib/utils/dev";
 
 import { prepareStoryRender } from "../story-render";
@@ -38,13 +38,14 @@ export async function GET(request: Request) {
   const videoId = url.searchParams.get("videoId");
   const variant = url.searchParams.get("variant") ?? "new";
 
-  const videos = await listProductVideos(prepared.productId);
+  const videos = await listReadyProductVideos(prepared.productId);
   if (videos.length === 0) {
     log.warn("no videos for product", prepared.productId);
     return new Response("No videos for this product", { status: 404 });
   }
   const chosen = videos.find((v) => v.id === videoId) ?? videos[0];
-  const videoUrl = publicUrlFor(chosen.r2Key, R2_PUBLIC_BASE_URL);
+  // `listReadyProductVideos` only returns transcoded rows, so r2Key is set.
+  const videoUrl = publicUrlFor(chosen.r2Key ?? "", R2_PUBLIC_BASE_URL);
 
   log.log("request", {
     productId: prepared.productId,

@@ -1,7 +1,4 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 
 import { devGroup } from "@/lib/utils/dev";
 
@@ -9,8 +6,12 @@ const dev = devGroup("transcode-video");
 
 /**
  * Server-side product-video transcode via the system `ffmpeg` (installed
- * in the image — see Dockerfile). Runs synchronously inside the upload
- * action on temp files under `os.tmpdir()`.
+ * in the image — see Dockerfile). Runs in the BullMQ transcode worker
+ * (`transcode-worker.ts`) on local temp files: the worker streams the raw
+ * R2 object to `inPath`, calls this, then streams `outPath` back to R2.
+ * Operating on file paths (never Buffers) keeps peak memory bounded to
+ * ffmpeg's own working set regardless of clip size — the whole reason the
+ * transcode moved off the request path and into the worker.
  *
  * Goal: keep near-source quality while cutting file size to a fraction of
  * a phone's 4K/60 original. The recipe:
@@ -81,80 +82,76 @@ const BT709_OUTPUT_FLAGS = [
   "-x264-params", "colorprim=bt709:transfer=bt709:colormatrix=bt709",
 ];
 
-export type TranscodedVideo = {
-  /** H.264/MP4 bytes, ready to push to R2. */
-  buffer: Buffer;
-  /** Output size in bytes. */
-  sizeBytes: number;
-  /** Output dimensions (computed from the source + 1080p cap). Null when
-   *  the source dimensions weren't known. */
+/**
+ * Caps ffmpeg's encoder thread count. Each thread keeps its own in-flight
+ * frame buffers, so on the small VPS — especially the HDR tonemap path,
+ * whose `gbrpf32le` intermediate frames are 4 bytes/channel — fewer
+ * threads means a lower memory ceiling. 2 keeps 4K encodes acceptably
+ * fast without letting the encoder fan out to every core.
+ */
+const ENCODER_THREADS = "2";
+
+export type TranscodeResult = {
+  /** Output dimensions (computed from the probed source + 1080p cap).
+   *  Null when the source dimensions couldn't be probed. */
   width: number | null;
   height: number | null;
 };
 
 /**
- * Transcodes a raw video buffer to a size-optimized 1080p H.264/MP4.
+ * Transcodes a raw video file to a size-optimized 1080p H.264/MP4 in
+ * place: reads `inPath`, writes `outPath`. The caller owns both temp
+ * files (create the input, clean up after). Source dimensions and the
+ * HDR transfer function are probed from `inPath` via ffprobe — nothing
+ * about the source needs to be passed in or trusted from the client.
  *
- * @param input - Raw source bytes (any supported container).
- * @param sourceExt - Source file extension (for the temp input name).
- * @param sourceDims - Source pixel dimensions, used to compute the output
- *   size; pass `null`s if unknown (output dims then come back null).
- * @returns The transcoded bytes + their size and dimensions.
+ * @param inPath - Absolute path to the raw source clip (any container).
+ * @param outPath - Absolute path to write the MP4 to.
+ * @returns The output dimensions (nulls if the source couldn't be probed).
  * @throws If ffmpeg exits non-zero (e.g. an undecodable file).
  */
-export async function transcodeProductVideo(
-  input: Buffer,
-  sourceExt: string,
-  sourceDims: { width: number | null; height: number | null },
-): Promise<TranscodedVideo> {
-  const work = await mkdtemp(join(tmpdir(), "product-video-"));
-  const inPath = join(work, `in.${sourceExt}`);
-  const outPath = join(work, "out.mp4");
+export async function transcodeVideoFile(
+  inPath: string,
+  outPath: string,
+): Promise<TranscodeResult> {
+  dev.log("transcode start", { inPath, outPath });
 
-  dev.log("transcode start", { inBytes: input.length, sourceDims, work });
+  // Probe the source transfer function so HDR clips get tone-mapped and
+  // SDR clips skip the (lossy, slower) tonemap chain. A failed/unknown
+  // probe falls back to the SDR path — safe for the BT.709 phone norm.
+  const [isHdr, sourceDims] = await Promise.all([
+    probeIsHdr(inPath),
+    probeDimensions(inPath),
+  ]);
+  const filters = isHdr
+    ? `${SCALE_FILTER},${HDR_TO_SDR_FILTER},format=yuv420p`
+    : `${SCALE_FILTER},format=yuv420p`;
+  dev.log("transcode filters", { isHdr, sourceDims });
 
-  try {
-    await writeFile(inPath, input);
+  await runFfmpeg([
+    "-y",
+    "-i",
+    inPath,
+    "-an",
+    "-vf",
+    filters,
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-threads",
+    ENCODER_THREADS,
+    "-crf",
+    CRF,
+    ...BT709_OUTPUT_FLAGS,
+    "-movflags",
+    "+faststart",
+    outPath,
+  ]);
 
-    // Probe the source transfer function so HDR clips get tone-mapped and
-    // SDR clips skip the (lossy, slower) tonemap chain. A failed/unknown
-    // probe falls back to the SDR path — safe for the BT.709 phone norm.
-    const isHdr = await probeIsHdr(inPath);
-    const filters = isHdr
-      ? `${SCALE_FILTER},${HDR_TO_SDR_FILTER},format=yuv420p`
-      : `${SCALE_FILTER},format=yuv420p`;
-    dev.log("transcode filters", { isHdr });
-
-    await runFfmpeg([
-      "-y",
-      "-i",
-      inPath,
-      "-an",
-      "-vf",
-      filters,
-      "-c:v",
-      "libx264",
-      "-preset",
-      "veryfast",
-      "-crf",
-      CRF,
-      ...BT709_OUTPUT_FLAGS,
-      "-movflags",
-      "+faststart",
-      outPath,
-    ]);
-
-    const buffer = await readFile(outPath);
-    const { width, height } = scaledDimensions(sourceDims);
-    dev.log("transcode ok", {
-      outBytes: buffer.length,
-      width,
-      height,
-    });
-    return { buffer, sizeBytes: buffer.length, width, height };
-  } finally {
-    await rm(work, { recursive: true, force: true });
-  }
+  const { width, height } = scaledDimensions(sourceDims);
+  dev.log("transcode ok", { width, height });
+  return { width, height };
 }
 
 /**
@@ -214,6 +211,49 @@ function probeIsHdr(inPath: string): Promise<boolean> {
     });
     proc.on("error", () => resolve(false));
     proc.on("close", () => resolve(HDR_TRANSFERS.has(out.trim())));
+  });
+}
+
+/**
+ * Reads the source's pixel dimensions via `ffprobe`. Resolves nulls on
+ * any probe failure (unreadable stream, missing fields) so the transcode
+ * still runs — the output just comes back with null dimensions, which the
+ * caller treats as "unknown" rather than aborting.
+ */
+function probeDimensions(
+  inPath: string,
+): Promise<{ width: number | null; height: number | null }> {
+  return new Promise((resolve) => {
+    let proc;
+    try {
+      proc = spawn(
+        "ffprobe",
+        [
+          "-v", "error",
+          "-select_streams", "v:0",
+          "-show_entries", "stream=width,height",
+          "-of", "csv=s=x:p=0",
+          inPath,
+        ],
+        { stdio: ["ignore", "pipe", "ignore"] },
+      );
+    } catch (err) {
+      dev.error("ffprobe (dimensions) spawn failed:", err);
+      resolve({ width: null, height: null });
+      return;
+    }
+    let out = "";
+    proc.stdout.on("data", (chunk) => {
+      out += chunk.toString();
+    });
+    proc.on("error", () => resolve({ width: null, height: null }));
+    proc.on("close", () => {
+      const [w, h] = out.trim().split("x").map((n) => Number.parseInt(n, 10));
+      resolve({
+        width: Number.isFinite(w) ? w : null,
+        height: Number.isFinite(h) ? h : null,
+      });
+    });
   });
 }
 

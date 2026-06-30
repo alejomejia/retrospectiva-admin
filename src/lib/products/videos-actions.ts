@@ -1,7 +1,7 @@
 "use server";
 
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 
@@ -11,11 +11,13 @@ import { events, productVideos, products } from "@/lib/db/schema";
 import { m } from "@/lib/i18n/messages.es";
 import { R2_BUCKET, r2 } from "@/lib/integrations/r2/client";
 import {
-  generateVideoKey,
+  generateRawVideoKey,
   generateVideoPosterKey,
   type AllowedVideoExtension,
 } from "@/lib/integrations/r2/keys";
+import { presignPutUrl } from "@/lib/integrations/r2/presign";
 import { uploadToR2 } from "@/lib/integrations/r2/upload";
+import { videoTranscodeQueue } from "@/lib/queue/queues";
 import { devGroup } from "@/lib/utils/dev";
 
 import {
@@ -24,11 +26,6 @@ import {
   VIDEO_SOURCE_MAX_BYTES,
   VIDEO_SOURCE_MAX_MB,
 } from "./media-limits";
-import {
-  TRANSCODED_EXTENSION,
-  TRANSCODED_MIME,
-  transcodeProductVideo,
-} from "./transcode-video";
 
 const dev = devGroup("videos");
 const EXT_FOR_MIME: Record<string, AllowedVideoExtension> = {
@@ -37,46 +34,61 @@ const EXT_FOR_MIME: Record<string, AllowedVideoExtension> = {
   "video/webm": "webm",
 };
 
-export type UploadVideoInput = {
+export type CreateVideoUploadInput = {
   productId: string;
-  video: File;
+  /** Source clip mime — one of the keys of `EXT_FOR_MIME`. */
+  contentType: string;
+  /** Raw source size in bytes, for the size-cap pre-check. */
+  sizeBytes: number;
   /** Browser-extracted WebP poster. May be null if decode failed. */
   poster: File | null;
   /** From `extractVideoPoster`. Null if unreadable. */
   durationMs?: number | null;
-  width?: number;
-  height?: number;
 };
 
-export type UploadVideoResult =
-  | { ok: true; id: string; key: string }
+export type CreateVideoUploadResult =
+  | {
+      ok: true;
+      /** `product_videos.id` of the new `processing` row. */
+      videoId: string;
+      /** Presigned R2 PUT URL — the browser uploads the raw clip here. */
+      uploadUrl: string;
+      /** The exact `Content-Type` the PUT must send (bound into the URL). */
+      contentType: string;
+    }
   | { ok: false; error: string };
 
 /**
- * Validates a video upload, transcodes the raw source to a size-optimized
- * 1080p H.264/MP4 (synchronously — see `transcode-video.ts`), pushes the
- * result + (optional) poster to R2, and inserts a `product_videos` row.
+ * Step 1 of the two-phase video upload. Validates the clip's declared
+ * type/size/duration, uploads the (small) poster, inserts a `processing`
+ * `product_videos` row, and returns a presigned R2 PUT URL the browser
+ * uses to upload the RAW clip DIRECTLY to R2.
  *
- * The browser sends the RAW clip (up to VIDEO_SOURCE_MAX_BYTES); the row
- * always records the TRANSCODED file's mime/size/dimensions, since that's
- * what actually lives in R2 and gets served.
+ * The big payload never transits the app server — that's the whole point:
+ * a 100 MB+ clip can't buffer in (and OOM) the Next.js process. The
+ * transcode runs later in the worker (`transcode-worker.ts`), triggered by
+ * `finalizeVideoUpload` once the PUT completes.
  */
-export async function uploadProductVideo(
-  input: UploadVideoInput,
-): Promise<UploadVideoResult> {
+export async function createVideoUpload(
+  input: CreateVideoUploadInput,
+): Promise<CreateVideoUploadResult> {
   const session = await requireSession();
-  const { productId, video, poster, durationMs, width, height } = input;
+  const { productId, contentType, sizeBytes, poster, durationMs } = input;
 
-  if (video.size > VIDEO_SOURCE_MAX_BYTES) {
+  if (sizeBytes > VIDEO_SOURCE_MAX_BYTES) {
     return {
       ok: false,
       error: m.errors.videoTooLarge(
-        (video.size / 1024 / 1024).toFixed(1),
+        (sizeBytes / 1024 / 1024).toFixed(1),
         VIDEO_SOURCE_MAX_MB,
       ),
     };
   }
-  if (durationMs !== undefined && durationMs !== null && durationMs > VIDEO_MAX_DURATION_MS) {
+  if (
+    durationMs !== undefined &&
+    durationMs !== null &&
+    durationMs > VIDEO_MAX_DURATION_MS
+  ) {
     return {
       ok: false,
       error: m.errors.videoTooLong(
@@ -85,12 +97,9 @@ export async function uploadProductVideo(
       ),
     };
   }
-  const ext = EXT_FOR_MIME[video.type];
+  const ext = EXT_FOR_MIME[contentType];
   if (!ext) {
-    return {
-      ok: false,
-      error: m.errors.unsupportedVideoType(video.type),
-    };
+    return { ok: false, error: m.errors.unsupportedVideoType(contentType) };
   }
 
   // Guard against a stale tab posting to a deleted product. Also pull
@@ -104,13 +113,11 @@ export async function uploadProductVideo(
   if (!product) return { ok: false, error: m.errors.productNotFound };
 
   const uuid = randomUUID();
-  // The stored file is always the transcoded MP4, so the key carries the
-  // output extension — not the source container's (`ext`, validated above).
-  const videoKey = generateVideoKey({
+  const rawKey = generateRawVideoKey({
     productId,
     createdAt: product.createdAt,
     uuid,
-    extension: TRANSCODED_EXTENSION,
+    extension: ext,
   });
   const posterKey = poster
     ? generateVideoPosterKey({
@@ -120,42 +127,23 @@ export async function uploadProductVideo(
       })
     : null;
 
-  // Transcode the raw source to a size-optimized 1080p H.264/MP4 before
-  // anything touches R2. ffmpeg failures (undecodable file, etc.) abort
-  // the upload with a user-facing message rather than storing the raw.
-  let transcoded: Awaited<ReturnType<typeof transcodeProductVideo>>;
-  try {
-    const rawBuffer = Buffer.from(await video.arrayBuffer());
-    transcoded = await transcodeProductVideo(rawBuffer, ext, {
-      width: width ?? null,
-      height: height ?? null,
-    });
-  } catch (err) {
-    dev.error("transcode failed:", err);
-    return { ok: false, error: m.errors.videoProcessingFailed };
-  }
-
-  try {
-    await uploadToR2({
-      key: videoKey,
-      body: transcoded.buffer,
-      contentType: TRANSCODED_MIME,
-    });
-
-    if (poster && posterKey) {
+  // The poster is a tiny browser-extracted WebP, so it's safe to push
+  // through the action; only the big raw clip goes direct-to-R2.
+  if (poster && posterKey) {
+    try {
       const posterBuffer = Buffer.from(await poster.arrayBuffer());
       await uploadToR2({
         key: posterKey,
         body: posterBuffer,
         contentType: "image/webp",
       });
+    } catch (err) {
+      dev.error("poster upload failed:", err);
+      return {
+        ok: false,
+        error: err instanceof Error ? err.message : m.errors.couldNotUploadR2,
+      };
     }
-  } catch (err) {
-    dev.error("R2 upload failed:", err);
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : m.errors.couldNotUploadR2,
-    };
   }
 
   const existing = await db
@@ -170,13 +158,10 @@ export async function uploadProductVideo(
     .insert(productVideos)
     .values({
       productId,
-      r2Key: videoKey,
+      status: "processing",
+      rawR2Key: rawKey,
       posterR2Key: posterKey,
-      mimeType: TRANSCODED_MIME,
-      sizeBytes: transcoded.sizeBytes,
       durationMs: durationMs ?? null,
-      width: transcoded.width,
-      height: transcoded.height,
       order: nextOrder,
     })
     .returning({ id: productVideos.id });
@@ -185,25 +170,64 @@ export async function uploadProductVideo(
     return { ok: false, error: m.errors.couldNotRecordVideo };
   }
 
+  const uploadUrl = await presignPutUrl({ key: rawKey, contentType });
+
   await db.insert(events).values({
     productId,
     actor: session.username,
-    type: "video.uploaded",
+    type: "video.upload_started",
     payloadJson: {
       videoId: row.id,
-      key: videoKey,
+      rawKey,
       posterKey,
-      sizeBytes: transcoded.sizeBytes,
-      sourceSizeBytes: video.size,
+      sourceSizeBytes: sizeBytes,
       durationMs: durationMs ?? null,
     },
   });
 
-  dev.log("uploaded:", videoKey, "order=", nextOrder);
-  revalidatePath(`/products/${productId}`);
-  return { ok: true, id: row.id, key: videoKey };
+  dev.log("upload created:", rawKey, "order=", nextOrder);
+  return { ok: true, videoId: row.id, uploadUrl, contentType };
 }
 
+/**
+ * Step 2 of the two-phase upload. The browser calls this once the raw
+ * clip has finished uploading to R2. Enqueues the transcode job (jobId =
+ * videoId so a retry coalesces) and revalidates the page so the new
+ * `processing` tile renders. The worker takes it from here.
+ */
+export async function finalizeVideoUpload(
+  videoId: string,
+): Promise<VideoMutationResult> {
+  await requireSession();
+
+  const [row] = await db
+    .select({ id: productVideos.id, productId: productVideos.productId, status: productVideos.status })
+    .from(productVideos)
+    .where(eq(productVideos.id, videoId))
+    .limit(1);
+  if (!row) return { ok: false, error: m.errors.videoNotFound };
+
+  // Only a freshly-created row should be queued. A non-`processing` status
+  // means this was already finalized (double-submit) — treat as success.
+  if (row.status === "processing") {
+    await videoTranscodeQueue.add(
+      "transcode",
+      { videoId },
+      { jobId: videoId },
+    );
+    dev.log("transcode queued:", videoId);
+  }
+
+  revalidatePath(`/products/${row.productId}`);
+  return { ok: true };
+}
+
+/**
+ * All videos for a product, INCLUDING `processing` and `failed` rows.
+ * Used by the admin product page so the operator sees in-flight and
+ * failed uploads. Playback/publish surfaces want `listReadyProductVideos`
+ * instead — a `processing` row has no `r2Key` yet.
+ */
 export async function listProductVideos(productId: string) {
   await requireSession();
   return db
@@ -213,11 +237,32 @@ export async function listProductVideos(productId: string) {
     .orderBy(asc(productVideos.order));
 }
 
+/**
+ * Only `ready` videos — those with a transcoded MP4 at `r2Key`. Every
+ * surface that actually plays, composes, or publishes a video (socials,
+ * Etsy, the storefront payload) uses this so it never touches a row whose
+ * transcode is still running or failed.
+ */
+export async function listReadyProductVideos(productId: string) {
+  await requireSession();
+  return db
+    .select()
+    .from(productVideos)
+    .where(
+      and(
+        eq(productVideos.productId, productId),
+        eq(productVideos.status, "ready"),
+      ),
+    )
+    .orderBy(asc(productVideos.order));
+}
+
 export type VideoMutationResult = { ok: true } | { ok: false; error: string };
 
 /**
- * Deletes a video row + its R2 object(s) — the video file and the
- * poster, if present.
+ * Deletes a video row + its R2 object(s) — the transcoded video, the
+ * poster, and the raw source if a transcode never completed (a `failed`
+ * or still-`processing` row that the operator removes).
  */
 export async function deleteProductVideo(
   videoId: string,
@@ -230,9 +275,9 @@ export async function deleteProductVideo(
     .limit(1);
   if (!row) return { ok: false, error: m.errors.videoNotFound };
 
-  // Delete both objects, best-effort. An orphan in R2 is recoverable;
+  // Delete every object, best-effort. An orphan in R2 is recoverable;
   // an orphan DB row pointing at a missing key is what we want to avoid.
-  for (const key of [row.r2Key, row.posterR2Key]) {
+  for (const key of [row.r2Key, row.posterR2Key, row.rawR2Key]) {
     if (!key) continue;
     try {
       await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));

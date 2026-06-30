@@ -132,6 +132,50 @@ export function generateVideoKey({
 }
 
 /**
+ * Raw upload key for the UNtranscoded source clip. The browser PUTs the
+ * raw bytes here directly (presigned URL — the app server never buffers
+ * them), then the transcode worker reads this object, produces the final
+ * MP4 at the matching `video/` key (see `deriveTranscodedVideoKey`), and
+ * deletes this temp object. Lives under its own `video_raw/` prefix so a
+ * stray temp object is trivially distinguishable from a real video.
+ */
+export function generateRawVideoKey({
+  productId,
+  createdAt,
+  uuid,
+  extension,
+}: GenerateVideoKeyInput): string {
+  const ext = extension.toLowerCase().replace(/^\./, "");
+  if (!ALLOWED_VIDEO_EXTENSIONS.includes(ext as AllowedVideoExtension)) {
+    throw new Error(
+      `Unsupported video extension "${extension}". Allowed: ${ALLOWED_VIDEO_EXTENSIONS.join(", ")}.`,
+    );
+  }
+  return `${ENV_PREFIX}/products/${formatDatePrefix(createdAt)}/${productId}/video_raw/${uuid}.${ext}`;
+}
+
+/**
+ * Maps a raw upload key to its final transcoded MP4 key, preserving the
+ * date/product/uuid stem so the pair is correlatable in R2. The worker
+ * calls this to know where to write the transcode output without a DB
+ * roundtrip or re-deriving the date partition.
+ *
+ *   `{prefix}/video_raw/{uuid}.{srcext}` → `{prefix}/video/{uuid}.mp4`
+ *
+ * @throws If `rawKey` isn't a `video_raw/` key (guards against a caller
+ *   passing the wrong key and silently overwriting the wrong object).
+ */
+export function deriveTranscodedVideoKey(rawKey: string): string {
+  const marker = "/video_raw/";
+  const at = rawKey.indexOf(marker);
+  if (at === -1) {
+    throw new Error(`Not a raw video key (no "${marker}"): ${rawKey}`);
+  }
+  const stem = rawKey.slice(at + marker.length).replace(/\.[^.]+$/, "");
+  return `${rawKey.slice(0, at)}/video/${stem}.mp4`;
+}
+
+/**
  * Poster keys share the same `{productId}/{uuid}` stem as their video so
  * the pair can be correlated in R2 without a DB roundtrip. Always WebP
  * (we always extract via Canvas).

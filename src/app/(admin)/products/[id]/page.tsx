@@ -108,7 +108,9 @@ export default async function ProductDetailPage({
   }));
   const videoItems: VideoListItem[] = videos.map((v) => ({
     id: v.id,
-    url: publicUrlFor(v.r2Key, R2_PUBLIC_BASE_URL),
+    status: v.status,
+    error: v.error,
+    url: v.r2Key ? publicUrlFor(v.r2Key, R2_PUBLIC_BASE_URL) : null,
     posterUrl: v.posterR2Key
       ? publicUrlFor(v.posterR2Key, R2_PUBLIC_BASE_URL)
       : null,
