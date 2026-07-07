@@ -8,7 +8,6 @@ import type { Product } from "@/lib/db/schema";
 import { appendListingFooter } from "@/lib/products/listing-footer";
 import { prependMeasurementBlock } from "@/lib/products/measurement-header";
 import { prependSizeHeader } from "@/lib/products/size-conversion";
-import { appendTitleSuffix } from "@/lib/products/title-suffix";
 
 import { ETSY_MATERIAL_MAX_LEN, ETSY_TAG_MAX_LEN } from "./etsy-text";
 import type {
@@ -94,11 +93,8 @@ export function mapProductToCreateDraftPayload({
   shop,
   footerEn = "",
 }: MapToCreateDraftInput): CreateDraftListingPayload {
-  const titleBody = (product.titleEn ?? "").trim();
-  if (!titleBody) throw new ListingMapperError("missing titleEn");
-  // Brand suffix appended at the payload boundary only (mirrors the ES
-  // upsert in the publish processor) — never stored, never translated.
-  const title = appendTitleSuffix(titleBody, "en");
+  const title = (product.titleEn ?? "").trim();
+  if (!title) throw new ListingMapperError("missing titleEn");
   if (title.length > MAX_TITLE_LEN) {
     throw new ListingMapperError(
       `titleEn exceeds ${MAX_TITLE_LEN} chars (got ${title.length})`,
