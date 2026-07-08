@@ -1,10 +1,10 @@
 "use client";
 
-import { LayoutDashboard, Package, Settings, Share2, Users } from "lucide-react";
+import { LayoutDashboard, Package, Settings, Share2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { cn } from "@/lib/utils/helpers";
 
 /**
@@ -22,7 +22,6 @@ type NavItem = {
 const topItems: NavItem[] = [
   { href: "/", label: m.nav.dashboard, icon: LayoutDashboard },
   { href: "/products", label: m.nav.products, icon: Package },
-  { href: "/models", label: m.nav.models, icon: Users },
   { href: "/socials", label: m.nav.socials, icon: Share2 },
   { href: "/settings", label: m.nav.settings, icon: Settings }
 ];

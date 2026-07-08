@@ -38,10 +38,10 @@ const dev = devGroup("openai.regenerate-field");
  * never picks a category, so it's not a regenerable field.
  */
 export const REGENERABLE_FIELDS = [
-  "titleEs",
-  "descriptionEs",
-  "etsyTagsEs",
-  "etsyMaterialsEs",
+  "titleEn",
+  "descriptionEn",
+  "etsyTagsEn",
+  "etsyMaterialsEn",
   "etsyWhenMade",
   "etsyPrimaryColor",
   "etsySecondaryColor",
@@ -50,10 +50,10 @@ export const REGENERABLE_FIELDS = [
 export type RegenerableField = (typeof REGENERABLE_FIELDS)[number];
 
 export type RegeneratedValue =
-  | { field: "titleEs"; value: string }
-  | { field: "descriptionEs"; value: string }
-  | { field: "etsyTagsEs"; value: string[] }
-  | { field: "etsyMaterialsEs"; value: string[] }
+  | { field: "titleEn"; value: string }
+  | { field: "descriptionEn"; value: string }
+  | { field: "etsyTagsEn"; value: string[] }
+  | { field: "etsyMaterialsEn"; value: string[] }
   | { field: "etsyWhenMade"; value: EtsyEra }
   | { field: "etsyPrimaryColor"; value: EtsyColor }
   | { field: "etsySecondaryColor"; value: EtsyColor | null };
@@ -125,7 +125,7 @@ export async function regenerateField(
       input: [
         {
           role: "system",
-          content: `${ENRICH_SYSTEM}\n\n${BRAND_VOICE}\n\nRegenera SOLO el campo "${field}". Devuelve un objeto JSON con esa única propiedad.`,
+          content: `${ENRICH_SYSTEM}\n\n${BRAND_VOICE}\n\nRegenerate ONLY the "${field}" field. Return a JSON object with that single property.`,
         },
         { role: "user", content: userContent },
       ],
@@ -183,17 +183,17 @@ export async function regenerateField(
 function schemaForField(field: RegenerableField) {
   const property = (() => {
     switch (field) {
-      case "titleEs":
+      case "titleEn":
         return { type: "string", minLength: 10, maxLength: 140 };
-      case "descriptionEs":
+      case "descriptionEn":
         return { type: "string", minLength: 40, maxLength: 2000 };
-      case "etsyTagsEs":
+      case "etsyTagsEn":
         return {
           type: "array",
           maxItems: 13,
           items: { type: "string", minLength: 1, maxLength: 20 },
         };
-      case "etsyMaterialsEs":
+      case "etsyMaterialsEn":
         return {
           type: "array",
           maxItems: 13,
@@ -232,14 +232,14 @@ function parseFieldValue(
   }
   const value = (parsed as Record<string, unknown>)[field];
   switch (field) {
-    case "titleEs":
-    case "descriptionEs":
+    case "titleEn":
+    case "descriptionEn":
       if (typeof value !== "string") {
         throw new Error(`${field} value was not a string`);
       }
       return value;
-    case "etsyTagsEs":
-    case "etsyMaterialsEs":
+    case "etsyTagsEn":
+    case "etsyMaterialsEn":
       if (!Array.isArray(value) || !value.every((v) => typeof v === "string")) {
         throw new Error(`${field} value was not a string array`);
       }
@@ -248,7 +248,7 @@ function parseFieldValue(
       // than persisting an over-length tag/material.
       return clampPhrasesToMaxLen(
         value as string[],
-        field === "etsyTagsEs" ? ETSY_TAG_MAX_LEN : ETSY_MATERIAL_MAX_LEN,
+        field === "etsyTagsEn" ? ETSY_TAG_MAX_LEN : ETSY_MATERIAL_MAX_LEN,
       );
     case "etsyWhenMade":
       if (

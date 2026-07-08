@@ -80,7 +80,7 @@ Each entry: what we picked, what we considered, why we picked it.
 - **One AI call → both locales.** Phase 6 prompt template will emit
   `{ en: …, es: … }` in a single Responses API call. Cheaper than two
   round-trips, and the EN/ES versions stay consistent.
-- **Centralized `messages.es.ts`.** Alternative was hardcoded JSX
+- **Centralized `messages.en.ts`.** Alternative was hardcoded JSX
   strings. Centralized makes future EN-fallback mechanical, and keeps
   voice consistent.
 - **Dev-facing errors stay English.** Parser throws, jose errors,
@@ -206,7 +206,7 @@ publish). See [product-form.md](../product/form.md) +
 - **Store-flat measurements; double at the boundary** for
   chest/waist/hip/leg. Form shows both flat and circumference
   values; DB stores flat; Etsy/website payloads use doubled.
-- **Bilingual: ES canonical, EN auto-derived.** Each text field has
+- **Bilingual: EN canonical, ES auto-derived.** Each text field has
   `*_es` + `*_en` columns. Tags + materials are parallel arrays
   aligned by index. Translation runs on a small `ai-translate`
   queue via `gpt-4o-mini` (cheap + fast).

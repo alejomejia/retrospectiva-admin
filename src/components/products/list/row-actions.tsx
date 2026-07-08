@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { deleteProduct } from "@/lib/products/actions";
 import { markAsPublished, markAsSold } from "@/lib/products/draft-actions";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { MarkSoldDialog } from "@/components/products/mark-sold-dialog";
 
 import type { ProductListItem } from "./types";

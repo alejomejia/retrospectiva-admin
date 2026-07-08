@@ -25,7 +25,7 @@ import {
   type ReturnPolicy,
   type ShippingProfile,
 } from "@/lib/integrations/etsy/shop-config";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { devError } from "@/lib/utils/dev";
 import { SidebarSettings } from "@/components/layout/sidebar-settings";
 

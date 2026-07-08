@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 import { STEP_ORDER, parseStep, type StepKey } from "./new-product-stepper.const";
 

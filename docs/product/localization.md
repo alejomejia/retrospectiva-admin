@@ -7,7 +7,7 @@ language requirements. This doc maps them all out.
 
 | Surface | Language(s) | Why |
 | --- | --- | --- |
-| **Admin UI** (this repo) | **Spanish only** | The primary user is Spanish-speaking. No locale toggle, no English fallback. |
+| **Admin UI** (this repo) | **English only** | The admin authors in English (English-first). No locale toggle, no Spanish fallback. |
 | **Etsy listing** | **Primary: English** · **Secondary: Spanish** | The shop targets EU buyers (not Spain-domestic). English maximises Etsy discoverability; Spanish goes through `updateListingTranslation` (`es` locale). |
 | **Public website** (`retrospectiva-website`, separate repo) | **Bilingual EN + ES** | The visitor picks. Both versions delivered via the Phase 7 webhook payload. |
 
@@ -15,22 +15,22 @@ language requirements. This doc maps them all out.
 
 ### Where strings live
 
-All user-facing strings are in **`src/lib/i18n/messages.es.ts`** — a
+All user-facing strings are in **`src/lib/i18n/messages.en.ts`** — a
 single object `m` nested by surface:
 
 ```ts
-m.common.signOut                       // "Cerrar sesión"
-m.login.signInButton                   // "Entrar"
-m.products.statuses.draft              // "borrador"
-m.toasts.productSaved                  // "Producto guardado como borrador"
-m.errors.invalidCredentials            // "Credenciales no válidas."
-m.toasts.mediaUploaded(2, 1)           // "Subido: 2 fotos y 1 vídeo"
-m.uploader.media.hintVideos(100, 30)   // "Vídeos · MP4 … · máx. 100 MB y 30 s · …"
+m.common.signOut                       // "Sign out"
+m.login.signInButton                   // "Sign in"
+m.products.statuses.draft              // "Draft"
+m.toasts.productSaved                  // "Product saved as draft"
+m.errors.invalidCredentials            // "Invalid credentials."
+m.toasts.mediaUploaded(2, 1)           // "Uploaded: 2 photos and 1 video"
+m.uploader.media.hintVideos(100, 30)   // "Videos · MP4 … · max 100 MB and 30 s · …"
 ```
 
 Static strings are literal; parameterized strings are functions that
 return strings (so callers can interpolate dynamic values into
-Spanish-grammar-correct templates).
+grammar-correct templates).
 
 ### What stays in English
 
@@ -45,58 +45,48 @@ Three categories are explicitly NOT translated:
 3. **Code comments + JSDoc.** Project documentation language is
    English regardless of the UI language.
 
-When a Spanish error toast *contains* a dev-facing detail (e.g.
-"Authentication is misconfigured: ALLOW_USERS hash did not decode…"),
-the prefix is Spanish (from `m.errors.*`) and the wrapped detail
-stays English. The user (Alejandro, bilingual) reads both; the main user
-(Spanish-only) at least understands the "something is wrong with
-auth" prefix and can flag it.
-
 ### How to add a new string
 
-1. Add the key to `messages.es.ts` under the appropriate surface
+1. Add the key to `messages.en.ts` under the appropriate surface
    group. Static → string literal; dynamic → function.
-2. Import `m` from `@/lib/i18n/messages.es` in your component / action.
+2. Import `m` from `@/lib/i18n/messages.en` in your component / action.
 3. Reference as `m.products.detail.fieldName` or `m.toasts.foo(arg)`.
 
 ### Why centralized (vs hardcoded JSX strings)
 
 Two reasons:
-- **Future EN fallback.** If we ever need bilingual admin, adding
-  `messages.en.ts` + a small `t()` resolver is a mechanical change.
-  Strings are already located.
-- **Consistency.** "Are we sure we say 'Eliminar' for delete in every
-  card?" — a `grep` of `m.common.delete` answers it.
+- **Future locale.** If we ever need a bilingual admin, adding a
+  sibling `messages.<locale>.ts` + a small `t()` resolver is a
+  mechanical change. Strings are already located.
+- **Consistency.** "Are we sure we say 'Delete' in every card?" — a
+  `grep` of `m.common.delete` answers it.
 
 ### What about UI dates and numbers?
 
 - **Prices:** `formatCents` defaults to `en-IE` locale (`€49.99`).
   See [media-handling.md](../ai/media-handling.md) for the rationale on
-  why prices stay dot-decimal even though the admin is Spanish.
-- **Dates:** Used via `.toLocaleString("es-ES")` at the consumer
-  level. The R2 date partition uses `Europe/Madrid` for the same
-  reason.
+  dot-decimal prices.
+- **Dates:** The R2 date partition uses `Europe/Madrid`.
 
 ## Etsy listing
 
 ### Direction
 
 ```
-admin user types in Spanish
+admin user authors in English
         │
         ▼
-AI prompt (Phase 6) sees: Spanish input + photos
+AI enrichment sees: English input + photos
         │ single Responses API call, vision-enabled
         ▼
-AI returns: {
-  en: { title, description, tags[], materials[] },
-  es: { title, description, tags[], materials[] }
-}
+AI returns English: { titleEn, descriptionEn, etsyTagsEn, etsyMaterialsEn }
+  → written to the canonical *_en columns
         │
         ▼
-Etsy publish (Phase 4):
-  - createDraftListing with EN payload    ← primary
-  - updateListingTranslation(es, …)       ← secondary
+Etsy publish:
+  - translate *_en → *_es inline (EN → ES translation queue)
+  - createDraftListing with EN payload    ← primary (canonical *_en)
+  - updateListingTranslation(es, …)       ← secondary (derived *_es)
   - state = "active"
 ```
 
@@ -106,12 +96,13 @@ Etsy publish (Phase 4):
 - The Spanish translation still appears for visitors who set the
   store-front language to Spanish.
 
-### One AI call, two locales
+### Enrichment generates English; translation derives Spanish
 
-The prompt is engineered to produce both locales in one Responses API
-call — keeps OpenAI cost low and guarantees the EN/ES versions
-describe the same garment from a shared context (era, fabric,
-condition). Phase 6 will land the prompt template; see roadmap.md.
+Enrichment (`runEnrichment`) generates the canonical English fields
+directly. The Spanish counterparts are produced by the translation
+queue (`runTranslation`, EN → ES) inline at the Etsy-publish boundary,
+so both locales describe the same garment and the derived `*_es`
+columns exist only when a product is actually published.
 
 ## Public website
 
@@ -150,18 +141,14 @@ from triggering revalidation.
 
 ## Edge cases worth knowing
 
-### "Sin título" placeholder
+### "Untitled" placeholder
 
-When the user clicks "Nuevo producto", the route handler at
-`/products/new/route.ts` auto-creates a draft with `name: "Sin título"`
-and `priceCents: 0`, then redirects to the detail page in edit mode.
-The placeholder string is hardcoded in `src/lib/products/actions.ts`
-— it can't be exported from a `"use server"` file as a non-async
-constant, so the docstring there documents the value for future
-maintenance.
-
-Phase 9 cleanup job (when written) should grep for that literal to
-sweep orphan drafts.
+When the user clicks "New product", the route handler at
+`/products/new/route.ts` auto-creates a draft with null title fields,
+then redirects to the detail page in edit mode. Lists and the detail
+header render `m.products.detail.untitled` ("Untitled") whenever both
+`titleEn` and `titleEs` are empty — the placeholder is UI-only, never
+persisted as a title value.
 
 ### Date formatting in R2 paths
 

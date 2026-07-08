@@ -75,8 +75,8 @@ interpolation gotcha that drove the base64-wrap choice.
 
 ## Localization
 
-The admin is **Spanish-only** for the primary user. All user-
-facing strings live in `src/lib/i18n/messages.es.ts`. See
+The admin is **English-only** for the primary user. All user-
+facing strings live in `src/lib/i18n/messages.en.ts`. See
 [localization.md](../product/localization.md) for the full direction including
 Etsy listing locales and AI translation flow.
 
@@ -109,7 +109,7 @@ src/
   lib/
     auth/                      ← password, session, users, rate-limit, require-session
     db/                        ← Drizzle client, schema, migrations
-    i18n/                      ← messages.es.ts
+    i18n/                      ← messages.en.ts
     integrations/
       r2/                      ← S3 client + key helpers + upload + delete-prefix
       etsy/                    ← Phase 4

@@ -11,7 +11,7 @@ import { devGroup } from "@/lib/utils/dev";
 
 import { completeRun, failRun, startRun } from "./ai-runs-log";
 import { MODELS, openai } from "./client";
-import { TRANSLATE_ES_EN } from "./prompts";
+import { TRANSLATE_EN_ES } from "./prompts";
 import {
   estimateCostUsd,
   extractOutputText,
@@ -21,30 +21,30 @@ import {
 const dev = devGroup("openai.translate");
 
 /**
- * The four ES product columns that the Etsy-publish processor
- * translates to their EN counterparts before pushing the listing.
- * Translations live entirely at the publish boundary — the admin
- * UI only edits Spanish; the EN columns are a cache of what we
- * last sent to Etsy.
+ * The four canonical EN product columns that the Etsy-publish
+ * processor translates to their ES counterparts before pushing the
+ * listing. Translations live entirely at the publish boundary — the
+ * admin UI only edits English; the ES columns are a derived cache
+ * consumed by the website's Spanish view and the Etsy ES translation.
  */
 export const TRANSLATABLE_FIELDS = [
-  "titleEs",
-  "descriptionEs",
-  "etsyTagsEs",
-  "etsyMaterialsEs",
+  "titleEn",
+  "descriptionEn",
+  "etsyTagsEn",
+  "etsyMaterialsEn",
 ] as const;
 
 export type TranslatableField = (typeof TRANSLATABLE_FIELDS)[number];
 
-/** ES → EN column name. Single source of truth for the field map. */
+/** EN → ES column name. Single source of truth for the field map. */
 const TARGET_COLUMN: Record<
   TranslatableField,
-  "titleEn" | "descriptionEn" | "etsyTagsEn" | "etsyMaterialsEn"
+  "titleEs" | "descriptionEs" | "etsyTagsEs" | "etsyMaterialsEs"
 > = {
-  titleEs: "titleEn",
-  descriptionEs: "descriptionEn",
-  etsyTagsEs: "etsyTagsEn",
-  etsyMaterialsEs: "etsyMaterialsEn",
+  titleEn: "titleEs",
+  descriptionEn: "descriptionEs",
+  etsyTagsEn: "etsyTagsEs",
+  etsyMaterialsEn: "etsyMaterialsEs",
 };
 
 /** Structured-output schemas. Two shapes only — strings and arrays
@@ -70,16 +70,16 @@ const ARRAY_SCHEMA = {
 } as const;
 
 /**
- * Translate one ES field of a product to EN. Reads the current ES
+ * Translate one EN field of a product to ES. Reads the current EN
  * value from the DB, calls gpt-4o-mini via the Responses API with a
- * structured-output schema, and writes the EN value back.
+ * structured-output schema, and writes the ES value back.
  *
- * Empty source → clears the EN target (null for strings, [] for
+ * Empty source → clears the ES target (null for strings, [] for
  * arrays). Treated as a successful run; no API call is made.
  *
  * Throws on hard failures (no row, OpenAI error, schema mismatch).
- * Callers (the Phase 4c publish processor) wrap with their own
- * error handling so a single failed field doesn't void the listing.
+ * Callers (the publish processor) wrap with their own error handling
+ * so a single failed field doesn't void the listing.
  */
 export async function runTranslation(
   productId: string,
@@ -98,9 +98,9 @@ export async function runTranslation(
   const isArrayField = Array.isArray(sourceValue);
   const isEmpty = isEmptySource(sourceValue);
 
-  // Empty source short-circuits with a direct DB write. The EN
-  // counterpart should always mirror the ES presence — a cleared ES
-  // field means the EN side stops "carrying" the previous value.
+  // Empty source short-circuits with a direct DB write. The ES
+  // counterpart should always mirror the EN presence — a cleared EN
+  // field means the ES side stops "carrying" the previous value.
   if (isEmpty) {
     await db
       .update(products)
@@ -125,7 +125,7 @@ export async function runTranslation(
     const response = await openai.responses.create({
       model: MODELS.translate,
       input: [
-        { role: "system", content: TRANSLATE_ES_EN },
+        { role: "system", content: TRANSLATE_EN_ES },
         { role: "user", content: userPayload },
       ],
       text: {
@@ -171,9 +171,9 @@ export async function runTranslation(
 }
 
 /**
- * Translate a single ES string to EN, returning the result without
+ * Translate a single EN string to ES, returning the result without
  * touching the DB. Used for the per-product listing-footer override,
- * whose EN counterpart is cached at save time rather than living in a
+ * whose ES counterpart is cached at save time rather than living in a
  * translatable product column. Empty input short-circuits to "".
  *
  * Throws on OpenAI errors or a malformed response so the caller can
@@ -187,7 +187,7 @@ export async function translateText(text: string): Promise<string> {
   const response = await openai.responses.create({
     model: MODELS.translate,
     input: [
-      { role: "system", content: TRANSLATE_ES_EN },
+      { role: "system", content: TRANSLATE_EN_ES },
       { role: "user", content: JSON.stringify({ value: source }) },
     ],
     text: {
@@ -208,7 +208,7 @@ export async function translateText(text: string): Promise<string> {
 /**
  * Clamp a translated tag/material array to the Etsy per-entry cap. The
  * cap applies in every locale, and the translator can lengthen a phrase
- * (an EN rendering may run longer than its ES source), so the EN side is
+ * (an ES rendering may run longer than its EN source), so the ES side is
  * clamped here rather than relying on the listing mapper to drop the
  * over-length entries it would otherwise discard.
  */
@@ -216,10 +216,10 @@ function clampTranslatedArray(
   field: TranslatableField,
   translated: string[],
 ): string[] {
-  if (field === "etsyTagsEs") {
+  if (field === "etsyTagsEn") {
     return clampPhrasesToMaxLen(translated, ETSY_TAG_MAX_LEN);
   }
-  if (field === "etsyMaterialsEs") {
+  if (field === "etsyMaterialsEn") {
     return clampPhrasesToMaxLen(translated, ETSY_MATERIAL_MAX_LEN);
   }
   return translated;

@@ -25,7 +25,7 @@ function fakePayload(): WebsitePayload {
     emittedAt: "2026-05-10T00:00:00.000Z",
     status: "published",
     clothingType: "shirt",
-    condition: "perfect",
+    condition: "excellent",
     size: "M",
     featured: false,
     colors: { primary: null, secondary: null },

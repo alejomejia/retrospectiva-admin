@@ -98,11 +98,11 @@ describe("generateImageKey", () => {
       generateImageKey({
         productId: "p",
         createdAt: CREATED_AT,
-        role: "ai_model",
+        role: "thumbnail",
         uuid: "u",
         extension: "jpg",
       }),
-    ).toMatch(new RegExp(`^${PREFIX}/products/2026/05/15/p/ai_model/`));
+    ).toMatch(new RegExp(`^${PREFIX}/products/2026/05/15/p/thumbnail/`));
   });
 });
 

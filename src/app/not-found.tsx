@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * Default 404 for unmatched URLs and any unhandled `notFound()` call.

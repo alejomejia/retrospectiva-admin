@@ -83,7 +83,7 @@ function baseProduct(overrides: Row = {}): Row {
     listPriceCentsOverride: null,
     buyPriceCents: 1000,
     clothingType: "shirt",
-    condition: "perfect",
+    condition: "excellent",
     sizes: ["M"],
     shoulderCm: 45,
     chestCm: 50,
@@ -222,35 +222,29 @@ describe("buildWebsitePayload", () => {
     expect(out.measurements.waistMaxCm).toBe(88);
   });
 
-  it("orders images: originals by `order`, then ai_model appended last", async () => {
+  it("orders images: originals by `order`", async () => {
     state.products = [baseProduct()];
     state.images = [
       { r2Key: "a.jpg", role: "original", order: 1, width: 1, height: 1 },
       { r2Key: "b.jpg", role: "original", order: 0, width: 1, height: 1 },
-      { r2Key: "ai.jpg", role: "ai_model", order: 99, width: 1, height: 1 },
     ];
     const out = await buildWebsitePayload({
       productId: "prod-1",
       kind: "publish",
     });
-    expect(out.images.map((i) => i.role)).toEqual([
-      "original",
-      "original",
-      "ai_model",
-    ]);
+    expect(out.images.map((i) => i.role)).toEqual(["original", "original"]);
     expect(out.images.map((i) => i.url)).toEqual([
       "https://cdn.example.com/b.jpg",
       "https://cdn.example.com/a.jpg",
-      "https://cdn.example.com/ai.jpg",
     ]);
-    expect(out.images.map((i) => i.rank)).toEqual([1, 2, 3]);
+    expect(out.images.map((i) => i.rank)).toEqual([1, 2]);
   });
 
-  it("excludes ai_reference role from images", async () => {
+  it("excludes thumbnail role from images", async () => {
     state.products = [baseProduct()];
     state.images = [
       { r2Key: "o.jpg", role: "original", order: 0, width: 1, height: 1 },
-      { r2Key: "ref.jpg", role: "ai_reference", order: 1, width: 1, height: 1 },
+      { r2Key: "t.jpg", role: "thumbnail", order: 1, width: 1, height: 1 },
     ];
     const out = await buildWebsitePayload({
       productId: "prod-1",

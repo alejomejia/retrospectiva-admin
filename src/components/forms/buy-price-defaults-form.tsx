@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ClothingType } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { saveAllBuyPriceDefaults } from "@/lib/products/buy-price-defaults";
 import { CLOTHING_TYPES, getCategoryLabel } from "@/lib/products/clothing-types";
 import type { GarmentCategory } from "@/lib/products/clothing-types";

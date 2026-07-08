@@ -68,10 +68,10 @@ grep -rn "process\.env" src/ scripts/ --include='*.ts' --include='*.tsx' \
 
 See `.agents/skills/project-conventions/consume-env-via-config.md`.
 
-## 2. User-facing strings live in `messages.es.ts`
+## 2. User-facing strings live in `messages.en.ts`
 
 **Rule:** Any string a user might see goes through `m.*` from
-`@/lib/i18n/messages.es`. Never hardcode Spanish strings in JSX,
+`@/lib/i18n/messages.en`. Never hardcode Spanish strings in JSX,
 toasts, action errors, or zod messages.
 
 **Why:**
@@ -202,7 +202,7 @@ src/components/
 src/lib/
   auth/                        password / session / users / rate-limit
   db/                          drizzle client + schema + migrations
-  i18n/                        messages.es.ts
+  i18n/                        messages.en.ts
   integrations/
     r2/                        S3-compat client + key helpers
     etsy/                      Phase 4

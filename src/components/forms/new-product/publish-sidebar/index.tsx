@@ -16,7 +16,7 @@ import {
 import { MarkSoldDialog } from "@/components/products/mark-sold-dialog";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 import { SchedulePicker } from "../schedule-picker";
 import {
@@ -30,7 +30,7 @@ import {
  *
  * - `draft`: Publish now / Save draft / Schedule (legacy flow).
  * - `edit`:  Actualizar en Etsy / Archivar / Restaurar borrador /
- *            Cancelar programación, depending on status.
+ *            Cancel schedule, depending on status.
  *
  * Schedule is only meaningful in `draft` mode — once published the
  * listing is live, and re-scheduling would be ambiguous.

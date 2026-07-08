@@ -32,12 +32,12 @@ import { ETSY_ERA_VALUES } from "@/lib/products/draft-schema";
  */
 
 export const EnrichmentOutput = z.object({
-  titleEs: z.string().trim().min(10).max(140),
-  descriptionEs: z.string().trim().min(40).max(700),
-  etsyTagsEs: z
+  titleEn: z.string().trim().min(10).max(140),
+  descriptionEn: z.string().trim().min(40).max(700),
+  etsyTagsEn: z
     .array(z.string().trim().min(1).max(20))
     .max(13),
-  etsyMaterialsEs: z
+  etsyMaterialsEn: z
     .array(z.string().trim().min(1).max(45))
     .max(13),
   etsyWhenMade: z.enum(ETSY_ERA_VALUES),

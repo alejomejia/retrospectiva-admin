@@ -55,10 +55,10 @@ Phase 4c publish processor for product P:
   → updateListingTranslation(...)   # uses the freshly-written *_en columns
 ```
 
-Admin UI is Spanish-only. The shop owner doesn't read English, so
-paying for translations on autosave / enrich-success would burn
-tokens on content that may never publish. The `*_en` columns are a
-cache of what we last sent to Etsy.
+Admin UI is English-only. Paying for translations on autosave /
+enrich-success would burn tokens on content that may never publish.
+The `*_es` columns are a derived cache consumed by the website's
+Spanish view and the Etsy ES translation.
 
 ---
 
@@ -110,13 +110,13 @@ deploy:
 | Template | Env override | Purpose |
 | --- | --- | --- |
 | `BRAND_VOICE` | `BRAND_VOICE_PROMPT` | Tone/voice rules — appended to title + description prompts. |
-| `ENRICH_TITLE` | `ENRICH_TITLE_PROMPT` | "Generate a Spanish title for this vintage garment…" |
-| `ENRICH_DESCRIPTION` | `ENRICH_DESCRIPTION_PROMPT` | Multi-paragraph product description in Spanish. |
-| `ENRICH_TAGS` | `ENRICH_TAGS_PROMPT` | Up to 13 Spanish tags. |
-| `ENRICH_MATERIALS` | `ENRICH_MATERIALS_PROMPT` | Best-guess material list in Spanish. |
+| `ENRICH_TITLE` | `ENRICH_TITLE_PROMPT` | "Generate an English title for this vintage garment…" |
+| `ENRICH_DESCRIPTION` | `ENRICH_DESCRIPTION_PROMPT` | Multi-paragraph product description in English. |
+| `ENRICH_TAGS` | `ENRICH_TAGS_PROMPT` | Up to 13 English tags. |
+| `ENRICH_MATERIALS` | `ENRICH_MATERIALS_PROMPT` | Best-guess material list in English. |
 | `ENRICH_ERA` | `ENRICH_ERA_PROMPT` | Pick one of Etsy's `when_made` values. |
 | `ENRICH_TAXONOMY` | `ENRICH_TAXONOMY_PROMPT` | Pick one taxonomy ID from the curated list. |
-| `TRANSLATE_ES_EN` | `TRANSLATE_ES_EN_PROMPT` | Translate a single string ES→EN. |
+| `TRANSLATE_EN_ES` | `TRANSLATE_EN_ES_PROMPT` | Translate a single string EN→ES. |
 | `IMAGE_PLACEMENT` | `IMAGE_PLACEMENT_PROMPT` | Place the garment on the model. Includes a `{location}` placeholder. |
 
 The image-placement prompt has a `{location}` placeholder filled by a
@@ -132,10 +132,10 @@ schema. Defined in `src/lib/integrations/openai/schemas.ts`:
 
 ```ts
 const EnrichmentOutput = z.object({
-  titleEs: z.string().min(10).max(140),
-  descriptionEs: z.string().min(40).max(2000),
-  etsyTagsEs: z.array(z.string()).max(13),
-  etsyMaterialsEs: z.array(z.string()).max(13),
+  titleEn: z.string().min(10).max(140),
+  descriptionEn: z.string().min(40).max(2000),
+  etsyTagsEn: z.array(z.string()).max(13),
+  etsyMaterialsEn: z.array(z.string()).max(13),
   etsyWhenMade: z.enum([
     '1990s', '1980s', '1970s', '1960s', '1950s', 'before_1950',
   ]),
@@ -151,9 +151,9 @@ The processor:
 3. Calls `openai.responses.create({ response_format: { type:
    'json_schema', json_schema: EnrichmentOutput } })`.
 4. Validates with zod (`safeParse`).
-5. Writes each field to `products`.
-6. Enqueues an `ai-translate` job per text field for the EN
-   counterpart.
+5. Writes each field to `products` (canonical `*_en` columns).
+6. Translation to the `*_es` counterpart runs later, inline at the
+   Etsy-publish boundary — not here.
 7. Inserts an `ai_runs` row per call with `kind`, `model`,
    `input_json`, `output_json`, `cost_usd`.
 
@@ -186,13 +186,12 @@ any clone).
 
 ## 7 · Bilingual handling
 
-The admin UI is Spanish. The user only edits the ES side; the EN
-counterparts are filled by `runTranslation` at the Etsy-publish
+The admin UI is English. The user only edits the EN side (canonical);
+the ES counterparts are filled by `runTranslation` at the Etsy-publish
 boundary.
 
-- **Admin never displays EN.** No EN collapsibles, no per-field
-  badges, no manual EN tweaks. The shop owner doesn't read English
-  and can't validate the output, so we trust the model 1:1.
+- **Admin never displays ES.** No ES collapsibles, no per-field
+  badges, no manual ES tweaks. We trust the model's translation 1:1.
 - **Translation runs inline in the Phase 4c publish processor.** For
   each `TRANSLATABLE_FIELDS` entry (titleEs, descriptionEs,
   etsyTagsEs, etsyMaterialsEs), the processor calls
@@ -301,7 +300,7 @@ every 2.5 s on step 2 until the enrich run is `succeeded` or
 ## 12 · Testing strategy
 
 - **Unit (vitest)**: prompt templates produce valid messages;
-  structured-output schema parses fixture JSON; ES→EN translation
+  structured-output schema parses fixture JSON; EN→ES translation
   function returns a string; image-placement honors the "delete prior
   ai_model" rule.
 - **MSW**: all OpenAI HTTP is intercepted in tests (`src/test/msw/`).

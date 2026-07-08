@@ -1,7 +1,7 @@
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * Top bar for the (admin) section. Shows the current username and a

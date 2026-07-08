@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { devError } from "@/lib/utils/dev";
 
 const IS_DEV = process.env.NODE_ENV === "development";

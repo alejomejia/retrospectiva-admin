@@ -142,8 +142,10 @@ export function buildProductsWhere(
   if (params.q) {
     // unaccent ILIKE — accent-insensitive case-insensitive substring.
     const like = `%${params.q}%`;
+    // Search the canonical English title, falling back to the derived
+    // Spanish for legacy rows that predate the English-first flip.
     clauses.push(
-      sql`unaccent(coalesce(${products.titleEs}, '')) ILIKE unaccent(${like})`,
+      sql`unaccent(coalesce(${products.titleEn}, ${products.titleEs}, '')) ILIKE unaccent(${like})`,
     );
   }
 

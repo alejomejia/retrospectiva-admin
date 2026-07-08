@@ -17,19 +17,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import type { ClothingType, Product } from "@/lib/db/schema";
 import type { ShippingProfile } from "@/lib/integrations/etsy/shop-config";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { cn } from "@/lib/utils/helpers";
 import { Star } from "lucide-react";
 
-import {
-  AiImageSection,
-  type AiReferenceImage,
-  type GeneratedAiImage,
-} from "../ai-image-section";
-import { AiImageOverrideField } from "../ai-image-override-field";
 import { BuyPriceField } from "../buy-price-field";
 import { ConditionField } from "../condition-field";
 import { GarmentTypeField } from "../garment-type-field";
@@ -49,43 +42,32 @@ export function Step1Inputs({
   featuredSlotsFull,
   shopMarkupPercent,
   shopDefaultDiscountPercent,
-  shopAiImageEnabled,
   buyPriceDefaults,
   imageItems,
   videoItems,
-  aiModels,
-  aiReferenceImage,
-  aiGeneratedImage,
   shippingProfiles,
   shippingMapping,
-  r2BaseUrl,
 }: {
   product: Product;
   /** Shop already holds the max featured products (excl. this one). */
   featuredSlotsFull: boolean;
   shopMarkupPercent: number;
   shopDefaultDiscountPercent: number;
-  shopAiImageEnabled: boolean;
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
-  aiModels: ActiveAiModelListItem[];
-  aiReferenceImage: AiReferenceImage;
-  aiGeneratedImage: GeneratedAiImage;
   shippingProfiles: ShippingProfile[];
   shippingMapping: {
     light: number | null;
     medium: number | null;
     heavy: number | null;
   };
-  r2BaseUrl: string;
 }) {
   const vm = useStep1Inputs({
     product,
-    shopAiImageEnabled,
     buyPriceDefaults,
     imageItems,
-    aiReferenceImage,
+    shippingProfiles,
     shippingMapping,
   });
 
@@ -278,38 +260,6 @@ export function Step1Inputs({
             </Select>
           </div>
         )}
-      </div>
-
-      {/* AI product image generation */}
-      <div className="flex flex-col gap-8 p-6">
-        <header className="flex gap-4 items-center justify-between">
-          <div className="flex flex-col gap-2">
-            <h2 className="flex items-center gap-1">
-              <span className="font-mono text-brand-terracotta">05</span>
-              <span className="uppercase text-foreground">{m.products.stepper.step1.aiImageSection.title}</span>
-            </h2>
-            <p>{m.products.stepper.step1.aiImageSection.description}</p>
-          </div>
-          <div className="shrink-0">
-            <AiImageOverrideField
-              value={product.aiImageEnabled}
-              shopAiImageEnabled={shopAiImageEnabled}
-            />
-          </div>
-        </header>
-        <AiImageSection
-          product={product}
-          shopAiImageEnabled={shopAiImageEnabled}
-          aiModels={aiModels}
-          referenceImage={aiReferenceImage}
-          generatedImage={aiGeneratedImage}
-          clothingType={vm.clothingType}
-          r2BaseUrl={r2BaseUrl}
-          // Stepper auto-enqueues placement on Next; a manual button
-          // here would only invite duplicate calls.
-          showGenerateControls={false}
-          onAiRequiredStateChange={vm.handleAiRequiredStateChange}
-        />
       </div>
     </div>
   );

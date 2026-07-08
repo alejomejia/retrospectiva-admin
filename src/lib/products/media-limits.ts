@@ -11,7 +11,7 @@
  *     server never sees it) and transcoded in the worker
  *     (`src/lib/products/transcode-worker.ts`) to a 1080p H.264/MP4
  *     well under `VIDEO_MAX_BYTES`
- *   - `src/lib/i18n/messages.es.ts` — error + hint strings interpolate
+ *   - `src/lib/i18n/messages.en.ts` — error + hint strings interpolate
  *     these values, so changing the limit auto-updates the UI copy
  *   - `src/lib/products/videos-actions.ts` — `createVideoUpload`
  *     enforces `VIDEO_SOURCE_MAX_BYTES` before minting the presigned URL

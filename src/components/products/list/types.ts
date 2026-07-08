@@ -8,6 +8,9 @@ import type { Product } from "@/lib/db/schema";
 export type ProductListItem = Pick<
   Product,
   | "id"
+  // English is canonical; Spanish kept only as a fallback for legacy
+  // rows published before the English-first flip.
+  | "titleEn"
   | "titleEs"
   | "status"
   | "basePriceCents"

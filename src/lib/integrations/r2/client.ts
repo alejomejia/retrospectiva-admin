@@ -12,9 +12,8 @@ import { S3Client } from "@aws-sdk/client-s3";
  * reads `process.env` directly rather than going through
  * `@/lib/utils/config`. Reason: the BullMQ worker
  * (`src/lib/queue/worker.ts`) runs under raw `tsx` where the
- * `server-only` chain in `config.ts` throws on import. Task 8
- * (Model Studio) uploads contact sheets + cropped panels from the
- * worker via `model-generate.ts` → `r2/upload.ts` → this file.
+ * `server-only` chain in `config.ts` throws on import. Background
+ * workers upload media to R2 via `r2/upload.ts` → this file.
  * Same sanctioned exception as `db/client.ts`, `openai/client.ts`,
  * and `queue/redis.ts`; tracked in
  * `docs/overview/project-conventions.md` §1. Client-bundle protection is

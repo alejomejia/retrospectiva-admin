@@ -6,11 +6,11 @@ import { EnrichmentOutput } from "./schemas";
 
 describe("EnrichmentOutput", () => {
   const validInput = {
-    titleEs: "Vestido azul de los 80 con flores",
-    descriptionEs:
-      "Un vestido de los 80 en azul intenso con un estampado floral pequeño. Tela ligera, ideal para primavera. Combínalo con botas blancas para un look retro.",
-    etsyTagsEs: ["vestido", "vintage", "anos 80"],
-    etsyMaterialsEs: ["algodon", "poliester"],
+    titleEn: "Blue 80s floral dress",
+    descriptionEn:
+      "An 80s dress in deep blue with a small floral print. Lightweight fabric, ideal for spring. Pair it with white boots for a retro look.",
+    etsyTagsEn: ["dress", "vintage", "80s"],
+    etsyMaterialsEn: ["cotton", "polyester"],
     etsyWhenMade: "1980s" as const,
     etsyPrimaryColor: "blue" as const,
     etsySecondaryColor: null,
@@ -22,13 +22,13 @@ describe("EnrichmentOutput", () => {
 
   it("rejects titles below 10 chars or above 140", () => {
     expect(
-      EnrichmentOutput.safeParse({ ...validInput, titleEs: "Vestido" })
+      EnrichmentOutput.safeParse({ ...validInput, titleEn: "Dress" })
         .success,
     ).toBe(false);
     expect(
       EnrichmentOutput.safeParse({
         ...validInput,
-        titleEs: "x".repeat(141),
+        titleEn: "x".repeat(141),
       }).success,
     ).toBe(false);
   });
@@ -37,7 +37,7 @@ describe("EnrichmentOutput", () => {
     expect(
       EnrichmentOutput.safeParse({
         ...validInput,
-        descriptionEs: "demasiado corta",
+        descriptionEn: "too short",
       }).success,
     ).toBe(false);
   });
@@ -46,7 +46,7 @@ describe("EnrichmentOutput", () => {
     expect(
       EnrichmentOutput.safeParse({
         ...validInput,
-        etsyTagsEs: Array(14).fill("tag"),
+        etsyTagsEn: Array(14).fill("tag"),
       }).success,
     ).toBe(false);
   });
@@ -55,7 +55,7 @@ describe("EnrichmentOutput", () => {
     expect(
       EnrichmentOutput.safeParse({
         ...validInput,
-        etsyTagsEs: ["x".repeat(31)],
+        etsyTagsEn: ["x".repeat(31)],
       }).success,
     ).toBe(false);
   });
@@ -64,7 +64,7 @@ describe("EnrichmentOutput", () => {
     expect(
       EnrichmentOutput.safeParse({
         ...validInput,
-        etsyMaterialsEs: ["x".repeat(46)],
+        etsyMaterialsEn: ["x".repeat(46)],
       }).success,
     ).toBe(false);
   });

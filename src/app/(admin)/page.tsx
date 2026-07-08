@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { requireSession } from "@/lib/auth/require-session";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * Dashboard landing page. Phase 2 keeps it intentionally minimal —

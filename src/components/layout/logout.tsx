@@ -1,7 +1,7 @@
 import { LogOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * Logout for the (admin) section. 

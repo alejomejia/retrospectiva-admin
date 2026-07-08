@@ -1,4 +1,3 @@
-import { AiImageToggleForm } from "@/components/forms/ai-image-toggle-form";
 import { BuyPriceDefaultsForm } from "@/components/forms/buy-price-defaults-form";
 import { DefaultDiscountForm } from "@/components/forms/default-discount-form";
 import { ListingFooterForm } from "@/components/forms/listing-footer-form";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { getAllBuyPriceDefaults } from "@/lib/products/buy-price-defaults";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 import { getProductSettings } from "@/lib/products/settings";
@@ -56,20 +55,6 @@ export default async function ProductSettingsPage() {
                 <ShopMarkupForm currentMarkupPercent={currentMarkupPercent} />
                 <DefaultDiscountForm
                   currentDiscountPercent={settings.defaultDiscountPercent}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{m.settings.products.aiImage.cardTitle}</CardTitle>
-                <CardDescription>
-                  {m.settings.products.aiImage.cardDescription}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <AiImageToggleForm
-                  currentAiImageEnabled={settings.aiImageEnabled}
                 />
               </CardContent>
             </Card>

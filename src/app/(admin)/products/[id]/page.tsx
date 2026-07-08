@@ -6,7 +6,6 @@ import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
 import { CopyListingLinkButton } from "@/components/products/copy-listing-link-button";
 import { Badge } from "@/components/ui/badge";
-import { listActiveAiModels } from "@/lib/ai-models/actions";
 import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
 import {
@@ -16,18 +15,14 @@ import {
 import { devError } from "@/lib/utils/dev";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { getProduct } from "@/lib/products/actions";
 import { getAllBuyPriceDefaults } from "@/lib/products/buy-price-defaults";
 import {
   countOtherFeaturedProducts,
   FEATURED_LISTING_CAP,
 } from "@/lib/products/featured";
-import {
-  getAiModelImage,
-  getAiReferenceImage,
-  listProductImages,
-} from "@/lib/products/images-actions";
+import { listProductImages } from "@/lib/products/images-actions";
 import { listProductVideos } from "@/lib/products/videos-actions";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 import { getProductSettings } from "@/lib/products/settings";
@@ -48,9 +43,6 @@ export default async function ProductDetailPage({
     oauthRows,
     buyPriceDefaults,
     settings,
-    aiModels,
-    aiReferenceRow,
-    aiModelImageRow,
     otherFeaturedCount,
   ] = await Promise.all([
     listProductImages(id),
@@ -68,9 +60,6 @@ export default async function ProductDetailPage({
       .limit(1),
     getAllBuyPriceDefaults(),
     getProductSettings(),
-    listActiveAiModels(),
-    getAiReferenceImage(id),
-    getAiModelImage(id),
     countOtherFeaturedProducts(id),
   ]);
   // Disable the featured toggle once the shop already holds the max
@@ -79,7 +68,6 @@ export default async function ProductDetailPage({
   const featuredSlotsFull = otherFeaturedCount >= FEATURED_LISTING_CAP;
   const shopMarkupPercent =
     oauthRows[0]?.markupPercent ?? DEFAULT_MARKUP_PERCENT;
-  const shopAiImageEnabled = settings.aiImageEnabled;
   const hasAnyShippingMapping =
     oauthRows[0]?.shippingProfileLightId != null ||
     oauthRows[0]?.shippingProfileMediumId != null ||
@@ -133,7 +121,7 @@ export default async function ProductDetailPage({
           />
           <div className="flex items-center gap-3">
             <PageHeader.Title>
-              {product.titleEs ?? m.products.detail.untitled}
+              {product.titleEn ?? product.titleEs ?? m.products.detail.untitled}
             </PageHeader.Title>
             <Badge
               variant={product.status === "draft" ? "outline" : "default"}
@@ -154,38 +142,17 @@ export default async function ProductDetailPage({
           featuredSlotsFull={featuredSlotsFull}
           shopMarkupPercent={shopMarkupPercent}
           shopDefaultDiscountPercent={settings.defaultDiscountPercent}
-          shopAiImageEnabled={shopAiImageEnabled}
-          shopListingFooterEs={settings.listingFooterEs}
+          shopListingFooterEn={settings.listingFooterEn}
           etsyPoliciesConfigured={etsyPoliciesConfigured}
           buyPriceDefaults={buyPriceDefaults}
           imageItems={imageItems}
           videoItems={videoItems}
-          aiModels={aiModels}
-          aiReferenceImage={
-            aiReferenceRow
-              ? {
-                  url: publicUrlFor(aiReferenceRow.r2Key, R2_PUBLIC_BASE_URL),
-                  width: aiReferenceRow.width,
-                  height: aiReferenceRow.height,
-                }
-              : null
-          }
-          aiGeneratedImage={
-            aiModelImageRow
-              ? {
-                  url: publicUrlFor(aiModelImageRow.r2Key, R2_PUBLIC_BASE_URL),
-                  width: aiModelImageRow.width,
-                  height: aiModelImageRow.height,
-                }
-              : null
-          }
           shippingProfiles={shippingProfiles}
           shippingMapping={{
             light: oauthRows[0]?.shippingProfileLightId ?? null,
             medium: oauthRows[0]?.shippingProfileMediumId ?? null,
             heavy: oauthRows[0]?.shippingProfileHeavyId ?? null,
           }}
-          r2BaseUrl={R2_PUBLIC_BASE_URL}
         />
       </main>
     </>

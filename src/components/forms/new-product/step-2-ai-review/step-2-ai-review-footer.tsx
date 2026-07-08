@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 import { useStep2AiReviewFooter } from "./use-step-2-ai-review-footer";
 
@@ -11,26 +11,26 @@ import { useStep2AiReviewFooter } from "./use-step-2-ai-review-footer";
  * Step-2 listing-footer field. Shows the shop-wide default footer
  * (read-only, so the operator can confirm the same boilerplate ships
  * on every product) and lets them override it for this product. The
- * override is typed in Spanish only; the save action translates +
- * caches the English at the publish boundary.
+ * override is typed in English only; the save action translates +
+ * caches the Spanish at the publish boundary.
  */
 export function ListingFooterField({
   productId,
-  shopFooterDefaultEs,
-  initialOverrideEs,
+  shopFooterDefaultEn,
+  initialOverrideEn,
 }: {
   productId: string;
-  shopFooterDefaultEs: string;
-  initialOverrideEs: string | null;
+  shopFooterDefaultEn: string;
+  initialOverrideEn: string | null;
 }) {
   const { overriding, draft, setDraft, pending, startOverride, save, clear } =
     useStep2AiReviewFooter({
       productId,
-      initialOverrideEs: initialOverrideEs ?? "",
+      initialOverrideEn: initialOverrideEn ?? "",
     });
 
   const t = m.products.editForm.listingFooter;
-  const defaultText = shopFooterDefaultEs.trim();
+  const defaultText = shopFooterDefaultEn.trim();
 
   return (
     <div className="space-y-3 rounded-md border border-border p-4">
@@ -64,9 +64,9 @@ export function ListingFooterField({
       {overriding && (
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label htmlFor="footer-override-es">{t.overrideLabel}</Label>
+            <Label htmlFor="footer-override-en">{t.overrideLabel}</Label>
             <Textarea
-              id="footer-override-es"
+              id="footer-override-en"
               rows={5}
               maxLength={2000}
               value={draft}

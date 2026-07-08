@@ -22,7 +22,7 @@ import type {
   ReturnPolicy,
   ShippingProfile,
 } from "@/lib/integrations/etsy/shop-config";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 type ShippingMappingFormProps = {
   shippingProfiles: ShippingProfile[];

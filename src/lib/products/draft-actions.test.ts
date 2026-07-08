@@ -42,22 +42,16 @@ vi.mock("@/lib/integrations/openai/ai-runs-log", () => ({
   latestRunForKind: latestRunForKindMock,
 }));
 
-// `runTranslation` writes the EN column to the DB in real code. The
-// mock simulates that side effect by stamping `titleEn` onto the row the
-// db mock returns, so the slug-freeze re-read in `markAsPublished` sees
-// the freshly-translated English title.
-const runTranslationMock = vi.fn(async (_id: string, field: string) => {
-  if (field === "titleEs") {
-    dbState.selectRow.titleEn = "Blue dress";
-  }
-});
+// `runTranslation` writes the derived ES column in real code. It runs
+// on the update-website path (EN → ES); the mock is a no-op spy.
+const runTranslationMock = vi.fn();
 
 vi.mock("@/lib/integrations/openai/translate", () => ({
   TRANSLATABLE_FIELDS: [
-    "titleEs",
-    "descriptionEs",
-    "etsyTagsEs",
-    "etsyMaterialsEs",
+    "titleEn",
+    "descriptionEn",
+    "etsyTagsEn",
+    "etsyMaterialsEn",
   ],
   runTranslation: runTranslationMock,
   translateText: vi.fn().mockResolvedValue(""),
@@ -394,7 +388,7 @@ describe("markAsPublished", () => {
   });
 
   it("freezes a slug when the row has none", async () => {
-    dbState.selectRow = { status: "scheduled", slug: null, titleEs: "Vestido azul" };
+    dbState.selectRow = { status: "scheduled", slug: null, titleEn: "Blue dress" };
     const res = await markAsPublished("p1");
     expect(res.ok).toBe(true);
     expect(dbState.updateCalls[0]?.values.slug).toEqual(expect.any(String));
@@ -413,7 +407,7 @@ describe("markAsPublished", () => {
     expect(dbState.updateCalls[0]?.values.slug).toMatch(/^blue-dress-/);
   });
 
-  it("translates the title before freezing the slug when there is no English title", async () => {
+  it("falls back to the Spanish title for the slug when there is no English title", async () => {
     dbState.selectRow = {
       status: "scheduled",
       slug: null,
@@ -422,9 +416,10 @@ describe("markAsPublished", () => {
     };
     const res = await markAsPublished("p1");
     expect(res.ok).toBe(true);
-    // Translation must run so the slug is English, never the Spanish title.
-    expect(runTranslationMock).toHaveBeenCalledWith("p1", "titleEs");
-    expect(dbState.updateCalls[0]?.values.slug).toMatch(/^blue-dress-/);
+    // English is canonical and normally always present; markAsPublished no
+    // longer translates here, it just falls back to the Spanish title.
+    expect(runTranslationMock).not.toHaveBeenCalled();
+    expect(dbState.updateCalls[0]?.values.slug).toMatch(/^vestido-azul-/);
   });
 
   it("keeps an existing frozen slug unchanged", async () => {

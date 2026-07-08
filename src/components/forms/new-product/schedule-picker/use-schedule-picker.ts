@@ -3,7 +3,7 @@
 import { addMonths, addMinutes, format, isAfter, isBefore } from "date-fns";
 import { useMemo, useState } from "react";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 import { MAX_LEAD_MONTHS, MIN_LEAD_MINUTES } from "./schedule-picker.const";
 

@@ -31,7 +31,7 @@ export function derivePhase(
   if (timedOut) return "failed";
 
   if (!aiStatus) {
-    return product.titleEs && product.titleEs.trim() !== ""
+    return product.titleEn && product.titleEn.trim() !== ""
       ? "succeeded"
       : "running";
   }
@@ -54,7 +54,7 @@ export function derivePhase(
   // we don't pin to "running" and poll `/ai-status` forever.
   if (!enrich) {
     if (kickedAt > 0) return "running"; // new run kicked, row not visible yet
-    return product.titleEs && product.titleEs.trim() !== ""
+    return product.titleEn && product.titleEn.trim() !== ""
       ? "succeeded"
       : "running";
   }

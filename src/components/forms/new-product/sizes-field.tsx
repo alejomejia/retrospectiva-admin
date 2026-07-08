@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SIZE_VALUES, type SizeValue } from "@/lib/products/draft-schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 import { useAutosave } from "./autosave";
 

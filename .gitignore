@@ -46,3 +46,6 @@ design-system.html
 
 # docs
 docs/policies
+
+# local prod DB dumps — never commit
+db-dumps/

@@ -1,25 +1,25 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { saveListingFooterOverride } from "@/lib/products/draft-actions";
 
 /**
  * State + server-action wiring for the step-2 listing-footer override.
- * The override is ES-only on the way in; the action machine-translates
- * to EN and caches both columns, so this hook only ever deals with the
- * Spanish draft. `overriding` toggles between "inherit the shop-wide
+ * The override is EN-only on the way in; the action machine-translates
+ * to ES and caches both columns, so this hook only ever deals with the
+ * English draft. `overriding` toggles between "inherit the shop-wide
  * footer" and "use this product's own text".
  */
 export function useStep2AiReviewFooter({
   productId,
-  initialOverrideEs,
+  initialOverrideEn,
 }: {
   productId: string;
-  initialOverrideEs: string;
+  initialOverrideEn: string;
 }) {
-  const [overriding, setOverriding] = useState(initialOverrideEs.trim() !== "");
-  const [draft, setDraft] = useState(initialOverrideEs);
+  const [overriding, setOverriding] = useState(initialOverrideEn.trim() !== "");
+  const [draft, setDraft] = useState(initialOverrideEn);
   const [pending, startTransition] = useTransition();
 
   const startOverride = () => setOverriding(true);
@@ -30,7 +30,7 @@ export function useStep2AiReviewFooter({
       if (result.ok) {
         // Empty draft clears the override server-side — reflect that by
         // dropping back to the inherited default.
-        if (result.footerEsOverride == null) {
+        if (result.footerEnOverride == null) {
           setOverriding(false);
           setDraft("");
         }

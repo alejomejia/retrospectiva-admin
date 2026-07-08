@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * 9:16 preview frame. The parent `key`s this on the URL, so switching the

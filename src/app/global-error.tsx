@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * Root-level error boundary. Catches errors thrown inside `app/layout.tsx`

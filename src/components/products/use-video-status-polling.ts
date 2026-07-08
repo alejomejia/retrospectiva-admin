@@ -12,7 +12,7 @@ const DEFAULT_INTERVAL_MS = 2500;
  * `VideoList` to watch in-flight transcodes; the caller enables it only
  * while a row is `processing` and disables once everything settles.
  *
- * Mirrors `useAiImageStatusPolling`. Network blips are swallowed; the
+ * Mirrors `useAiStatusPolling`. Network blips are swallowed; the
  * loop stops on unmount or when disabled.
  */
 export function useVideoStatusPolling(

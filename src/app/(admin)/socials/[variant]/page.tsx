@@ -11,7 +11,7 @@ import {
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
 import { etsyOauth, productImages, products } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
 import type { Product } from "@/lib/db/schema";
@@ -62,12 +62,13 @@ export default async function SocialsVariantPage({
       ? sql`coalesce(${products.soldAt}, ${products.createdAt}) DESC`
       : sql`coalesce(${products.scheduledPublishAt}, ${products.createdAt}) DESC`;
   const where = q
-    ? and(inArray(products.status, [...statuses]), ilike(products.titleEs, `%${q}%`))
+    ? and(inArray(products.status, [...statuses]), ilike(products.titleEn, `%${q}%`))
     : inArray(products.status, [...statuses]);
 
   const rows = await db
     .select({
       id: products.id,
+      titleEn: products.titleEn,
       titleEs: products.titleEs,
       status: products.status,
     })
@@ -99,7 +100,7 @@ export default async function SocialsVariantPage({
   const items: SocialsProductItem[] = rows
     .map((r) => ({
       id: r.id,
-      title: r.titleEs,
+      title: r.titleEn ?? r.titleEs,
       status: r.status,
       thumbnailUrl: thumbByProductId.get(r.id) ?? null,
     }))

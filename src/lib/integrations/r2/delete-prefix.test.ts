@@ -48,7 +48,7 @@ describe("deleteR2Prefix", () => {
           Contents: [
             { Key: "products/abc/original/1.webp" },
             { Key: "products/abc/original/2.webp" },
-            { Key: "products/abc/ai_model/3.webp" },
+            { Key: "products/abc/thumbnail/3.webp" },
           ],
           IsTruncated: false,
         };
@@ -73,7 +73,7 @@ describe("deleteR2Prefix", () => {
     expect(deleteCmd.input.Delete?.Objects).toEqual([
       { Key: "products/abc/original/1.webp" },
       { Key: "products/abc/original/2.webp" },
-      { Key: "products/abc/ai_model/3.webp" },
+      { Key: "products/abc/thumbnail/3.webp" },
     ]);
   });
 

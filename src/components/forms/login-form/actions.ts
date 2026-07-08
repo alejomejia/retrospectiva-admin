@@ -8,7 +8,7 @@ import { verifyPassword } from "@/lib/auth/password";
 import { checkRate, resetRate } from "@/lib/auth/rate-limit";
 import { setSessionCookie, signSession } from "@/lib/auth/session";
 import { findUser } from "@/lib/auth/users";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { devGroup } from "@/lib/utils/dev";
 const dev = devGroup("auth");
 

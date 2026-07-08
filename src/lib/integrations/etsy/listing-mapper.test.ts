@@ -29,7 +29,7 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     listPriceCentsOverride: null,
     buyPriceCents: null,
     clothingType: "dress",
-    condition: "perfect",
+    condition: "excellent",
     size: "M",
     isFeatured: false,
     etsyPrimaryColor: null,
@@ -49,14 +49,6 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
     etsyWhenMade: "1990s",
     etsyTaxonomyId: 11074,
     shippingProfileId: 5001,
-    aiImageEnabled: null,
-    aiModelId: null,
-    aiSourcePanel: null,
-    aiPosePreset: "soft_relaxed",
-    aiFramingPreset: "waist_up",
-    aiEnvironmentPreset: "textured_wall",
-    aiFitOverride: null,
-    aiImageQuality: "low",
     status: "draft",
     scheduledPublishAt: null,
     etsyListingId: null,
@@ -79,7 +71,7 @@ describe("mapProductToCreateDraftPayload", () => {
       // Size header (from the `size` column) leads the description,
       // with the condition appended to the same line.
       description:
-        "Size: M | EU 40 | UK 12 | US 8 | Condition: Perfect\n\nBeautiful dress.",
+        "Size: M | EU 40 | UK 12 | US 8 | Condition: Excellent\n\nBeautiful dress.",
       // 100.00 EUR * 1.30 = 130.00 → charm-priced to 130.99
       price: 130.99,
       who_made: "someone_else",

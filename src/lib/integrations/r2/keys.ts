@@ -16,10 +16,10 @@
  *   This makes the R2 console browseable by month / year and keeps
  *   per-product deletes a single prefix sweep.
  * - `productId` is a UUID, URL-safe and unique.
- * - `role` (original | ai_model | thumbnail) matches the
+ * - `role` (original | thumbnail) matches the
  *   `product_images.role` column — lets a future
  *   `deleteR2Prefix(products/{date}/{id}/{role}/)` sweep one role
- *   only (e.g. nuke AI shots before regenerating).
+ *   only.
  * - The trailing UUID lets two uploads of the same filename coexist
  *   without overwriting each other.
  *

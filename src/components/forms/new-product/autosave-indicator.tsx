@@ -3,7 +3,7 @@
 import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { cn } from "@/lib/utils/helpers";
 
 import { useAutosave } from "./autosave";

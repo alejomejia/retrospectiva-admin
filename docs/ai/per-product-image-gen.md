@@ -172,7 +172,7 @@ can override per product if a different angle reads better.
 - `src/lib/products/draft-actions.ts` — handle the new AI columns in `updateProductDraftField`.
 - `src/lib/products/draft-schema.ts` — zod for the new fields.
 - `src/components/forms/new-product/step-1-inputs.tsx` — render the new section at the bottom.
-- `src/lib/i18n/messages.es.ts` — labels for all the new selects + button text.
+- `src/lib/i18n/messages.en.ts` — labels for all the new selects + button text.
 
 ---
 

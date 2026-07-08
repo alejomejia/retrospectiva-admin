@@ -35,8 +35,8 @@ const CONDITION_LABEL: Record<"es" | "en", string> = {
 
 /** Localized condition value shown after the size conversion. */
 const CONDITION_VALUE: Record<"es" | "en", Record<ProductCondition, string>> = {
-  es: { perfect: "Perfecto", very_good: "Muy bueno", good: "Bueno" },
-  en: { perfect: "Perfect", very_good: "Very good", good: "Good" },
+  es: { excellent: "Excelente", very_good: "Muy bueno", good: "Bueno" },
+  en: { excellent: "Excellent", very_good: "Very good", good: "Good" },
 };
 
 /** Joiner between the size header and the description body. */
@@ -85,7 +85,7 @@ export function formatSizeBadge(
 
 /**
  * Builds the localized size header for a product, e.g.
- * `Size: S | EU 36 | UK 8 | US 4 | Condition: Perfect`. The condition
+ * `Size: S | EU 36 | UK 8 | US 4 | Condition: Excellent`. The condition
  * segment is appended only when a condition is supplied. Returns `null`
  * when no usable size is set (so callers can omit the line entirely).
  *

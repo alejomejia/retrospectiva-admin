@@ -6,7 +6,7 @@ import { useEffect, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import {
   deleteProductVideo,
   moveProductVideo,

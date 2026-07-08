@@ -281,7 +281,7 @@ both counts in one Spanish-correct message:
 - 1 video → `"Vídeo subido"`
 - mixed → `"Subido: ${imagesPart} y ${videosPart}"`
 
-See `m.toasts.mediaUploaded` in `src/lib/i18n/messages.es.ts`.
+See `m.toasts.mediaUploaded` in `src/lib/i18n/messages.en.ts`.
 
 ## Galleries (display)
 

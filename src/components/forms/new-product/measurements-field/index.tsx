@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import type { ClothingType } from "@/lib/db/schema";
 import {
   doublesAtBoundary,

@@ -21,7 +21,7 @@ import {
 import type { StoryVariantKey } from "./instagram-story-variants";
 
 /** Static default copy shared across templates (was inline / in i18n). */
-const NEW_BADGE = "New today";
+const BADGE = "Available";
 const SOLD_ACCENT = "Gone";
 const FOOTER_TAGLINE = "One of a kind";
 
@@ -132,7 +132,7 @@ export function defaultStoryFields(
   const originalPrice = storyOriginalPriceLabel(product, shopMarkupPercent);
 
   return {
-    badge: NEW_BADGE,
+    badge: BADGE,
     eyebrow: storyEyebrow(product) ?? "",
     title,
     // Price is hidden by default — turn on the `showPrice` toggle to reveal

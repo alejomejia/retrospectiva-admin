@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveShopMarkup } from "@/lib/integrations/etsy/defaults-actions";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { DEFAULT_MARKUP_PERCENT } from "@/lib/products/pricing";
 
 type Props = {

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { updateProductDraftField } from "@/lib/products/draft-actions";
 import { type ProductDraftPatch } from "@/lib/products/draft-schema";
 

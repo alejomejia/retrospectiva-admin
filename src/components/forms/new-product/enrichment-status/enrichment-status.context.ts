@@ -18,9 +18,8 @@ export type EnrichmentStatusValue = {
    * its fresh AI content is pulled in via `router.refresh()`. Used as
    * the React `key` for the editable AI-content fields so they remount
    * (and re-seed from the new server values) on a real regenerate —
-   * but NOT on unrelated refreshes (autosave bumping `updatedAt`, the
-   * image-placement job finishing), which would otherwise blur the
-   * input the user is typing in.
+   * but NOT on unrelated refreshes (autosave bumping `updatedAt`),
+   * which would otherwise blur the input the user is typing in.
    */
   contentVersion: number;
 };

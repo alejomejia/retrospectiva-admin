@@ -3,12 +3,10 @@
 import { AiContentSection } from "@/components/products/ai-content-section";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { Product } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
-import type { GeneratedAiImage } from "../ai-image-section";
 import { FeatureImage } from "./step-2-ai-review-feature-image";
 import { ListingFooterField } from "./step-2-ai-review-footer";
-import { AiImagePlacementSection } from "./step-2-ai-review-image-placement";
 import { FailureBanner } from "./step-2-ai-review-failure-banner";
 import { RunningSkeleton } from "./step-2-ai-review-running-skeleton";
 import { useStep2AiReview } from "./use-step-2-ai-review";
@@ -24,13 +22,11 @@ import { useStep2AiReview } from "./use-step-2-ai-review";
  */
 export function Step2AiReview({
   product,
-  initialAiImage,
-  shopListingFooterEs,
+  shopListingFooterEn,
   featureImage,
 }: {
   product: Product;
-  initialAiImage: GeneratedAiImage;
-  shopListingFooterEs: string;
+  shopListingFooterEn: string;
   /** Primary product photo (first in the ordered list), for side-by-side
    *  comparison against the AI-generated copy. Null when no photos. */
   featureImage: ImageListItem | null;
@@ -82,17 +78,11 @@ export function Step2AiReview({
           <ListingFooterField
             key={`footer-${product.id}`}
             productId={product.id}
-            shopFooterDefaultEs={shopListingFooterEs}
-            initialOverrideEs={product.listingFooterEsOverride}
+            shopFooterDefaultEn={shopListingFooterEn}
+            initialOverrideEn={product.listingFooterEnOverride}
           />
         )}
       </div>
-
-      {/* AI image placement */}
-      <AiImagePlacementSection
-        productId={product.id}
-        initialImage={initialAiImage}
-      />
     </div>
   );
 }

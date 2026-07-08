@@ -21,7 +21,7 @@ import { db } from "@/lib/db/client";
 import { etsyOauth, productImages, products } from "@/lib/db/schema";
 import { R2_PUBLIC_BASE_URL } from "@/lib/integrations/r2/client";
 import { publicUrlFor } from "@/lib/integrations/r2/keys";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import {
   buildProductsWhere,
   parseProductListParams,
@@ -62,6 +62,7 @@ export default async function ProductsPage({
     db
       .select({
         id: products.id,
+        titleEn: products.titleEn,
         titleEs: products.titleEs,
         status: products.status,
         basePriceCents: products.basePriceCents,
@@ -110,6 +111,7 @@ export default async function ProductsPage({
 
   const rows: ProductListItem[] = productRows.map((r) => ({
     id: r.id,
+    titleEn: r.titleEn,
     titleEs: r.titleEs,
     status: r.status,
     basePriceCents: r.basePriceCents,

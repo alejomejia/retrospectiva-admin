@@ -7,7 +7,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
 import { aiRuns, etsyOauth, products } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { featuredSlotFullForProduct } from "@/lib/integrations/etsy/publish";
 import { latestRunForKind } from "@/lib/integrations/openai/ai-runs-log";
 import {
@@ -332,22 +332,10 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
 
     // Freeze the public store slug on first publish — once set it never
     // changes so shared / indexed URLs stay valid (mirrors `publish`).
-    // The slug MUST be English. Translation normally runs at the publish
-    // boundary (`runScheduledPublish`); a manual reconcile skips the
-    // worker, so a product that never ran through it can still have an
-    // empty `titleEn`. Translate the title here before freezing rather
-    // than fall back to Spanish — a Spanish slug would be permanent.
-    let titleEn = row.titleEn;
-    if (!row.slug && !titleEn?.trim()) {
-      await runTranslation(id, "titleEs");
-      const [fresh] = await db
-        .select({ titleEn: products.titleEn })
-        .from(products)
-        .where(eq(products.id, id))
-        .limit(1);
-      titleEn = fresh?.titleEn ?? null;
-    }
-    const slug = row.slug ?? buildSlug(titleEn ?? row.titleEs, id);
+    // English is canonical and populated by enrichment, so the slug is
+    // built directly from `titleEn`; `titleEs` is only a fallback for
+    // the (legacy) case where English is somehow absent.
+    const slug = row.slug ?? buildSlug(row.titleEn ?? row.titleEs, id);
 
     await db
       .update(products)
@@ -424,7 +412,7 @@ export async function updatePublishedProduct(
       return { ok: false, error: m.errors.couldNotSaveChanges };
     }
 
-    // Re-translate ES→EN for every translatable field. Sequential to
+    // Re-translate EN→ES for every translatable field. Sequential to
     // keep the OpenAI call volume predictable; a single failure aborts
     // the push so we never ship a half-translated payload.
     for (const field of TRANSLATABLE_FIELDS) {
@@ -757,31 +745,31 @@ const FOOTER_OVERRIDE_MAX_LEN = 2000;
 
 /**
  * Persist a per-product listing-footer override. The operator types
- * only Spanish; we machine-translate it to English once here and cache
+ * only English; we machine-translate it to Spanish once here and cache
  * both columns, so the publish + website paths stay pure column reads
- * (no per-publish OpenAI call). An empty ES value clears the override,
+ * (no per-publish OpenAI call). An empty EN value clears the override,
  * reverting the product to the shop-wide footer (both columns → null).
  *
  * Translating on save (rather than at publish) keeps the rare override
- * out of the hot publish path and matches the "EN columns are a cache"
+ * out of the hot publish path and matches the "ES columns are a cache"
  * precedent used by the AI-enriched fields.
  */
 export async function saveListingFooterOverride(
   productId: string,
-  footerEs: string,
+  footerEn: string,
 ): Promise<SaveFooterOverrideResult> {
   await requireSession();
 
-  const trimmed = footerEs.trim();
+  const trimmed = footerEn.trim();
   if (trimmed.length > FOOTER_OVERRIDE_MAX_LEN) {
     return { ok: false, error: m.errors.invalidForm };
   }
 
   try {
     // Empty → clear the override (inherit the shop-wide footer).
-    const footerEn = trimmed ? await translateText(trimmed) : "";
-    const footerEsOverride = trimmed || null;
-    const footerEnOverride = trimmed ? footerEn : null;
+    const footerEs = trimmed ? await translateText(trimmed) : "";
+    const footerEnOverride = trimmed || null;
+    const footerEsOverride = trimmed ? footerEs : null;
 
     const [row] = await db
       .update(products)

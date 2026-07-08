@@ -142,19 +142,20 @@ shows skeletons in place of the not-yet-filled fields.
 | --- | --- | --- |
 | Title | `title_es`, `title_en` | Single text input (ES). Collapsible "Ver versión en inglés" with the EN value + "Regenerar traducción". |
 | Description | `description_es`, `description_en` | Multi-line textarea (ES) + same EN collapsible. |
-| Tags | `etsy_tags_es text[]`, `etsy_tags_en text[]` | Chip input on the ES array; EN parallel auto-translated. |
-| Materials | `etsy_materials_es text[]`, `etsy_materials_en text[]` | Same chip-input shape as tags. |
+| Tags | `etsy_tags_en text[]`, `etsy_tags_es text[]` | Chip input on the EN array; ES parallel auto-translated. |
+| Materials | `etsy_materials_en text[]`, `etsy_materials_es text[]` | Same chip-input shape as tags. |
 | Era | `etsy_when_made` | Select with the Etsy enum (`1990s`, `1980s`, `1970s`, `1960s`, `1950s`, `before_1950`). |
 | Taxonomy | `etsy_taxonomy_id` | Select from the curated short list in `src/lib/integrations/etsy/taxonomy.ts`. |
 | Model image | `product_images` row with `role='ai_model'` | Image preview + 🔄 regenerate; hard-deletes the prior `role='ai_model'` row + R2 object on each regenerate. |
 
 Each field is wrapped in an `<AiField>` component: input + spinner
-state + "🔄 regenerar" button + (for text fields) the EN collapsible.
+state + "🔄 regenerate" button.
 
-**ES → EN translation flow**: edits to the ES side debounce 500 ms
-then enqueue an `ai-translate` job, which updates the EN counterpart.
-The EN collapsible shows a small "Actualizando…" indicator while
-running.
+**EN → ES translation flow**: the operator edits only the canonical
+English side. The Spanish counterpart is not translated on autosave —
+it is derived inline at the Etsy-publish boundary (`runTranslation`,
+EN → ES) so we never pay for a translation on content that may never
+publish.
 
 **AI failure handling**: if the `ai-enrich` job fails, step 2 still
 renders with the fields **empty and editable**. A top-of-page banner

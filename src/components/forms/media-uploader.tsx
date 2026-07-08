@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { uploadProductImage } from "@/lib/products/images-actions";
 import {
   VIDEO_MAX_DURATION_MS,

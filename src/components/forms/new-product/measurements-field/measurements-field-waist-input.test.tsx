@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { WaistInput } from "./measurements-field-waist-input";
 
 describe("WaistInput", () => {
-  it("shows a single 'Cintura' field when not elastic", () => {
+  it("shows a single 'Waist' field when not elastic", () => {
     render(
       <WaistInput
         doubles
@@ -15,8 +15,8 @@ describe("WaistInput", () => {
         onChangeMax={() => {}}
       />,
     );
-    expect(screen.getByLabelText(/^cintura\s*\*?$/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/cintura máxima/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^waist\s*\*?$/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/maximum waist/i)).not.toBeInTheDocument();
   });
 
   it("reveals min/max fields when the elastic toggle is turned on", async () => {
@@ -30,8 +30,8 @@ describe("WaistInput", () => {
       />,
     );
     await userEvent.click(screen.getByRole("switch"));
-    expect(screen.getByLabelText(/cintura mínima/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/cintura máxima/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/minimum waist/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/maximum waist/i)).toBeInTheDocument();
   });
 
   it("clears the max when the elastic toggle is turned off", async () => {
@@ -46,9 +46,9 @@ describe("WaistInput", () => {
       />,
     );
     // Starts elastic because a max is present.
-    expect(screen.getByLabelText(/cintura máxima/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/maximum waist/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("switch"));
     expect(onChangeMax).toHaveBeenCalledWith(null);
-    expect(screen.queryByLabelText(/cintura máxima/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/maximum waist/i)).not.toBeInTheDocument();
   });
 });

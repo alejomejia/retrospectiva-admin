@@ -159,11 +159,11 @@ Root `(admin)/page.tsx` still the Phase 2 minimal landing.
 
 ## Locked design rules (carry-forward)
 
-- **Spanish-only admin.** Translations run at the Etsy-publish
+- **English-only admin.** Translations (EN → ES) run at the Etsy-publish
   boundary. No EN UI anywhere. Memory:
   `feedback_translate-at-publish-boundary`.
 - **All code in English.** Identifiers, URL params, registry keys.
-  Spanish lives only in `messages.es.ts`. Memory:
+  Spanish is machine-derived; UI copy lives only in `messages.en.ts`. Memory:
   `feedback_code-english-only`.
 - **Worker can't load `server-only` modules.** Sanctioned exceptions
   in `docs/overview/project-conventions.md` §1.

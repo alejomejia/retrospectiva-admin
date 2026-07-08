@@ -46,7 +46,7 @@ export class WebsitePayloadError extends Error {
 
 export type WebsiteImage = {
   url: string;
-  role: "original" | "ai_model";
+  role: "original";
   rank: number;
   width: number | null;
   height: number | null;
@@ -264,7 +264,6 @@ export async function buildWebsitePayload(input: {
   const originals = imageRows
     .filter((r) => r.role === "original")
     .sort((a, b) => a.order - b.order);
-  const aiModel = imageRows.find((r) => r.role === "ai_model") ?? null;
   const ordered: WebsiteImage[] = originals.map((r, i) => ({
     url: publicUrlFor(r.r2Key, base),
     role: "original",
@@ -272,15 +271,6 @@ export async function buildWebsitePayload(input: {
     width: r.width,
     height: r.height,
   }));
-  if (aiModel) {
-    ordered.push({
-      url: publicUrlFor(aiModel.r2Key, base),
-      role: "ai_model",
-      rank: ordered.length + 1,
-      width: aiModel.width,
-      height: aiModel.height,
-    });
-  }
 
   // Storefront only ever gets a fully transcoded video — a `processing`
   // or `failed` row has no playable bytes, so filter to `ready`.

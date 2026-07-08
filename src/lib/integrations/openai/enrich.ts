@@ -116,7 +116,7 @@ const R2_PUBLIC_BASE_URL =
 
 /**
  * Full enrichment pass for a single product. One Responses-API call
- * with the structured-output schema returns Spanish title +
+ * with the structured-output schema returns English title +
  * description + tags + materials + era + taxonomy key in one go.
  * The result is persisted on `products` and the call is logged to
  * `ai_runs`.
@@ -212,9 +212,9 @@ export async function runEnrichment(productId: string): Promise<void> {
 
     const text = extractOutputText(response);
     // OpenAI structured outputs ignore JSON-Schema maxLength, so the
-    // model routinely emits tags/materials over the Etsy per-entry cap
-    // (Spanish phrases run long). Clamp at word boundaries before zod so
-    // a normal over-length phrase repairs instead of failing the job.
+    // model routinely emits tags/materials over the Etsy per-entry cap.
+    // Clamp at word boundaries before zod so a normal over-length phrase
+    // repairs instead of failing the job.
     const parsed = EnrichmentOutput.safeParse(
       clampEnrichmentPhrases(safeJsonParse(text)),
     );
@@ -233,10 +233,10 @@ export async function runEnrichment(productId: string): Promise<void> {
     await db
       .update(products)
       .set({
-        titleEs: enrichment.titleEs,
-        descriptionEs: enrichment.descriptionEs,
-        etsyTagsEs: enrichment.etsyTagsEs,
-        etsyMaterialsEs: enrichment.etsyMaterialsEs,
+        titleEn: enrichment.titleEn,
+        descriptionEn: enrichment.descriptionEn,
+        etsyTagsEn: enrichment.etsyTagsEn,
+        etsyMaterialsEn: enrichment.etsyMaterialsEn,
         etsyWhenMade: enrichment.etsyWhenMade,
         etsyPrimaryColor: enrichment.etsyPrimaryColor,
         etsySecondaryColor: enrichment.etsySecondaryColor,
@@ -255,12 +255,12 @@ export async function runEnrichment(productId: string): Promise<void> {
       costUsd: estimateCostUsd(MODELS.text, response),
     });
 
-    // Translation is NOT triggered here. The EN columns are populated
-    // by the Phase 4c Etsy-publish processor (inline call to
-    // `runTranslation` per field, just before `updateListingTranslation`).
-    // The admin UI never displays EN, so paying for a translation on
-    // every draft enrichment would burn tokens on products that may
-    // never be published.
+    // Translation is NOT triggered here. English (`*_en`) is the
+    // canonical, operator-edited side; the derived Spanish (`*_es`)
+    // columns are populated by the Etsy-publish processor (inline call
+    // to `runTranslation` per field, just before the listing is pushed).
+    // Paying for a translation on every draft enrichment would burn
+    // tokens on products that may never be published.
 
     dev.log("enrichment succeeded", productId);
   } catch (err) {
@@ -282,14 +282,14 @@ const ENRICHMENT_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
-    titleEs: { type: "string", minLength: 10, maxLength: 140 },
-    descriptionEs: { type: "string", minLength: 40, maxLength: 2000 },
-    etsyTagsEs: {
+    titleEn: { type: "string", minLength: 10, maxLength: 140 },
+    descriptionEn: { type: "string", minLength: 40, maxLength: 2000 },
+    etsyTagsEn: {
       type: "array",
       maxItems: 13,
       items: { type: "string", minLength: 1, maxLength: 20 },
     },
-    etsyMaterialsEs: {
+    etsyMaterialsEn: {
       type: "array",
       maxItems: 13,
       items: { type: "string", minLength: 1, maxLength: 45 },
@@ -308,10 +308,10 @@ const ENRICHMENT_JSON_SCHEMA = {
     },
   },
   required: [
-    "titleEs",
-    "descriptionEs",
-    "etsyTagsEs",
-    "etsyMaterialsEs",
+    "titleEn",
+    "descriptionEn",
+    "etsyTagsEn",
+    "etsyMaterialsEn",
     "etsyWhenMade",
     "etsyPrimaryColor",
     "etsySecondaryColor",
@@ -338,13 +338,13 @@ function clampEnrichmentPhrases(parsed: unknown): unknown {
   const obj = parsed as Record<string, unknown>;
   return {
     ...obj,
-    ...(Array.isArray(obj.etsyTagsEs)
-      ? { etsyTagsEs: clampPhrasesToMaxLen(obj.etsyTagsEs, ETSY_TAG_MAX_LEN) }
+    ...(Array.isArray(obj.etsyTagsEn)
+      ? { etsyTagsEn: clampPhrasesToMaxLen(obj.etsyTagsEn, ETSY_TAG_MAX_LEN) }
       : {}),
-    ...(Array.isArray(obj.etsyMaterialsEs)
+    ...(Array.isArray(obj.etsyMaterialsEn)
       ? {
-          etsyMaterialsEs: clampPhrasesToMaxLen(
-            obj.etsyMaterialsEs,
+          etsyMaterialsEn: clampPhrasesToMaxLen(
+            obj.etsyMaterialsEn,
             ETSY_MATERIAL_MAX_LEN,
           ),
         }

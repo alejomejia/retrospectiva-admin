@@ -1,10 +1,8 @@
 import { z } from "zod";
 
-import { IMAGE_QUALITY_VALUES } from "@/lib/ai-models/variables";
 import { clothingType, productCondition } from "@/lib/db/schema";
 import { ETSY_COLORS } from "@/lib/integrations/etsy/etsy-colors";
 import { ETSY_SIZES } from "@/lib/integrations/etsy/etsy-sizes";
-import { PANEL_ORDER } from "@/lib/integrations/openai/panel-keys";
 
 /**
  * Per-field patch schema for the autosave server action used by both
@@ -35,48 +33,13 @@ export const ETSY_ERA_VALUES = [
 ] as const;
 export type EtsyEra = (typeof ETSY_ERA_VALUES)[number];
 
-// ----- Image-placement enums (Task 11) -----------------------------
-//
-// Declared here (not in image-placement-prompts.ts) so client form
-// components can import them without pulling the server-only prompt
-// module into the browser bundle. `image-placement-prompts.ts` is
-// the consumer and re-uses these same `as const` arrays for its
-// typed `POSES`/`FRAMINGS`/`ENVIRONMENTS` records.
-
-export const AI_POSE_PRESETS = [
-  "soft_relaxed",
-  "soft_movement",
-  "structured_posture",
-] as const;
-export type AiPosePreset = (typeof AI_POSE_PRESETS)[number];
-
-export const AI_FRAMING_PRESETS = [
-  "waist_up",
-  "thighs_up",
-  "full_body",
-  "close_detail",
-] as const;
-export type AiFramingPreset = (typeof AI_FRAMING_PRESETS)[number];
-
-export const AI_ENVIRONMENT_PRESETS = [
-  "textured_wall",
-  "minimal_apartment",
-  "soft_studio",
-  "vintage_home",
-  "window_light",
-] as const;
-export type AiEnvironmentPreset = (typeof AI_ENVIRONMENT_PRESETS)[number];
-
-export const AI_FIT_OVERRIDES = ["tight", "loose", "oversized"] as const;
-export type AiFitOverride = (typeof AI_FIT_OVERRIDES)[number];
-
 const cm = z
   .number()
-  .min(1, { message: "Debe ser mayor que 0" })
-  .max(500, { message: "Demasiado grande" })
+  .min(1, { message: "Must be greater than 0" })
+  .max(500, { message: "Too large" })
   // Allow halves/tenths but no finer; mirrors the input's 0.5 step.
   .refine((n) => Number.isInteger(n * 10), {
-    message: "Máximo un decimal",
+    message: "At most one decimal",
   });
 
 const trimmedShortString = (max: number) =>
@@ -156,27 +119,6 @@ export const ProductDraftPatchSchema = z.object({
   // `updateProductDraftField`), but the user can override on the
   // step-1 form.
   shippingProfileId: z.number().int().positive().nullable().optional(),
-
-  // Per-product override for the shop-wide AI image generation
-  // toggle. null = inherit shop default.
-  aiImageEnabled: z.boolean().nullable().optional(),
-
-  // ----- Image-placement inputs (Task 11) -------------------------
-  // null = no AI image for this product (worker short-circuits at
-  // enqueue time). Pose/framing/environment have hard-coded defaults
-  // in the DB so updates always send a concrete value when present.
-  // `aiSourcePanel` null = worker resolves the category default per
-  // `clothingType` (see `resolveSourcePanel` in image-placement-prompts.ts).
-  aiModelId: z.uuid().nullable().optional(),
-  aiSourcePanel: z.enum(PANEL_ORDER).nullable().optional(),
-  aiPosePreset: z.enum(AI_POSE_PRESETS).optional(),
-  aiFramingPreset: z.enum(AI_FRAMING_PRESETS).optional(),
-  aiEnvironmentPreset: z.enum(AI_ENVIRONMENT_PRESETS).optional(),
-  aiFitOverride: z.enum(AI_FIT_OVERRIDES).nullable().optional(),
-  // `gpt-image-2` quality tier for the per-product placement call.
-  // Not-nullable in the DB (text column with default 'low'); zod
-  // mirrors that with `.optional()` rather than `.nullable()`.
-  aiImageQuality: z.enum(IMAGE_QUALITY_VALUES).optional(),
 
   // Lifecycle
   scheduledPublishAt: z.string().datetime().nullable().optional(),

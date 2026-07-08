@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 import type { ImageListItem } from "@/components/products/image-list";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 /**
  * Primary product photo pinned at the top of step 2 so the operator can

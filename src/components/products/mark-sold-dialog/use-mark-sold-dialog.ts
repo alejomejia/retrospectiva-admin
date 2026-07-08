@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { MONEY_STRING_RE, priceEurToCents } from "@/lib/utils/money";
 
 /**

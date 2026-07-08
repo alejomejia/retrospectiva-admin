@@ -64,7 +64,7 @@ docs/
 | Question | Document |
 | --- | --- |
 | How does the products list / new-product stepper / edit form work? | [product/form.md](./product/form.md) |
-| Why is the admin in Spanish but Etsy listings in English? | [product/localization.md](./product/localization.md) |
+| Why is the admin in English and how are Spanish listings produced? | [product/localization.md](./product/localization.md) |
 
 ## Testing — automated + manual
 
@@ -112,7 +112,7 @@ it via signed HMAC webhooks.
 For future Claude sessions and human collaborators:
 
 - **Read the relevant doc here before writing code.** Many decisions
-  (WebP → JPEG, archived-on-sale, Spanish admin, date-partitioned R2,
+  (WebP → JPEG, archived-on-sale, English admin, date-partitioned R2,
   etc.) are non-obvious without context.
 - **Propose before executing** non-trivial changes. Surface tradeoffs
   via questions before silently picking an approach.

@@ -20,10 +20,10 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Product } from "@/lib/db/schema";
 import {
   ETSY_COLORS,
-  ETSY_COLOR_LABELS_ES,
+  ETSY_COLOR_LABELS_EN,
   type EtsyColor,
 } from "@/lib/integrations/etsy/etsy-colors";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import {
   ETSY_ERA_VALUES,
   type EtsyEra,
@@ -31,10 +31,10 @@ import {
 import { regenerateProductFieldAction } from "@/lib/products/draft-actions";
 
 type RegenerableField =
-  | "titleEs"
-  | "descriptionEs"
-  | "etsyTagsEs"
-  | "etsyMaterialsEs"
+  | "titleEn"
+  | "descriptionEn"
+  | "etsyTagsEn"
+  | "etsyMaterialsEn"
   | "etsyWhenMade"
   | "etsyPrimaryColor"
   | "etsySecondaryColor";
@@ -42,12 +42,11 @@ type RegenerableField =
 const TITLE_DEBOUNCE = 500;
 
 /**
- * "Contenido IA" section — the AI-generated fields that the user can
- * tweak, all in Spanish. The corresponding `*_en` columns are filled
- * by the Phase 4c Etsy-publish processor (inline `runTranslation`
- * calls) right before the listing is pushed; they're never displayed
- * here, because the shop owner doesn't read English and we trust the
- * model's translation 1:1.
+ * "AI content" section — the AI-generated fields that the user can
+ * tweak, all in English (the canonical `*_en` columns). The derived
+ * `*_es` columns are filled by the Etsy-publish processor (inline
+ * `runTranslation` calls) right before the listing is pushed; they're
+ * never displayed here, because we trust the model's translation 1:1.
  *
  * Two flavors of regeneration coexist:
  *
@@ -98,21 +97,21 @@ export function AiContentSection({
       <TextField
         productId={product.id}
         label={m.products.editForm.aiContent.title_field}
-        field="titleEs"
-        initial={product.titleEs}
+        field="titleEn"
+        initial={product.titleEn}
         maxLength={140}
       />
       <TextareaField
         productId={product.id}
         label={m.products.editForm.aiContent.description_field}
-        field="descriptionEs"
-        initial={product.descriptionEs}
+        field="descriptionEn"
+        initial={product.descriptionEn}
       />
       <ChipField
         productId={product.id}
         label={m.products.editForm.aiContent.tags}
-        field="etsyTagsEs"
-        initial={product.etsyTagsEs ?? []}
+        field="etsyTagsEn"
+        initial={product.etsyTagsEn ?? []}
         maxItems={13}
         maxItemLength={30}
         placeholder={m.products.editForm.aiContent.tagsPlaceholder}
@@ -120,8 +119,8 @@ export function AiContentSection({
       <ChipField
         productId={product.id}
         label={m.products.editForm.aiContent.materials}
-        field="etsyMaterialsEs"
-        initial={product.etsyMaterialsEs ?? []}
+        field="etsyMaterialsEn"
+        initial={product.etsyMaterialsEn ?? []}
         maxItems={13}
         maxItemLength={45}
         placeholder={m.products.editForm.aiContent.materialsPlaceholder}
@@ -246,7 +245,7 @@ function TextField({
 }: {
   productId: string;
   label: string;
-  field: "titleEs";
+  field: "titleEn";
   initial: string | null;
   maxLength: number;
 }) {
@@ -296,7 +295,7 @@ function TextareaField({
 }: {
   productId: string;
   label: string;
-  field: "descriptionEs";
+  field: "descriptionEn";
   initial: string | null;
 }) {
   const { schedule } = useAutosave();
@@ -350,7 +349,7 @@ function ChipField({
 }: {
   productId: string;
   label: string;
-  field: "etsyTagsEs" | "etsyMaterialsEs";
+  field: "etsyTagsEn" | "etsyMaterialsEn";
   initial: string[];
   maxItems: number;
   maxItemLength: number;
@@ -514,7 +513,7 @@ function ColorField({
           )}
           {ETSY_COLORS.map((c) => (
             <SelectItem key={c} value={c}>
-              {ETSY_COLOR_LABELS_ES[c]}
+              {ETSY_COLOR_LABELS_EN[c]}
             </SelectItem>
           ))}
         </SelectContent>

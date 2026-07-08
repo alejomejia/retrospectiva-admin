@@ -168,7 +168,7 @@ describe("regenerateField", () => {
   it("replays the cached enrich input — does NOT rebuild from the (possibly user-edited) product row", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
-      output_text: JSON.stringify({ titleEs: "Vestido floral años 80" }),
+      output_text: JSON.stringify({ titleEn: "80s floral dress" }),
       usage: { input_tokens: 800, output_tokens: 30 },
     });
 
@@ -178,7 +178,7 @@ describe("regenerateField", () => {
       { ...baseRow, comments: "tweaked by the user after enrich" },
     ];
 
-    await regenerateField("p1", "titleEs");
+    await regenerateField("p1", "titleEn");
 
     const call = openaiCreateMock.mock.calls[0]![0];
     const userMsg = call.input.find(
@@ -198,50 +198,50 @@ describe("regenerateField", () => {
   it("sends a JSON Schema constrained to ONLY the requested field", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
-      output_text: JSON.stringify({ descriptionEs: "x".repeat(60) }),
+      output_text: JSON.stringify({ descriptionEn: "x".repeat(60) }),
       usage: { input_tokens: 800, output_tokens: 200 },
     });
 
-    await regenerateField("p1", "descriptionEs");
+    await regenerateField("p1", "descriptionEn");
 
     const call = openaiCreateMock.mock.calls[0]![0];
     expect(call.text.format.type).toBe("json_schema");
     expect(call.text.format.strict).toBe(true);
     expect(Object.keys(call.text.format.schema.properties)).toEqual([
-      "descriptionEs",
+      "descriptionEn",
     ]);
-    expect(call.text.format.schema.required).toEqual(["descriptionEs"]);
+    expect(call.text.format.schema.required).toEqual(["descriptionEn"]);
     expect(call.text.format.schema.additionalProperties).toBe(false);
   });
 
-  it("for `etsyTagsEs`, sends an array schema and asks for ONLY that field", async () => {
+  it("for `etsyTagsEn`, sends an array schema and asks for ONLY that field", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
-      output_text: JSON.stringify({ etsyTagsEs: ["vintage", "vestido"] }),
+      output_text: JSON.stringify({ etsyTagsEn: ["vintage", "dress"] }),
       usage: { input_tokens: 800, output_tokens: 30 },
     });
 
-    await regenerateField("p1", "etsyTagsEs");
+    await regenerateField("p1", "etsyTagsEn");
 
     const call = openaiCreateMock.mock.calls[0]![0];
     const props = call.text.format.schema.properties;
-    expect(Object.keys(props)).toEqual(["etsyTagsEs"]);
-    expect(props.etsyTagsEs.type).toBe("array");
+    expect(Object.keys(props)).toEqual(["etsyTagsEn"]);
+    expect(props.etsyTagsEn.type).toBe("array");
   });
 
   it("writes ONLY the requested column on the products row", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
-      output_text: JSON.stringify({ titleEs: "Vestido vintage de los 80" }),
+      output_text: JSON.stringify({ titleEn: "Vintage 80s dress" }),
       usage: { input_tokens: 800, output_tokens: 30 },
     });
 
-    await regenerateField("p1", "titleEs");
+    await regenerateField("p1", "titleEn");
 
     expect(dbState.productUpdateCalls).toHaveLength(1);
     const written = dbState.productUpdateCalls[0]!.values;
-    expect(Object.keys(written)).toEqual(["titleEs"]);
-    expect(written.titleEs).toBe("Vestido vintage de los 80");
+    expect(Object.keys(written)).toEqual(["titleEn"]);
+    expect(written.titleEn).toBe("Vintage 80s dress");
     // updatedAt must NOT be bumped — bumping triggers a remount of
     // AiContentSection in the parent and discards in-progress user
     // edits on the other fields.
@@ -251,11 +251,11 @@ describe("regenerateField", () => {
   it("logs the run under kind='field_regenerate' (not 'enrich')", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
-      output_text: JSON.stringify({ titleEs: "Hola vintage style" }),
+      output_text: JSON.stringify({ titleEn: "Vintage style dress" }),
       usage: { input_tokens: 800, output_tokens: 30 },
     });
 
-    await regenerateField("p1", "titleEs");
+    await regenerateField("p1", "titleEn");
 
     expect(dbState.aiRunInserts).toHaveLength(1);
     expect(dbState.aiRunInserts[0]!.values.kind).toBe("field_regenerate");
@@ -265,7 +265,7 @@ describe("regenerateField", () => {
       field: string;
       context: unknown;
     };
-    expect(input.field).toBe("titleEs");
+    expect(input.field).toBe("titleEn");
     expect(input.context).toEqual(cachedInput);
     expect(dbState.aiRunUpdateCalls[0]!.values.status).toBe("succeeded");
   });
@@ -274,11 +274,11 @@ describe("regenerateField", () => {
     dbState.cachedInputJson = null;
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
-      output_text: JSON.stringify({ titleEs: "Vestido años 80 floral" }),
+      output_text: JSON.stringify({ titleEn: "80s floral dress" }),
       usage: { input_tokens: 800, output_tokens: 30 },
     });
 
-    await regenerateField("p1", "titleEs");
+    await regenerateField("p1", "titleEn");
 
     const call = openaiCreateMock.mock.calls[0]![0];
     const userMsg = call.input.find(
@@ -299,10 +299,10 @@ describe("regenerateField", () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_1",
       // Model returned a wrong-shape value for an array field.
-      output_text: JSON.stringify({ etsyTagsEs: "vintage" }),
+      output_text: JSON.stringify({ etsyTagsEn: "vintage" }),
     });
 
-    await expect(regenerateField("p1", "etsyTagsEs")).rejects.toThrow();
+    await expect(regenerateField("p1", "etsyTagsEn")).rejects.toThrow();
     expect(dbState.productUpdateCalls).toHaveLength(0);
     expect(dbState.aiRunUpdateCalls[0]!.values.status).toBe("failed");
   });
@@ -310,7 +310,7 @@ describe("regenerateField", () => {
   it("marks the run as failed when OpenAI throws", async () => {
     openaiCreateMock.mockRejectedValueOnce(new Error("OpenAI exploded"));
 
-    await expect(regenerateField("p1", "titleEs")).rejects.toThrow(
+    await expect(regenerateField("p1", "titleEn")).rejects.toThrow(
       "OpenAI exploded",
     );
     expect(dbState.productUpdateCalls).toHaveLength(0);

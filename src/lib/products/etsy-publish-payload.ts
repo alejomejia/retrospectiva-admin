@@ -19,16 +19,15 @@ import { productImages } from "@/lib/db/schema";
 /**
  * Etsy hard-caps the listing photo set at 10 images. Originals
  * already obey this at upload time via the client uploader; the
- * publish builder cuts the appended `ai_model` if adding it would
- * push the listing over the limit. Source: Etsy Open API v3
- * `createListingImage` docs.
+ * publish builder trims to the cap defensively. Source: Etsy Open
+ * API v3 `createListingImage` docs.
  */
 export const ETSY_LISTING_MAX_IMAGES = 10;
 
 /** Single image entry the publish worker will upload to Etsy. */
 export type PublishImage = {
   r2Key: string;
-  role: "original" | "ai_model";
+  role: "original";
   width: number | null;
   height: number | null;
 };
@@ -36,16 +35,10 @@ export type PublishImage = {
 /**
  * Returns the ordered image set the Etsy publish worker will upload
  * for `productId`. Originals come first in their stored `order`;
- * the single `ai_model` image (if present) is appended at the end
- * so `originals[0]` stays the listing cover — the customer's first
- * impression remains a real photo, the AI shot is a polished
- * showcase further down. `ai_reference` is excluded (input-only)
- * and `thumbnail` is excluded too (publish builder doesn't need it).
+ * `originals[0]` is the listing cover. `thumbnail` is excluded
+ * (publish builder doesn't need it).
  *
- * Respects {@link ETSY_LISTING_MAX_IMAGES}: when adding the AI
- * image would push past the cap, the cap wins and the AI image is
- * dropped. Originals are the source of truth — the operator can
- * delete one to make room for the AI shot.
+ * Respects {@link ETSY_LISTING_MAX_IMAGES}.
  */
 export async function listImagesForEtsyPublish(
   productId: string,
@@ -71,16 +64,5 @@ export async function listImagesForEtsyPublish(
       height: r.height,
     }));
 
-  const aiModel = rows.find((r) => r.role === "ai_model") ?? null;
-
-  const out: PublishImage[] = [...originals];
-  if (aiModel && out.length < ETSY_LISTING_MAX_IMAGES) {
-    out.push({
-      r2Key: aiModel.r2Key,
-      role: "ai_model",
-      width: aiModel.width,
-      height: aiModel.height,
-    });
-  }
-  return out.slice(0, ETSY_LISTING_MAX_IMAGES);
+  return originals.slice(0, ETSY_LISTING_MAX_IMAGES);
 }

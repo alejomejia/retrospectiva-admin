@@ -89,7 +89,7 @@ place of `Story.TitlePrice`.
 3. **Fields** — in `instagram-story-fields.ts` add the variant's editable slots
    to `STORY_FIELDS` and its defaults to `defaultStoryFields` (any new field
    key goes on `StoryFieldKey`). Add a Spanish label under `socials.fields.<key>`
-   in `messages.es.ts`, and the variant's name under
+   in `messages.en.ts`, and the variant's name under
    `products.instagramStory.variants.<key>`.
 4. **Assets** — vendor any new font weight/style under `fonts/` and image under
    `assets/`, and load it (module-cached) in `load-fonts.ts`. Add new per-render

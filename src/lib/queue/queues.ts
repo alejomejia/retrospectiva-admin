@@ -47,38 +47,6 @@ export const etsyPublishQueue = new Queue("etsy-publish", {
 export type EtsyPublishJob = { productId: string };
 
 /**
- * Synthetic-model generation (Model Studio, Task 8). One job per
- * `ai_models` row. Worker calls `gpt-image-2`, uploads contact
- * sheet + cropped panels to R2, populates the row's R2 keys.
- *
- * jobId = `ai_models.id` so re-runs (Regenerar) coalesce on the
- * same model row instead of stacking work.
- */
-export const aiModelGenerateQueue = new Queue("ai-model-generate", {
-  connection: redis,
-  defaultJobOptions: DEFAULT_JOB_OPTIONS,
-});
-
-export type AiModelGenerateJob = { modelId: string };
-
-/**
- * Per-product on-model image generation (Phase 2, Task 11). One job
- * per product. Worker assembles the 8-block prompt, calls
- * `gpt-image-2` via `openai.images.edit` with two input images
- * (model panel + ai_reference), hard-deletes any prior `ai_model`
- * row for the product, then inserts the new one.
- *
- * jobId = productId so re-runs (Regenerar) coalesce on the same
- * product instead of stacking work.
- */
-export const aiImagePlacementQueue = new Queue("ai-image-placement", {
-  connection: redis,
-  defaultJobOptions: DEFAULT_JOB_OPTIONS,
-});
-
-export type AiImagePlacementJob = { productId: string };
-
-/**
  * Outbound webhook to the public `retrospectiva-website` repo. The
  * website consumer revalidates its product cache and updates the
  * store. Producers:

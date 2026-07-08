@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { formatCents } from "@/lib/utils/money";
 import { cn } from "@/lib/utils/helpers";
 
@@ -102,7 +102,7 @@ function Cell({
         <TableCell className="w-16">
           <Link
             href={`/products/${row.id}`}
-            aria-label={row.titleEs ?? m.products.detail.untitled}
+            aria-label={row.titleEn ?? row.titleEs ?? m.products.detail.untitled}
             className="block size-32 overflow-hidden rounded-sm border border-border bg-muted"
           >
             {row.thumbnailUrl ? (
@@ -143,7 +143,7 @@ function Cell({
               href={`/products/${row.id}`}
               className="font-medium hover:text-brand-terracotta"
             >
-              {row.titleEs ?? m.products.detail.untitled}
+              {row.titleEn ?? row.titleEs ?? m.products.detail.untitled}
             </Link>
           </div>
         </TableCell>

@@ -8,10 +8,9 @@ import { db } from "@/lib/db/client";
 import { events, products } from "@/lib/db/schema";
 import { deleteR2Prefix } from "@/lib/integrations/r2/delete-prefix";
 import { productPrefix } from "@/lib/integrations/r2/keys";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { devGroup } from "@/lib/utils/dev";
 
-import { getProductSettings } from "./settings";
 
 const dev = devGroup("products");
 
@@ -33,21 +32,9 @@ export type CreateDraftResult = { id: string };
  */
 export async function createDraftProduct(): Promise<CreateDraftResult> {
   const session = await requireSession();
-  // Snapshot the shop-wide AI placement defaults onto the new row.
-  // Later changes to /settings/ai do NOT backfill existing drafts —
-  // matches the `buyPriceCents` precedent. The operator can still
-  // override every value per-product via the step-1 form.
-  const settings = await getProductSettings();
   const [row] = await db
     .insert(products)
-    .values({
-      aiModelId: settings.aiDefaultModelId,
-      aiSourcePanel: settings.aiDefaultSourcePanel,
-      aiPosePreset: settings.aiDefaultPosePreset,
-      aiFramingPreset: settings.aiDefaultFramingPreset,
-      aiEnvironmentPreset: settings.aiDefaultEnvironmentPreset,
-      aiImageQuality: settings.aiDefaultImageQuality,
-    })
+    .values({})
     .returning({ id: products.id });
   if (!row) {
     throw new Error("Could not create draft product");
@@ -101,7 +88,7 @@ export async function deleteProduct(id: string): Promise<DeleteProductResult> {
   const [row] = await db
     .select({
       id: products.id,
-      titleEs: products.titleEs,
+      titleEn: products.titleEn,
       status: products.status,
       createdAt: products.createdAt,
     })
@@ -125,7 +112,7 @@ export async function deleteProduct(id: string): Promise<DeleteProductResult> {
   await db.insert(events).values({
     actor: session.username,
     type: "product.deleted",
-    payloadJson: { id: row.id, titleEs: row.titleEs, status: row.status },
+    payloadJson: { id: row.id, titleEn: row.titleEn, status: row.status },
   });
 
   dev.log("deleted product:", row.id);

@@ -14,7 +14,6 @@ import {
   bigint,
   index,
   uniqueIndex,
-  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -25,7 +24,7 @@ import {
  * Etsy fields at action time, not at the DB level.
  *
  * Bilingual columns (`*_es` / `*_en`) follow the locked decision:
- * Spanish is canonical and editable; English is auto-derived via the
+ * English is canonical and editable; Spanish is auto-derived via the
  * translation queue.
  */
 
@@ -38,7 +37,7 @@ export const productStatus = pgEnum("product_status", [
 ]);
 
 export const productCondition = pgEnum("product_condition", [
-  "perfect",
+  "excellent",
   "very_good",
   "good",
 ]);
@@ -67,26 +66,13 @@ export const clothingType = pgEnum("clothing_type", [
 
 export const imageRole = pgEnum("image_role", [
   "original",
-  "ai_model",
-  // User-uploaded garment-on-white-wall input for Phase 2 image
-  // placement (Task 11). Excluded from the Etsy publish payload —
-  // only `original` + `ai_model` roles ship to listings.
-  "ai_reference",
   "thumbnail",
 ]);
 
 export const aiRunKind = pgEnum("ai_run_kind", [
   "enrich",
   "translation",
-  "model_generation",
-  "model_placement",
   "field_regenerate",
-]);
-
-export const aiModelStatus = pgEnum("ai_model_status", [
-  "draft",
-  "active",
-  "archived",
 ]);
 
 export const aiRunStatus = pgEnum("ai_run_status", [
@@ -117,7 +103,7 @@ export const products = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
-    // Identity. Spanish title is canonical; English derived by the
+    // Identity. English title is canonical; Spanish derived by the
     // translation queue. Both nullable until step 2 of the stepper
     // (or manual entry) fills them in.
     titleEs: text("title_es"),
@@ -150,8 +136,8 @@ export const products = pgTable(
 
     // Optional per-product override of the shop-wide listing footer
     // (the care/legal boilerplate appended to every listing). null =
-    // inherit the `product_settings` footer. The operator edits ES;
-    // `*_en` is the cached machine translation written at save time.
+    // inherit the `product_settings` footer. The operator edits EN;
+    // `*_es` is the cached machine translation written at save time.
     // The footer is appended only at the Etsy + website payload
     // boundary — never persisted into the description columns — so it
     // never feeds the AI enrich prompt nor the translation queue.
@@ -160,7 +146,7 @@ export const products = pgTable(
 
     // User-provided attributes (set in step 1 of the stepper).
     clothingType: clothingType("clothing_type"),
-    condition: productCondition("condition").default("perfect"),
+    condition: productCondition("condition").default("excellent"),
     // Single size value matching Etsy's "US Women's Letter" scale
     // (XXS, XS, S, M, L, XL, 1X, 2X, 3X). Migrated from the prior
     // `sizes` text[] by snapshotting the first array element.
@@ -222,39 +208,6 @@ export const products = pgTable(
     // from the shop-wide weight-class mapping based on `clothingType`,
     // user can override via the step-1 picker. Required before publish.
     shippingProfileId: bigint("shipping_profile_id", { mode: "number" }),
-
-    // Per-product override for the shop-wide AI image generation
-    // toggle (product_settings.ai_image_enabled). null = inherit shop
-    // default; true/false = explicit per-product override. Read at
-    // the image-placement-worker boundary (Task 11).
-    aiImageEnabled: boolean("ai_image_enabled"),
-
-    // ----- Image-placement inputs (Task 11) ------------------------
-    //
-    // The 6 user-controllable variables consumed by
-    // `assembleImagePlacementPrompt`. Stored as text + validated at
-    // the zod boundary (`draft-schema.ts`) so prompt-preset iteration
-    // doesn't require a migration. Pose / framing / environment have
-    // hard-coded defaults; source panel + fit override default to null
-    // (worker resolves source panel from `clothingType` per-category).
-    aiModelId: uuid("ai_model_id").references(
-      (): AnyPgColumn => aiModels.id,
-      { onDelete: "set null" },
-    ),
-    aiSourcePanel: text("ai_source_panel"),
-    aiPosePreset: text("ai_pose_preset").notNull().default("soft_relaxed"),
-    aiFramingPreset: text("ai_framing_preset").notNull().default("waist_up"),
-    aiEnvironmentPreset: text("ai_environment_preset")
-      .notNull()
-      .default("textured_wall"),
-    aiFitOverride: text("ai_fit_override"),
-    /**
-     * `gpt-image-2` quality tier the image-placement worker passes
-     * to `openai.images.edit` for THIS product. Default `'low'` (the
-     * cheap, iteration-friendly tier — placement runs are the high
-     * volume call in the pipeline). Mirrors `ai_models.image_quality`.
-     */
-    aiImageQuality: text("ai_image_quality").notNull().default("low"),
 
     // Public store URL slug, e.g. `chaqueta-safari-arena-9f3c1a`.
     // Frozen at first publish (see `buildSlug`) so editing a title
@@ -397,19 +350,13 @@ export const aiRuns = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     /**
-     * Subject the run is attached to. For per-product runs
-     * (`enrich`, `translation`, `model_placement`, etc.) this is the
-     * product UUID. For shop-wide runs (`model_generation` from the
-     * Model Studio) we leave it null — the back-reference lives on
-     * `ai_models.ai_run_id` instead. Nullable on the FK side so the
-     * cascade on product deletion still works for product-scoped
-     * runs.
+     * Subject the run is attached to — the product UUID. Nullable on
+     * the FK side so the cascade on product deletion still works for
+     * product-scoped runs.
      */
     productId: uuid("product_id").references(() => products.id, {
       onDelete: "cascade",
     }),
-    /** Set for `kind='model_generation'` runs; null otherwise. */
-    aiModelId: uuid("ai_model_id"),
     kind: aiRunKind("kind").notNull(),
     status: aiRunStatus("status").notNull().default("pending"),
     model: text("model"),
@@ -427,84 +374,6 @@ export const aiRuns = pgTable(
   (t) => [
     index("ai_runs_product_idx").on(t.productId),
     index("ai_runs_created_at_idx").on(t.createdAt),
-  ],
-);
-
-/**
- * Synthetic AI fashion models. Generated once via the Model Studio
- * (`/models`) and reused across product image generations. Decoupled
- * from `products` — these are shop-wide assets, not per-product.
- *
- * Lifecycle: `draft` (just generated, awaiting user review) → `active`
- * (saved with a label, available for per-product selection) →
- * `archived` (out of rotation but kept for provenance on products
- * that already used the model).
- *
- * R2 layout: `assets/models/{id}/{contact-sheet|front_full|…}.png`.
- * The contact sheet is the canonical artifact; the six panel crops
- * are derivatives produced by `grid-crop.ts` after the worker
- * downloads the OpenAI output. If gutter detection fails, only the
- * sheet is stored and `crops_available=false`.
- */
-export const aiModels = pgTable(
-  "ai_models",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    /** User-chosen short name ("Lucía", "Sofía", …). Null until the
-     *  user clicks Guardar on the post-generation preview. */
-    label: text("label"),
-    status: aiModelStatus("status").notNull().default("draft"),
-
-    // Generation inputs — exact strings interpolated into the
-    // BASE_MODEL_GENERATION prompt. Stored verbatim so "Regenerar"
-    // and "Clonar" workflows can reuse the same vars.
-    ageRange: text("age_range").notNull(),
-    bodyType: text("body_type").notNull(),
-    heightRange: text("height_range").notNull(),
-    skinTone: text("skin_tone").notNull(),
-    faceShape: text("face_shape").notNull(),
-    hairColor: text("hair_color").notNull(),
-    hairShape: text("hair_shape").notNull(),
-    hairType: text("hair_type").notNull(),
-
-    // R2 keys. `contactSheetKey` is null until generation succeeds.
-    // The six panel keys are null when `cropsAvailable=false` (gutter
-    // detection couldn't find a clean 3×2 grid in the model output).
-    contactSheetKey: text("contact_sheet_key"),
-    frontFullKey: text("front_full_key"),
-    frontPortraitKey: text("front_portrait_key"),
-    frontEditorialKey: text("front_editorial_key"),
-    sidePortraitKey: text("side_portrait_key"),
-    backFullKey: text("back_full_key"),
-    threequarterFullKey: text("threequarter_full_key"),
-    cropsAvailable: boolean("crops_available").notNull().default(false),
-
-    /**
-     * `gpt-image-2` quality tier used for THIS row's generation.
-     * Default `'low'` (cheap, good enough for the identity pass);
-     * the operator can pick `'medium'` or `'high'` on the new-model
-     * form. Validated app-side as a zod enum so future tiers (e.g.
-     * `'auto'`) don't require a migration. Read by the worker each
-     * generation run, so `Regenerar` honors the latest persisted
-     * value.
-     */
-    imageQuality: text("image_quality").notNull().default("low"),
-
-    /** Pointer to the last successful generation run. Audit/cost. */
-    aiRunId: uuid("ai_run_id").references(() => aiRuns.id, {
-      onDelete: "set null",
-    }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .default(sql`now()`),
-    archivedAt: timestamp("archived_at", { withTimezone: true }),
-  },
-  (t) => [
-    index("ai_models_status_idx").on(t.status),
-    index("ai_models_created_at_idx").on(t.createdAt),
   ],
 );
 
@@ -585,12 +454,6 @@ export const etsyOauth = pgTable("etsy_oauth", {
  */
 export const productSettings = pgTable("product_settings", {
   id: text("id").primaryKey().default("singleton"),
-  // Shop-wide default for AI image generation on products. Per-product
-  // override lives on `products.ai_image_enabled` (null = inherit).
-  // Read at the image-placement-worker boundary (Task 11) — cheaper
-  // to short-circuit at enqueue time than to skip mid-worker.
-  aiImageEnabled: boolean("ai_image_enabled").notNull().default(true),
-
   // Shop-wide listing footer (care/legal boilerplate) appended to
   // every listing description at the Etsy + website payload boundary.
   // Stored as an ES/EN pair the operator maintains by hand so it never
@@ -606,30 +469,6 @@ export const productSettings = pgTable("product_settings", {
   defaultDiscountPercent: smallint("default_discount_percent")
     .notNull()
     .default(25),
-
-  // ----- Image-placement shop defaults (Task 11) ------------------
-  //
-  // Snapshotted onto a fresh `products` row at draft-creation time
-  // (see `createDraftProduct`). Later changes here do NOT cascade
-  // into existing products — matches the `buyPriceCents` precedent.
-  // Per-product columns on `products` remain authoritative once set.
-  aiDefaultModelId: uuid("ai_default_model_id").references(
-    (): AnyPgColumn => aiModels.id,
-    { onDelete: "set null" },
-  ),
-  aiDefaultSourcePanel: text("ai_default_source_panel"),
-  aiDefaultPosePreset: text("ai_default_pose_preset")
-    .notNull()
-    .default("soft_relaxed"),
-  aiDefaultFramingPreset: text("ai_default_framing_preset")
-    .notNull()
-    .default("waist_up"),
-  aiDefaultEnvironmentPreset: text("ai_default_environment_preset")
-    .notNull()
-    .default("textured_wall"),
-  aiDefaultImageQuality: text("ai_default_image_quality")
-    .notNull()
-    .default("low"),
 
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -672,10 +511,7 @@ export type NewProduct = typeof products.$inferInsert;
 export type ProductImage = typeof productImages.$inferSelect;
 export type ProductVideo = typeof productVideos.$inferSelect;
 export type AiRun = typeof aiRuns.$inferSelect;
-export type AiModel = typeof aiModels.$inferSelect;
-export type NewAiModel = typeof aiModels.$inferInsert;
 export type EventRow = typeof events.$inferSelect;
 export type ProductStatus = (typeof productStatus.enumValues)[number];
 export type ProductCondition = (typeof productCondition.enumValues)[number];
 export type ClothingType = (typeof clothingType.enumValues)[number];
-export type AiModelStatus = (typeof aiModelStatus.enumValues)[number];

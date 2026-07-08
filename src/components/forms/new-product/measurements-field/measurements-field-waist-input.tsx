@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { isMeasurementRequired } from "@/lib/products/clothing-types";
 
 import { CmInput } from "./measurements-field-cm-input";
@@ -12,11 +12,11 @@ import { CmInput } from "./measurements-field-cm-input";
 /**
  * Waist input with optional max for resorted/elastic waistbands.
  *
- * Non-elastic (default): one "Cintura" field bound to the min column.
- * Toggling "Cintura resortada" reveals a second "Cintura máxima"
- * field; the first then reads "Cintura mínima". Turning the toggle
- * back off clears the max. Storage stays flat; both values double at
- * the boundary when the clothing type marks waist as x2.
+ * Non-elastic (default): one "Waist" field bound to the min column.
+ * Toggling "Elastic waist" reveals a second "Maximum waist" field;
+ * the first then reads "Minimum waist". Turning the toggle back off
+ * clears the max. Storage stays flat; both values double at the
+ * boundary when the clothing type marks waist as x2.
  */
 export function WaistInput({
   doubles,

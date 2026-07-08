@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation';
-import { Box, Sparkles, Wrench } from 'lucide-react';
+import { Box, Wrench } from 'lucide-react';
 
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { cn } from "@/lib/utils/helpers";
 
 export type NavGroup = {
@@ -18,11 +18,6 @@ const settingsGroup: NavGroup[] = [
     href: "/settings/products",
     label: m.nav.settingsProducts,
     icon: Box
-  },
-  {
-    href: "/settings/ai",
-    label: m.nav.settingsAi,
-    icon: Sparkles
   },
   {
     href: "/settings/integrations",

@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import type { StoryVariantKey } from "@/lib/products/instagram-story-variants";
 import { cn } from "@/lib/utils/helpers";
 

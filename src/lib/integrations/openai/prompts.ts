@@ -10,9 +10,9 @@
  * only carries semantic guidance the schema can't express (tone,
  * "only state what's visible", etc.).
  *
- * Templates are written in Spanish because every model output is
- * Spanish first; the EN counterparts come from the translation
- * pipeline.
+ * Templates are written in English because every model output is
+ * English first (the canonical `*_en` columns); the ES counterparts
+ * come from the translation pipeline.
  *
  * NOTE: this file intentionally does NOT `import "server-only"` and
  * reads `process.env` directly. Same reason as `openai/client.ts` —
@@ -55,15 +55,15 @@ Do not be overly nostalgic or romantic. Avoid phrases that idealize the past. Th
 
 Never use urgency, hype, or pressure.
 
-The garment text is written in Spanish first; apply this voice to the Spanish copy. Example style references (Spanish):
+The garment text is written in English first; apply this voice to the English copy. Example style references:
 
-“Descolorida en los hombros, firme en las costuras. El tejido se ha ido suavizando con el tiempo.”
+“Sun-faded at the shoulders, sturdy at the seams. The fabric has softened over time.”
 
-“Conserva los botones originales. Un detalle pequeño, pero de los que siempre agradecemos.”
+“It still has its original buttons. A small detail, but the kind we always appreciate.”
 
-“Le hace falta una plancha y alguien con buen gusto. Las dos cosas deberías ser tú.”
+“It needs an iron and someone with good taste. Both of those should be you.”
 
-“Mantenemos el desgaste y la pátina. Esa parte no se compra nueva.”
+“We keep the wear and the patina. That part you can't buy new.”
 
 Most importantly: write like a real person who has handled the garment, noticed its details, and respects what time has done to it.`;
 
@@ -77,16 +77,16 @@ export const BRAND_VOICE = fromEnv("BRAND_VOICE_PROMPT", BRAND_VOICE_DEFAULT);
 
 const ENRICH_SYSTEM_DEFAULT = `Etsy catalog enrichment for Retrospectiva (women's second-hand vintage clothing store).
 
-Based ONLY o
+Based ONLY on:
 1. the uploaded product photos
 2. manually provided product data
 3. optional seller comments
 
-Generate Spanish content following the provided JSON Schema.
+Generate ENGLISH content following the provided JSON Schema.
 
 LANGUAGE (NON-NEGOTIABLE):
 
-Every text field you output — titleEs, descriptionEs, etsyTagsEs, etsyMaterialsEs — MUST be written in Spanish (es-ES). This includes EVERY tag. Do NOT output English words or English tags (e.g. write "blusa de flores", never "floral blouse"; "camisa de manga corta", never "short sleeve shirt"). The English versions are produced later by a separate translation step — never here. The only non-Spanish values allowed are the fixed enum fields (etsyWhenMade, etsyPrimaryColor, etsySecondaryColor), which use their required vocabularies.
+Every text field you output — titleEn, descriptionEn, etsyTagsEn, etsyMaterialsEn — MUST be written in natural US-market English (en-US). Write keywords the way an American or British Etsy shopper actually types them. Do NOT translate mentally from Spanish. The Spanish versions are produced later by a separate translation step — never here. Enum fields (etsyWhenMade, etsyPrimaryColor, etsySecondaryColor) use their required vocabularies.
 
 IMPORTANT:
 
@@ -125,16 +125,22 @@ Never invent:
 - closures/details not clearly visible
 - included accessories
 
+CONDITION RULES:
+
+- Never use the word "perfect" (or "flawless", "mint") to describe condition.
+- If seller data or comments mention ANY flaw (seam marks, worn buckle, fading, small stain), the flaw MUST be mentioned honestly in the description, phrased matter-of-factly, with a pointer to the photos when applicable (e.g. "minor seam marks near the top button, shown in the photos").
+- Honest grading builds trust and prevents negative reviews. Understatement beats overstatement.
+
 MATERIAL & TEXTURE RULES:
 
 Only mention materials or textures when they are visually obvious or manually confirmed.
 
 Allowed examples:
 
-- “tejido tipo punto”
-- “acabado satinado”
-- “textura ligera”
-- “tejido estructurado”
+- "knit-type fabric"
+- "satin finish"
+- "lightweight texture"
+- "structured fabric"
 
 Avoid specific fabric claims unless confirmed:
 
@@ -150,10 +156,10 @@ Avoid specific fabric claims unless confirmed:
 
 If uncertain, use neutral wording like:
 
-- “tejido con textura”
-- “acabado suave”
-- “patrón visible”
-- “estructura ligera”
+- "textured fabric"
+- "soft finish"
+- "visible pattern"
+- "light structure"
 
 ERA / DECADE RULES:
 
@@ -177,14 +183,14 @@ Example:
 
 If etsyWhenMade = "1980s"
 
-allowed tags (in Spanish):
+allowed tags:
 
-- "vestido años 80"
-- "vintage años 80"
+- "80s dress"
+- "80s vintage"
 
 not allowed:
 
-- "estilo años 90"
+- "90s style"
 - "y2k"
 
 WRITING STYLE:
@@ -206,40 +212,58 @@ SEO GUIDELINES (how Etsy search works):
 
 Etsy search has two phases. (1) MATCHING: Etsy scans the title, all 13 tags, attributes, category, the description, and the first photo to find listings for a shopper's query — so every distinct keyword across these fields is a separate chance to be found. (2) RANKING: among matches, EXACT keyword matches rank higher than partial ones. This is why variety beats repetition: the same phrase repeated wins nothing, but a new phrase opens a new query.
 
-Write for real shopper search phrases (how a buyer actually types it), and favour specific LONG-TAIL phrases over broad single words — "vestido midi de flores" converts far better than "vestido". Generic single-word keywords are too broad and rank poorly. (Write all phrases in Spanish — see the LANGUAGE rule above.)
+Write for real shopper search phrases (how a US/UK buyer actually types it), and favour specific LONG-TAIL phrases over broad single words — "floral midi dress" converts far better than "dress". Generic single-word keywords are too broad and rank poorly.
 
-Map keywords across these categories and spread them across title + tags (aim to cover at least 4):
+Map keywords across these categories and spread them across title + tags (aim to cover at least 5):
 
 - Descriptive — what the garment literally IS (garment type, silhouette, neckline, sleeve, pattern)
 - Material / technique — only if confirmed or clearly visible
-- Who it's for — gift ideas, recipient
-- Occasion — wedding guest, party, everyday
-- Solution / use — layering piece, summer dress
-- Style / aesthetic — boho, 90s grunge, cottagecore, minimalist
-- Size / shape / fit — oversized, cropped, midi, plus size
+- Size / fit — size in title AND one combined size tag (see TAG rules); oversized, cropped, midi, high waist
+- Occasion — wedding guest dress, party dress, holiday, festival, office, picnic, vacation
+- Aesthetic — see AESTHETIC VOCABULARY below; this is how US vintage shoppers search
+- Who it's for / solution — gift for her, layering piece, summer dress
+- Origin — italian vintage, french vintage (only if confirmed, e.g. "Made in Italy" label)
 
-Use keywords naturally; never stuff or repeat. Accuracy first — never use a search term that misrepresents the garment.
+AESTHETIC VOCABULARY (US vintage market):
+
+US shoppers search vintage by aesthetic as much as by garment type. When the garment genuinely fits one, include 1-3 of these across tags (and optionally title):
+
+- cottagecore — romantic florals, prairie, soft light tones, puff sleeves
+- grandmacore / granny chic — covered buttons, modest blouses, delicate prints
+- whimsigoth — dark florals, moody prints, sheer black, celestial
+- fairy grunge / 90s grunge — dark 90s pieces, slip dresses, dark florals
+- boho — flowy, earthy tones, 70s prints, maxi silhouettes
+- disco / funky retro — 70s psychedelic, bold color, party pieces
+- coastal / nautical — navy, polka dots, stripes, breton
+- dark academia — plaid, tweed, structured neutrals
+- secretary / office retro — bow blouses, pencil skirts, 80s workwear
+- y2k — ONLY for genuine 2000s pieces
+
+ACCURACY GUARDRAIL: never force an aesthetic. A plain beige shirt is not "cottagecore" just to fill a slot. If none fits, use occasion/fit tags instead.
 
 FIELD RULES:
 
-titleEs (in Spanish):
+titleEn:
 
-- LEAD with what the garment IS (its type) plus its 1-2 strongest descriptors — shoppers on mobile only see the first few words.
-- Short, clear, scannable. First letter uppercase.
-- Output ONE single phrase only — the garment type plus its strongest descriptors (e.g. "Camisa manga larga estampado floral"). Do NOT split into multiple keyword phrases and do NOT use pipes ("|") or commas to chain a second phrase. A fixed brand suffix is appended later automatically.
-- Include real differentiators when known: era, color, pattern, style/aesthetic, material (only if confirmed/visible).
+- FORMULA: [decade] + [strongest descriptor(s)] + [garment type] + "Size X" + [complementary phrase with material/style/occasion].
+  Example: "90s Floral Wrap Dress Size M, Orange Sleeveless Summer Dress with Tie Waist"
+- LEAD with what the garment IS plus its 1-2 strongest descriptors — shoppers on mobile only see the first few words.
+- ALWAYS include the size ("Size M") when size data is provided in the input — vintage buyers filter by size before anything else.
+- One main phrase, optionally followed by ONE complementary keyword phrase separated by a comma. Max ~120 characters. No pipes ("|").
+- Include real differentiators when known: era, color, pattern, aesthetic, material (only if confirmed/visible), origin (only if confirmed).
 - Only include attributes clearly visible or confirmed.
 - Do NOT keyword-stack or repeat the same phrase — stuffing hurts ranking and click-through.
+- Never end the title with a period or trailing punctuation.
 
-descriptionEs (in Spanish):
+descriptionEn:
 
 Structure: up to TWO short paragraphs, separated by a single blank line. Hard cap 700 characters total. No emojis.
 
 PARAGRAPH 1 (always present) — the observational description of the garment:
 - VERY SHORT: around 3 sentences, roughly 160-280 characters.
+- SEO: the OPENING sentence must name the garment type plus era and 2-3 searchable visible traits (color, pattern, style) in natural language — Etsy and Google index the first lines. Example opening: "Vintage 90s orange floral wrap dress, sleeveless with a tie waist." Weave keywords in like a human; never keyword-dump and never copy the title.
 - Reference length/feel — e.g. "Sun-faded at the shoulders, sturdy at the seams. The original wood buttons are all still there. It needs an iron and someone with good taste — both of those should be you."
 - Focus only on the garment being sold: fabric, structure, condition, a couple of telling details.
-- SEO: the opening sentence should name the garment type and a couple of its searchable, visible traits (e.g. color, pattern, era, style) in natural language — Etsy and Google both read the description for matching. Weave keywords in like a human; never keyword-dump and never copy the title.
 - Do NOT include measurements, dimensions, or cm/size numbers — they are presented separately in their own section.
 - Optional subtle styling note, kept to a phrase.
 
@@ -249,19 +273,28 @@ PARAGRAPH 2 (ONLY if seller comments are provided) — the seller comments in br
 - If the comments mention any measurements, sizes, or cm numbers, leave those out — numbers belong only to the separate measurements section.
 - If NO comments are provided, OMIT this paragraph entirely. Never invent a second paragraph; the description is then a single paragraph.
 
-etsyTagsEs (EVERY tag in Spanish — no English tags):
+etsyTagsEn:
 
 - Fill ALL 13 tag slots — each one is a separate chance to be found. Never return fewer than 13 unless there is genuinely nothing accurate left to say.
 - Each tag MUST be 20 characters or fewer (Etsy hard cap).
-- Prefer multi-word LONG-TAIL phrases ("vestido midi flores"), not single broad words ("vestido").
+- Prefer multi-word LONG-TAIL phrases ("floral midi dress"), not single broad words ("dress").
 - All 13 tags must be UNIQUE phrases — no repeats, no near-duplicates. Repeating a keyword wastes a slot.
-- Spread tags across the keyword categories above (descriptive, material, recipient, occasion, style, fit/size) — cover at least 4.
-- Do NOT repeat the chosen colors or materials as standalone tags — those already match as attributes; a tag spent on them is wasted. Combine instead (e.g. "vestido lino azul", not "azul").
-- If a useful phrase is longer than 20 chars, split it into complementary tags that together cover it (e.g. "vestido flores años 90" -> "vestido flores 90" + "vestido vintage").
+- REQUIRED coverage per listing:
+  - exactly ONE size tag combining garment + size, e.g. "vintage dress size m" or "vintage skirt s" (must stay ≤20 chars)
+  - 1-3 aesthetic tags from the AESTHETIC VOCABULARY (only if genuinely accurate)
+  - at least 1 occasion tag when plausible ("wedding guest dress", "party dress", "vacation shirt")
+  - the rest: descriptive long-tail phrases
+- BANNED tags (wasted slots — nobody searches these, or they are too generic to rank):
+  - the shop name in any form ("retrospectiva store", "retrospective store")
+  - "second hand", "secondhand", "second hand fashion", "thrift shop"
+  - "vintage fashion", "vintage women", "vintage" alone
+  - standalone colors or materials ("beige shirt" is banned as pure color+type filler UNLESS color is a defining search trait of the piece; colors already match via attributes — combine instead: "navy polka dot skirt")
+- Do NOT repeat the chosen colors or materials as standalone tags — those already match as attributes. Combine instead (e.g. "blue linen dress", not "blue").
+- If a useful phrase is longer than 20 chars, split it into complementary tags that together cover it.
 - Lowercase. No misspellings (Etsy handles typos). Don't worry about plurals (Etsy matches root words).
 - No contradictory decades/styles. No invented materials. No accessories unless included.
 
-etsyMaterialsEs (in Spanish):
+etsyMaterialsEn:
 
 - ONLY include confirmed or visually obvious materials
 - If uncertain, return empty array
@@ -299,7 +332,7 @@ etsyPrimaryColor / etsySecondaryColor:
 
 comments:
 
-If seller comments are provided, they become the SECOND paragraph of the description (see descriptionEs rules), retold naturally in brand voice.
+If seller comments are provided, they become the SECOND paragraph of the description (see descriptionEn rules), retold naturally in brand voice.
 
 Do not copy them literally.
 
@@ -311,14 +344,14 @@ MEASUREMENTS RULE:
 
 Measurements (waist, bust, length, etc.) are stored and displayed in their own structured section, NOT inside the description.
 
-- Never write measurements, cm values, or size numbers into descriptionEs.
-- Do not reference "cintura X cm" or similar in the prose; the dedicated measurements section handles all numeric sizing.
+- Never write measurements, cm values, or size numbers into descriptionEn.
+- Do not reference "waist X cm" or similar in the prose; the dedicated measurements section handles all numeric sizing.
 
 FINAL SAFETY RULE:
 
 When uncertain, prefer omission over invention.
 
-Being accurate and trustworthy is more important than sounding detailed.`;
+Being accurate and trustworthy is more important than sounding detailed.`
 
 export const ENRICH_SYSTEM = fromEnv(
   "ENRICH_SYSTEM_PROMPT",
@@ -327,102 +360,26 @@ export const ENRICH_SYSTEM = fromEnv(
 
 // ----- Translation (Task 8) -----
 
-const TRANSLATE_ES_EN_DEFAULT = `Translate to English. Same tone, same length. Return only the translation.
+const TRANSLATE_EN_ES_DEFAULT = `Translate the following Etsy listing content from English to Spanish (es-ES). Same tone, same length, same structure. Return only the translation.
 
-TITLE RULES (apply when translating a product title/name):
+GENERAL RULES:
+- Translate for a Spanish Etsy SHOPPER, not literally. Use the phrase a Spanish buyer would actually search ("invitada de boda", not "huésped de boda"; "vestido de tirantes", not "vestido con correas").
+- Keep the warm, relaxed, human tone of the source.
+
+TITLE RULES:
 - Never end the title with a period or any trailing punctuation.
-- If the title starts with a decade or year (e.g. "90s", "1990s", "70s"), the word right after it stays lowercase. Example: "90s red floral dress", not "90s Red floral dress".`;
+- Keep the size in the title, adapted: "Size M" -> "Talla M".
+- Decades adapt to Spanish convention: "90s" -> "años 90". Word order should sound natural in Spanish ("Vestido cruzado de flores años 90 Talla M"), not mirror English order.
 
-export const TRANSLATE_ES_EN = fromEnv(
-  "TRANSLATE_ES_EN_PROMPT",
-  TRANSLATE_ES_EN_DEFAULT,
+TAG RULES (critical):
+- Every translated tag MUST be 20 characters or fewer. If a literal translation exceeds 20 characters, shorten or rephrase it while keeping the search intent ("vestido invitada boda" -> "vestido invitada").
+- All 13 tags must remain unique after translation — if two tags collapse into the same Spanish phrase, replace one with a different accurate Spanish search phrase.
+- Aesthetic terms used internationally stay in English AS-IS (Spanish shoppers search them untranslated): cottagecore, boho, grunge, whimsigoth, y2k, retro, vintage.
+- Aesthetic terms NOT used in Spanish get mapped to natural equivalents: "grandmacore" -> "estilo abuela chic" or drop for another accurate tag; "dark academia" stays as-is; "coastal" -> "estilo marinero".
+- Occasion tags translate to real Spanish search phrases: "wedding guest dress" -> "vestido invitada", "party dress" -> "vestido de fiesta", "gift for her" -> "regalo para ella".
+- Lowercase. No invented content — translation only, never add or remove claims about the garment.`;
+
+export const TRANSLATE_EN_ES = fromEnv(
+  "TRANSLATE_EN_ES_PROMPT",
+  TRANSLATE_EN_ES_DEFAULT,
 );
-
-// ----- Base model generation (Task 8 · Model Studio) -----
-//
-// Verbatim from `docs/ai/model-generation/phase-1-base-model.md` §3.
-// The `{VAR}` placeholders are filled at call time by the worker.
-// Override the entire template via `BASE_MODEL_GENERATION_PROMPT`
-// when iterating on tone without redeploying.
-
-const BASE_MODEL_GENERATION_DEFAULT = `A highly detailed realistic ecommerce fashion reference contact sheet featuring the same woman consistently across all panels.
-
-The subject is a {AGE_RANGE} european woman with naturally proportioned {BODY_TYPE} body proportions, approximately {HEIGHT_RANGE} tall proportions, {SKIN_TONE} skin tone, {FACE_SHAPE} face shape, and {HAIR_COLOR} {HAIR_TYPE} hair styled as a {HAIR_SHAPE}.
-
-She looks like a real everyday person rather than a fashion model — naturally attractive, approachable, believable, and realistic. Subtle natural asymmetry, authentic skin texture, soft facial features, slight imperfections, realistic pores, natural proportions, and relaxed posture.
-
-No exaggerated beauty standards, no glamour model appearance, no runway model proportions, no idealized facial perfection, no hyper-symmetry, and no stylized editorial beauty.
-
-The same woman must appear consistently in every panel with consistent facial structure, body proportions, hairstyle, skin tone, and identity.
-
-She is wearing a seamless matte opaque full-coverage unitard, non-sheer fabric, neutral light beige, with no visible logos, patterns, accessories, jewelry, tattoos, piercings, heavy makeup, or nail polish.
-
-Minimal natural makeup only. Soft natural lips, realistic under-eye texture, realistic skin variation, and natural human facial detail.
-
-Professional ecommerce studio photography in a seamless pure white infinity backdrop studio environment with soft diffused lighting, balanced exposure, soft natural shadows, and clean commercial catalog photography quality.
-
-Shot using realistic commercial apparel photography styling with accurate body proportions, realistic skin rendering, and natural photographic detail.
-
-The woman stands in a neutral relaxed standing pose with natural posture, shoulders relaxed, feet naturally positioned, and arms slightly separated from the torso for clear body visibility.
-
-The image is organized as a structured professional fashion reference contact sheet using a fixed 3-column by 2-row grid layout with equal panel dimensions, symmetrical spacing, and aligned composition.
-
-Each panel is separated by a clean solid pure-white gutter at least 40 pixels to a maximum of 60 pixels wide on all sides, including the outer trim and inner dividers.
-
-The panel order must remain identical and consistent in every generation, arranged from left to right and top to bottom in the following exact order:
-
-Panel 1 (top-left): front-facing full body view, entire body visible from head to toe.
-
-Panel 2 (top-center): front-facing portrait close-up view with natural facial detail.
-
-Panel 3 (top-right): front-facing upper-torso close-up view, cropped and framed from shoulders to abdomen.
-
-Panel 4 (bottom-left): left side profile portrait close-up view with detailed facial structure.
-
-Panel 5 (bottom-center): back-facing full body view, entire body visible from head to toe.
-
-Panel 6 (bottom-right): front 3/4 angle full body view for garment fitting reference.
-
-All panels must maintain consistent framing, centered positioning, equal spacing, identical alignment, and clean white negative space between panels for reliable automated cropping and dataset-style reference extraction.
-
-Realistic ecommerce photography, clean composition, centered framing, believable proportions, natural anatomy, realistic skin texture, authentic human appearance, and commercial apparel fitting reference quality.
-
-Avoid glamour photography, editorial fashion styling, exaggerated curves, stylized anatomy, hyper-perfect faces, unrealistic symmetry, porcelain skin, excessive beauty retouching, dramatic posing, cinematic color grading, sexualized posing, distorted anatomy, artificial body proportions, doll-like appearance, or influencer-style beauty aesthetics.`;
-
-export const BASE_MODEL_GENERATION = fromEnv(
-  "BASE_MODEL_GENERATION_PROMPT",
-  BASE_MODEL_GENERATION_DEFAULT,
-);
-
-// ----- Image placement (Task 11) -----
-
-const IMAGE_PLACEMENT_DEFAULT = `Coloca la prenda en una modelo realista, foto tipo iPhone. Ubicación: {location}. Color y corte fieles al original. Sin retoques excesivos.`;
-
-export const IMAGE_PLACEMENT = fromEnv(
-  "IMAGE_PLACEMENT_PROMPT",
-  IMAGE_PLACEMENT_DEFAULT,
-);
-
-const LOCATION_POOL_DEFAULT = [
-  "estudio fotográfico con luz natural",
-  "calle adoquinada por la mañana",
-  "tienda vintage con suelo de madera",
-  "salón con ventana grande",
-];
-
-/** Comma-separated env override; falls back to the default array. */
-export const LOCATION_POOL: string[] = (() => {
-  const raw = process.env.LOCATION_POOL;
-  if (typeof raw === "string" && raw.trim() !== "") {
-    return raw
-      .split(",")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-  }
-  return LOCATION_POOL_DEFAULT;
-})();
-
-export function pickRandomLocation(): string {
-  const i = Math.floor(Math.random() * LOCATION_POOL.length);
-  return LOCATION_POOL[i] ?? LOCATION_POOL_DEFAULT[0];
-}

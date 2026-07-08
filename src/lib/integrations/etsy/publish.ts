@@ -63,7 +63,7 @@ function shouldActivateListing(): boolean {
  * Sequence:
  *   1. Status guard (same race-safety check as the Task 9 stub —
  *      cancelled/archived rows skip cleanly without contacting Etsy).
- *   2. Inline ES → EN translation for the four translatable fields,
+ *   2. Inline EN → ES translation for the four translatable fields,
  *      with bounded per-field retry. Translation failures abort the
  *      publish so we never push a half-translated listing to buyers.
  *   3. Build the create-draft payload via the listing-mapper, then
@@ -73,7 +73,7 @@ function shouldActivateListing(): boolean {
  *   4. Upload images (rank starts at 1; alt_text = titleEn) and the
  *      optional video.
  *   5. Upsert the ES translation (title + description + tags) so EU
- *      buyers browsing in Spanish see the canonical copy.
+ *      buyers browsing in Spanish see the translated copy.
  *   6. Flip Etsy state to `active` and the local row to `published`.
  *
  * Throws on any unrecoverable failure; the BullMQ worker catches and
@@ -218,7 +218,7 @@ export async function runScheduledPublish(
 
   const shop = await loadShopConfig();
 
-  // Translate ES → EN inline. We retry per-field rather than letting
+  // Translate EN → ES inline. We retry per-field rather than letting
   // one transient OpenAI hiccup abort the whole publish. If retries
   // are exhausted, we throw — the BullMQ retry loop catches it and
   // tries the publish again later.
@@ -227,7 +227,8 @@ export async function runScheduledPublish(
   }
 
   // Re-read after translation so the mapper sees the freshly-written
-  // EN columns.
+  // ES columns (the main listing uses the canonical EN columns, which
+  // are already populated).
   const [product] = await db
     .select()
     .from(products)
@@ -380,7 +381,8 @@ export async function runScheduledPublish(
   );
   dev.log("listing properties applied", productId, appliedProps.join(",") || "none");
 
-  // ES translation — the EU-Spain visitor sees the canonical copy.
+  // ES translation — the EU-Spain visitor sees the translated copy
+  // (the derived `*_es` columns just written by the translation loop).
   const titleEs = (product.titleEs ?? "").trim();
   const descriptionEs = (product.descriptionEs ?? "").trim();
   if (titleEs && descriptionEs) {
@@ -421,9 +423,9 @@ export async function runScheduledPublish(
 
   // Freeze the public store slug on first publish. Once set it never
   // changes (even if the title is later edited) so shared / indexed
-  // website URLs stay valid — see `buildSlug`. Built from the English
-  // title (`product` is the post-translation re-read), falling back to
-  // the Spanish title only if translation yielded nothing.
+  // website URLs stay valid — see `buildSlug`. Built from the canonical
+  // English title, falling back to the Spanish title only for the
+  // (legacy) case where English is somehow absent.
   const slug = row.slug ?? buildSlug(product.titleEn ?? product.titleEs, row.id);
 
   await db

@@ -10,7 +10,7 @@ import {
   clothingBuyPriceDefaults,
   type ClothingType,
 } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { devGroup } from "@/lib/utils/dev";
 import { MONEY_STRING_RE, priceEurToCents } from "@/lib/utils/money";
 

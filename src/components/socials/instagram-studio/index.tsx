@@ -5,7 +5,7 @@ import { Download, Film, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { cn } from "@/lib/utils/helpers";
 
 import { InstagramStudioFieldsForm } from "./instagram-studio-fields-form";

@@ -3,14 +3,9 @@
 import { Stepper } from "@/components/forms/stepper";
 import type { ImageListItem } from "@/components/products/image-list";
 import type { VideoListItem } from "@/components/products/video-list";
-import type { ActiveAiModelListItem } from "@/lib/ai-models/actions";
 import type { ClothingType, Product } from "@/lib/db/schema";
 import type { ShippingProfile } from "@/lib/integrations/etsy/shop-config";
 
-import {
-  type AiReferenceImage,
-  type GeneratedAiImage,
-} from "../ai-image-section";
 import { AutosaveProvider } from "../autosave";
 import { AutosaveIndicator } from "../autosave-indicator";
 import { EnrichmentStatusProvider } from "../enrichment-status";
@@ -41,18 +36,13 @@ export function NewProductStepper({
   featuredSlotsFull,
   shopMarkupPercent,
   shopDefaultDiscountPercent,
-  shopAiImageEnabled,
-  shopListingFooterEs,
+  shopListingFooterEn,
   etsyPoliciesConfigured,
   buyPriceDefaults,
   imageItems,
   videoItems,
-  aiModels,
-  aiReferenceImage,
-  aiGeneratedImage,
   shippingProfiles,
   shippingMapping,
-  r2BaseUrl,
 }: {
   product: Product;
   mode?: PublishSidebarMode;
@@ -60,22 +50,17 @@ export function NewProductStepper({
   featuredSlotsFull: boolean;
   shopMarkupPercent: number;
   shopDefaultDiscountPercent: number;
-  shopAiImageEnabled: boolean;
-  shopListingFooterEs: string;
+  shopListingFooterEn: string;
   etsyPoliciesConfigured: boolean;
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
   videoItems: VideoListItem[];
-  aiModels: ActiveAiModelListItem[];
-  aiReferenceImage: AiReferenceImage;
-  aiGeneratedImage: GeneratedAiImage;
   shippingProfiles: ShippingProfile[];
   shippingMapping: {
     light: number | null;
     medium: number | null;
     heavy: number | null;
   };
-  r2BaseUrl: string;
 }) {
   const vm = useNewProductStepper({ etsyPoliciesConfigured });
 
@@ -109,23 +94,17 @@ export function NewProductStepper({
                     featuredSlotsFull={featuredSlotsFull}
                     shopMarkupPercent={shopMarkupPercent}
                     shopDefaultDiscountPercent={shopDefaultDiscountPercent}
-                    shopAiImageEnabled={shopAiImageEnabled}
                     buyPriceDefaults={buyPriceDefaults}
                     imageItems={imageItems}
                     videoItems={videoItems}
-                    aiModels={aiModels}
-                    aiReferenceImage={aiReferenceImage}
-                    aiGeneratedImage={aiGeneratedImage}
                     shippingProfiles={shippingProfiles}
                     shippingMapping={shippingMapping}
-                    r2BaseUrl={r2BaseUrl}
                   />
                 )}
                 {vm.currentStep === "ai" && (
                   <Step2AiReview
                     product={product}
-                    initialAiImage={aiGeneratedImage}
-                    shopListingFooterEs={shopListingFooterEs}
+                    shopListingFooterEn={shopListingFooterEn}
                     featureImage={imageItems[0] ?? null}
                   />
                 )}

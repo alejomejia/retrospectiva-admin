@@ -7,7 +7,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
 import { etsyOauth } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { devGroup } from "@/lib/utils/dev";
 
 const dev = devGroup("etsy.defaults");

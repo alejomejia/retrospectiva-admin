@@ -140,7 +140,7 @@ revisiting once Phase 2-4 prompts are stable.
 
 ## 5 · Locked decisions
 
-- Prompts stay in English. The admin UI is Spanish, but every
+- Prompts stay in English. The admin UI is English; every
   prompt sent to OpenAI is English-only (better model performance,
   fewer translation quirks). See
   [../project-conventions.md](../../overview/project-conventions.md) §2.

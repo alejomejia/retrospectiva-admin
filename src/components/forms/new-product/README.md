@@ -1,9 +1,8 @@
 # `new-product/`
 
 The 2-step "new product" flow used at `/products/[id]`. Wraps every input the
-operator touches on a draft listing — manual fields, media, AI image config,
-AI-generated content review, and the publish actions in the always-visible
-right rail.
+operator touches on a draft listing — manual fields, media, AI-generated
+content review, and the publish actions in the always-visible right rail.
 
 Entry point: `new-product-stepper/` → `NewProductStepper`.
 
@@ -13,8 +12,8 @@ Entry point: `new-product-stepper/` → `NewProductStepper`.
 
 | Step | URL              | Component       | What happens                                                                                                                              |
 |------|------------------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| 1    | `?step=inputs` *(default — no param)* | `Step1Inputs`   | Operator fills garment type, condition, sizes, prices, measurements, comments, uploads media, configures AI image (model / reference / panel / presets). |
-| 2    | `?step=ai`       | `Step2AiReview` | After **Next**, an `ai-enrich` job runs (title / description / tags / materials). Skeletons show until polling sees `succeeded`; failure surfaces a retry banner. Placement image polls in parallel. Each field is editable + regenerable in-place. |
+| 1    | `?step=inputs` *(default — no param)* | `Step1Inputs`   | Operator fills garment type, condition, sizes, prices, measurements, comments, uploads media. |
+| 2    | `?step=ai`       | `Step2AiReview` | After **Next**, an `ai-enrich` job runs (title / description / tags / materials). Skeletons show until polling sees `succeeded`; failure surfaces a retry banner. Each field is editable + regenerable in-place. |
 
 The `PublishSidebar` (right rail) is visible on every step. Its three actions
 — **Publish now** / **Save draft** / **Schedule** — all flush autosave first
@@ -34,7 +33,7 @@ The folder follows
 [`.agents/skills/project-conventions/component-pattern.md`](../../../../.agents/skills/project-conventions/component-pattern.md):
 each non-trivial component owns a kebab-cased subfolder with a thin `index.tsx`
 shell, a `use-<name>.ts` hook, and sibling sub-component files prefixed with
-the parent name. The prefix makes cmd+P deterministic — type `ai-image-section-`
+the parent name. The prefix makes cmd+P deterministic — type `step-1-inputs-`
 and you get every part of that component.
 
 ```
@@ -50,31 +49,12 @@ new-product/
 │   ├── use-step-1-inputs.ts      # All local state, beforeNext, register
 │   └── step-1-inputs.const.ts    # missingFieldList()
 │
-├── step-2-ai-review/             # Step 2 — AI enrich review + placement
+├── step-2-ai-review/             # Step 2 — AI enrich review
 │   ├── index.tsx
 │   ├── use-step-2-ai-review.ts   # Polling glue, kick, timeout
 │   ├── step-2-ai-review.const.ts # POLL_TIMEOUT_MS, derivePhase(), Phase
 │   ├── step-2-ai-review-running-skeleton.tsx
-│   ├── step-2-ai-review-failure-banner.tsx
-│   └── step-2-ai-review-image-placement.tsx
-│
-├── ai-image-section/             # Step 1's "Imagen IA" card (also embedded in edit-form)
-│   ├── index.tsx
-│   ├── use-ai-image-section.ts
-│   ├── ai-image-section.types.ts # AiImageSectionProduct, AiReferenceImage, GeneratedAiImage
-│   ├── ai-image-section.const.ts # FIT_NONE_VALUE, PANEL_AUTO_VALUE, PANEL_TO_KEY, poll constants
-│   ├── ai-image-section-poll-placement.ts  # pollPlacementUntilDone() util
-│   ├── ai-image-section-no-models.tsx
-│   ├── ai-image-section-model-picker.tsx
-│   ├── ai-image-section-reference-uploader.tsx
-│   ├── ai-image-section-source-panel-select.tsx
-│   ├── ai-image-section-panel-preview.tsx
-│   ├── ai-image-section-pose-select.tsx
-│   ├── ai-image-section-framing-select.tsx
-│   ├── ai-image-section-environment-select.tsx
-│   ├── ai-image-section-fit-override-select.tsx
-│   ├── ai-image-section-quality-select.tsx
-│   └── ai-image-section-generate-block.tsx
+│   └── step-2-ai-review-failure-banner.tsx
 │
 ├── publish-sidebar/              # Right rail — terminal actions
 │   ├── index.tsx
@@ -100,7 +80,6 @@ new-product/
 ├── step-footer-context.tsx       # Tiny shared state for the footer's canNext / beforeNext / disabledReason
 ├── autosave-indicator.tsx        # The "Guardado hace 3s" pill in the stepper header
 │
-├── ai-image-override-field.tsx   # Per-product on/off toggle for AI image generation
 ├── buy-price-field.tsx           # Buy-price (cost basis) input
 ├── condition-field.tsx           # Used / Like-new / etc. select
 ├── garment-type-field.tsx        # The clothing-type select — drives required measurements
@@ -146,48 +125,20 @@ since step 2 is the last step, this only matters if a future step is added.
 
 ---
 
-## 4. AI generation gating
-
-Two independent shop / product toggles converge on the same gate:
-
-```
-aiImageOn = product.aiImageEnabled ?? shopAiImageEnabled
-```
-
-- Shop-wide off + no product override → AI image controls hidden, placement
-  worker short-circuits at enqueue.
-- Per-product override off → same.
-- Either path on → `AiImageSection` renders, and on **Next** from step 1 the
-  placement job is auto-enqueued alongside the enrich job (only if model +
-  reference + clothing type are all set — see `canAutoEnqueuePlacement` in
-  `use-step-1-inputs.ts`).
-
-The reference uploader bypasses autosave; it has its own server actions
-(`uploadAiReferenceImage` / `deleteAiReferenceImage`) that mutate
-`product_images` directly.
-
----
-
-## 5. Polling
+## 4. Polling
 
 - **Step 2 enrich**: `useAiStatusPolling(productId)` (from
   `@/components/products/use-ai-status-polling`) polls every ~2.5s. Phase is
   fully derived (no `setState`-in-effect) via `derivePhase()` —
   `kickedAt` is used to ignore stale `finishedAt` values so the UI flips back
   to **running** the instant the user clicks **Regenerar** / **Retry**.
-- **Step 2 placement**: `useAiImageStatusPolling(productId)` does the
-  equivalent for the placement job; succeeds trigger a one-shot
-  `router.refresh()` so the server-rendered AI fields appear.
-- **Step 1 generate-block** (used only by the flat edit form):
-  `pollPlacementUntilDone()` in `ai-image-section-poll-placement.ts` is a
-  one-shot polling helper used right after a manual generate click.
 
-Both polling hooks live outside this folder (under `src/components/products/`)
-because the flat edit form needs them too.
+The polling hook lives outside this folder (under `src/components/products/`)
+because the flat edit form needs it too.
 
 ---
 
-## 6. External consumers
+## 5. External consumers
 
 The folder is consumed in three places. Only the listed paths are public —
 nothing else should be imported from inside the subfolders.
@@ -195,7 +146,7 @@ nothing else should be imported from inside the subfolders.
 | Importer | What it imports |
 |---|---|
 | `src/app/(admin)/products/[id]/page.tsx` | `NewProductStepper` |
-| `src/components/products/edit-form.tsx` | `AiImageSection`, `AutosaveProvider`, `AutosaveIndicator`, the 6 field components (`ConditionField`, `GarmentTypeField`, `MeasurementsField`, `BuyPriceField`, `PriceField`, `SizesField`) |
+| `src/components/products/edit-form.tsx` | `AutosaveProvider`, `AutosaveIndicator`, the 6 field components (`ConditionField`, `GarmentTypeField`, `MeasurementsField`, `BuyPriceField`, `PriceField`, `SizesField`) |
 | `src/components/products/edit-form/ai-content-section.tsx` | `useAutosave` |
 
 Because every compound-root folder ships an `index.tsx`, the import paths are
@@ -214,12 +165,12 @@ for the flat file it replaced.
 - Keep `index.tsx` thin: props destructure → `useFoo(props)` → JSX. If you
   catch yourself writing a `useEffect` in `index.tsx`, lift it into the hook.
 - File names are kebab-case, **prefixed with the parent folder name** so
-  cmd+P stays deterministic. `ai-image-section-pose-select.tsx`, not
-  `pose-select.tsx`.
+  cmd+P stays deterministic. `measurements-field-cm-input.tsx`, not
+  `cm-input.tsx`.
 - `.context.ts` is `.ts` (no JSX). The provider component lives in
   `index.tsx` or a `<name>-provider.tsx` sibling.
 - `cn()` comes from `@/lib/utils/helpers`. Never import `clsx` directly.
-- All strings in the UI are Spanish via `m.*` from `@/lib/i18n/messages.es`;
+- All UI strings are English via `m.*` from `@/lib/i18n/messages.en`;
   the ES → EN translation happens at the Etsy-publish boundary, not here.
 - Don't add public compound API (`Object.assign(Root, { Sub })`) here unless
   the sub-component is meaningfully callable from outside the folder. The
@@ -240,9 +191,9 @@ for the flat file it replaced.
 - **Step 2 uses `key={product.updatedAt.getTime()}`** on `AiContentSection`
   so it re-mounts (re-seeds its local state) after a successful enrich /
   regenerate.
-- **`router.refresh()`** is called exactly once per phase transition to
-  `succeeded` (enrich and placement separately). Adding more refresh sites is
-  almost always wrong — debug by inspecting polling cadence first.
+- **`router.refresh()`** is called exactly once per enrich phase transition to
+  `succeeded`. Adding more refresh sites is almost always wrong — debug by
+  inspecting polling cadence first.
 - The publish sidebar's **Schedule** button is gated on
   `etsyPoliciesConfigured`; the warning toast in `useNewProductStepper`
   surfaces the same constraint at the top level.

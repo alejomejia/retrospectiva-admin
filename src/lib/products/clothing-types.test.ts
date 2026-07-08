@@ -25,11 +25,11 @@ describe("CLOTHING_TYPES registry", () => {
   });
 
   it("getClothingTypeLabel reads from i18n", () => {
-    expect(getClothingTypeLabel("dress")).toBe("Vestido");
+    expect(getClothingTypeLabel("dress")).toBe("Dress");
   });
 
   it("getClothingTypeLabel falls back to the raw value when missing", () => {
-    expect(getClothingTypeLabel("skirt")).toBe("Falda");
+    expect(getClothingTypeLabel("skirt")).toBe("Skirt");
   });
 
   it("groups by category", () => {
@@ -42,9 +42,9 @@ describe("CLOTHING_TYPES registry", () => {
     ]);
   });
 
-  it("returns Spanish category labels", () => {
-    expect(getCategoryLabel("upper")).toBe("Parte superior");
-    expect(getCategoryLabel("complete")).toBe("Conjunto completo");
+  it("returns category labels", () => {
+    expect(getCategoryLabel("upper")).toBe("Upper body");
+    expect(getCategoryLabel("complete")).toBe("Complete set");
   });
 });
 

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { useAiStatusPolling } from "@/components/products/use-ai-status-polling";
 import type { Product } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { enqueueEnrichJob } from "@/lib/products/draft-actions";
 
 import {
@@ -62,7 +62,7 @@ export function useEnrichmentStatus({
   // poll is just re-observing content we already have — adopt its
   // `finishedAt` as the baseline without refreshing/remounting.
   const enteredEnriched = useRef(
-    Boolean(product.titleEs && product.titleEs.trim() !== ""),
+    Boolean(product.titleEn && product.titleEn.trim() !== ""),
   );
   // Bumped once each post-enrich refresh has actually landed. Drives
   // the `key` on the editable AI-content fields so they remount with

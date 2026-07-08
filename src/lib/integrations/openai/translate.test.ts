@@ -16,10 +16,10 @@ vi.mock("@/lib/integrations/openai/client", () => ({
 
 type DbProductRow = {
   id: string;
-  titleEs: string | null;
-  descriptionEs: string | null;
-  etsyTagsEs: string[];
-  etsyMaterialsEs: string[];
+  titleEn: string | null;
+  descriptionEn: string | null;
+  etsyTagsEn: string[];
+  etsyMaterialsEn: string[];
 };
 
 const dbState: {
@@ -92,11 +92,11 @@ const { runTranslation } = await import("./translate");
 
 const baseRow: DbProductRow = {
   id: "p1",
-  titleEs: "Vestido vintage de los 80",
-  descriptionEs:
-    "Un vestido vintage de los 80 con estampado floral. Combínalo con botas blancas.",
-  etsyTagsEs: ["vestido", "vintage", "años 80"],
-  etsyMaterialsEs: ["algodón", "poliéster"],
+  titleEn: "Vintage 80s dress",
+  descriptionEn:
+    "A vintage 80s dress with a floral print. Pair it with white boots.",
+  etsyTagsEn: ["dress", "vintage", "80s"],
+  etsyMaterialsEn: ["cotton", "polyester"],
 };
 
 beforeEach(() => {
@@ -108,13 +108,13 @@ beforeEach(() => {
 });
 
 describe("runTranslation — string fields", () => {
-  it("translates titleEs → titleEn and writes the result", async () => {
+  it("translates titleEn → titleEs and writes the result", async () => {
     openaiCreateMock.mockResolvedValueOnce({
-      output_text: JSON.stringify({ value: "Vintage 80s dress" }),
+      output_text: JSON.stringify({ value: "Vestido vintage de los 80" }),
       usage: { input_tokens: 50, output_tokens: 20 },
     });
 
-    await runTranslation("p1", "titleEs");
+    await runTranslation("p1", "titleEn");
 
     expect(openaiCreateMock).toHaveBeenCalledTimes(1);
     const call = openaiCreateMock.mock.calls[0]![0];
@@ -122,17 +122,17 @@ describe("runTranslation — string fields", () => {
     expect(call.text.format.type).toBe("json_schema");
     expect(call.text.format.name).toBe("TranslatedString");
 
-    // User payload carries the ES value wrapped in { value }.
+    // User payload carries the EN value wrapped in { value }.
     const userMsg = call.input.find(
       (m: { role: string }) => m.role === "user",
     );
     expect(JSON.parse(userMsg.content)).toEqual({
-      value: baseRow.titleEs,
+      value: baseRow.titleEn,
     });
 
     expect(dbState.updateCalls).toHaveLength(1);
     expect(dbState.updateCalls[0]!.values).toEqual({
-      titleEn: "Vintage 80s dress",
+      titleEs: "Vestido vintage de los 80",
     });
 
     // ai_runs: one insert (running) + one update (succeeded).
@@ -142,59 +142,61 @@ describe("runTranslation — string fields", () => {
     });
   });
 
-  it("translates descriptionEs the same way", async () => {
+  it("translates descriptionEn the same way", async () => {
     openaiCreateMock.mockResolvedValueOnce({
-      output_text: JSON.stringify({ value: "A nice vintage 80s dress." }),
+      output_text: JSON.stringify({
+        value: "Un bonito vestido vintage de los 80.",
+      }),
     });
-    await runTranslation("p1", "descriptionEs");
+    await runTranslation("p1", "descriptionEn");
     expect(dbState.updateCalls[0]!.values).toEqual({
-      descriptionEn: "A nice vintage 80s dress.",
+      descriptionEs: "Un bonito vestido vintage de los 80.",
     });
   });
 
-  it("clears the EN column to null when the source string is empty (no API call)", async () => {
-    dbState.rows = [{ ...baseRow, titleEs: "" }];
-    await runTranslation("p1", "titleEs");
+  it("clears the ES column to null when the source string is empty (no API call)", async () => {
+    dbState.rows = [{ ...baseRow, titleEn: "" }];
+    await runTranslation("p1", "titleEn");
     expect(openaiCreateMock).not.toHaveBeenCalled();
-    expect(dbState.updateCalls).toEqual([{ values: { titleEn: null } }]);
+    expect(dbState.updateCalls).toEqual([{ values: { titleEs: null } }]);
     // No ai_runs row for a no-op clear.
     expect(dbState.aiRunInsertCount).toBe(0);
   });
 });
 
 describe("runTranslation — array fields", () => {
-  it("translates etsyTagsEs item-by-item, preserving the order", async () => {
+  it("translates etsyTagsEn item-by-item, preserving the order", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       output_text: JSON.stringify({
-        items: ["dress", "vintage", "80s"],
+        items: ["vestido", "vintage", "años 80"],
       }),
     });
-    await runTranslation("p1", "etsyTagsEs");
+    await runTranslation("p1", "etsyTagsEn");
 
     const call = openaiCreateMock.mock.calls[0]![0];
     expect(call.text.format.name).toBe("TranslatedArray");
 
     expect(dbState.updateCalls).toHaveLength(1);
     expect(dbState.updateCalls[0]!.values).toEqual({
-      etsyTagsEn: ["dress", "vintage", "80s"],
+      etsyTagsEs: ["vestido", "vintage", "años 80"],
     });
   });
 
-  it("clears the EN column to [] when the source array is empty (no API call)", async () => {
-    dbState.rows = [{ ...baseRow, etsyTagsEs: [] }];
-    await runTranslation("p1", "etsyTagsEs");
+  it("clears the ES column to [] when the source array is empty (no API call)", async () => {
+    dbState.rows = [{ ...baseRow, etsyTagsEn: [] }];
+    await runTranslation("p1", "etsyTagsEn");
     expect(openaiCreateMock).not.toHaveBeenCalled();
-    expect(dbState.updateCalls).toEqual([{ values: { etsyTagsEn: [] } }]);
+    expect(dbState.updateCalls).toEqual([{ values: { etsyTagsEs: [] } }]);
   });
 
   it("rejects the run when the translated array length drifts from the source", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       output_text: JSON.stringify({
-        items: ["dress", "vintage"], // 2 != 3
+        items: ["vestido", "vintage"], // 2 != 3
       }),
     });
     await expect(
-      runTranslation("p1", "etsyTagsEs"),
+      runTranslation("p1", "etsyTagsEn"),
     ).rejects.toThrow(/length drift/);
     // No product write, but the run is recorded as failed.
     expect(dbState.updateCalls).toHaveLength(0);
@@ -209,7 +211,7 @@ describe("runTranslation — failure paths", () => {
     openaiCreateMock.mockResolvedValueOnce({
       output_text: "this is not JSON",
     });
-    await expect(runTranslation("p1", "titleEs")).rejects.toThrow();
+    await expect(runTranslation("p1", "titleEn")).rejects.toThrow();
     expect(dbState.updateCalls).toHaveLength(0);
     expect(dbState.aiRunUpdateCalls[0]!.values).toMatchObject({
       status: "failed",
@@ -218,7 +220,7 @@ describe("runTranslation — failure paths", () => {
 
   it("marks the run as failed when the OpenAI call itself throws", async () => {
     openaiCreateMock.mockRejectedValueOnce(new Error("OpenAI exploded"));
-    await expect(runTranslation("p1", "titleEs")).rejects.toThrow(
+    await expect(runTranslation("p1", "titleEn")).rejects.toThrow(
       "OpenAI exploded",
     );
     expect(dbState.aiRunUpdateCalls[0]!.values).toMatchObject({
@@ -229,10 +231,9 @@ describe("runTranslation — failure paths", () => {
 
   it("throws when the product doesn't exist", async () => {
     dbState.rows = [];
-    await expect(runTranslation("missing", "titleEs")).rejects.toThrow(
+    await expect(runTranslation("missing", "titleEn")).rejects.toThrow(
       /not found/,
     );
     expect(openaiCreateMock).not.toHaveBeenCalled();
   });
 });
-

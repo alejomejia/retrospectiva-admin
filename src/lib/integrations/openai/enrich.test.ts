@@ -31,7 +31,7 @@ type DbProductRow = {
   legCm: number | null;
   lengthCm: number | null;
   braSize: string | null;
-  titleEs?: string | null;
+  titleEn?: string | null;
 };
 
 const dbState: {
@@ -131,11 +131,11 @@ const baseRow: DbProductRow = {
 };
 
 const validOutput = {
-  titleEs: "Vestido azul de los 80 con flores",
-  descriptionEs:
-    "Un vestido vintage de los 80 con estampado floral. Combínalo con botas blancas para un look retro inconfundible.",
-  etsyTagsEs: ["vestido", "vintage"],
-  etsyMaterialsEs: ["algodon"],
+  titleEn: "Blue 80s floral dress",
+  descriptionEn:
+    "A vintage 80s dress with a floral print. Pair it with white boots for an unmistakable retro look.",
+  etsyTagsEn: ["dress", "vintage"],
+  etsyMaterialsEn: ["cotton"],
   etsyWhenMade: "1980s",
   etsyPrimaryColor: "blue",
   etsySecondaryColor: null,
@@ -190,11 +190,11 @@ describe("runEnrichment", () => {
     expect(dbState.updateCalls).toHaveLength(1);
     const written = dbState.updateCalls[0]!.values;
     expect(written).toMatchObject({
-      titleEs: validOutput.titleEs,
-      descriptionEs: validOutput.descriptionEs,
+      titleEn: validOutput.titleEn,
+      descriptionEn: validOutput.descriptionEn,
       etsyWhenMade: "1980s",
     });
-    expect(written.etsyTagsEs).toEqual(["vestido", "vintage"]);
+    expect(written.etsyTagsEn).toEqual(["dress", "vintage"]);
     // `etsyTaxonomyId` is derived from `clothingType` in
     // `updateProductDraftField`, not by this enrichment path.
     expect(written.etsyTaxonomyId).toBeUndefined();
@@ -225,7 +225,7 @@ describe("runEnrichment", () => {
     await runEnrichment("p1");
     expect(dbState.updateCalls).toHaveLength(1);
     expect(dbState.updateCalls[0]!.values).toMatchObject({
-      titleEs: validOutput.titleEs,
+      titleEn: validOutput.titleEn,
     });
   });
 
@@ -247,7 +247,7 @@ describe("runEnrichment", () => {
   it("marks the run as failed when the JSON fails the zod schema", async () => {
     openaiCreateMock.mockResolvedValueOnce({
       id: "resp_test",
-      output_text: JSON.stringify({ titleEs: "Hola" }),
+      output_text: JSON.stringify({ titleEn: "Hi" }),
     });
 
     await expect(runEnrichment("p1")).rejects.toThrow();

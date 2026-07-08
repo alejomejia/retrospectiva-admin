@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 
 export function RunningSkeleton() {
   return (

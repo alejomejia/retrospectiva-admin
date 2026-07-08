@@ -36,8 +36,8 @@ describe("formatSizeHeader", () => {
   });
 
   it("appends the condition segment when supplied", () => {
-    expect(formatSizeHeader("S", "en", "perfect")).toBe(
-      "Size: S | EU 36 | UK 8 | US 4 | Condition: Perfect",
+    expect(formatSizeHeader("S", "en", "excellent")).toBe(
+      "Size: S | EU 36 | UK 8 | US 4 | Condition: Excellent",
     );
     expect(formatSizeHeader("S", "es", "very_good")).toBe(
       "Talla: S | EU 36 | UK 8 | US 4 | Estado: Muy bueno",

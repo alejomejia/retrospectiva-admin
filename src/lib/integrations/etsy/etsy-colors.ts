@@ -41,27 +41,27 @@ export function isEtsyColor(value: unknown): value is EtsyColor {
 }
 
 /**
- * Spanish display labels for the picker UI. Keys must stay aligned
+ * English display labels for the picker UI. Keys must stay aligned
  * with the {@link ETSY_COLORS} enum.
  */
-export const ETSY_COLOR_LABELS_ES: Record<EtsyColor, string> = {
+export const ETSY_COLOR_LABELS_EN: Record<EtsyColor, string> = {
   beige: "Beige",
-  black: "Negro",
-  blue: "Azul",
-  bronze: "Bronce",
-  brown: "Marrón",
-  clear: "Transparente",
-  copper: "Cobre",
-  gold: "Dorado",
-  gray: "Gris",
-  green: "Verde",
-  orange: "Naranja",
-  pink: "Rosa",
-  purple: "Morado",
-  rainbow: "Arcoíris",
-  red: "Rojo",
-  rose: "Rosado",
-  silver: "Plateado",
-  white: "Blanco",
-  yellow: "Amarillo",
+  black: "Black",
+  blue: "Blue",
+  bronze: "Bronze",
+  brown: "Brown",
+  clear: "Clear",
+  copper: "Copper",
+  gold: "Gold",
+  gray: "Gray",
+  green: "Green",
+  orange: "Orange",
+  pink: "Pink",
+  purple: "Purple",
+  rainbow: "Rainbow",
+  red: "Red",
+  rose: "Rose",
+  silver: "Silver",
+  white: "White",
+  yellow: "Yellow",
 };

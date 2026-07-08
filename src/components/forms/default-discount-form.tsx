@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { saveDefaultDiscount } from "@/lib/products/settings-actions";
 import { DEFAULT_DISCOUNT_PERCENT } from "@/lib/products/pricing";
 

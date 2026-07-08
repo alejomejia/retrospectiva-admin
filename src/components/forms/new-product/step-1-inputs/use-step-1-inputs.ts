@@ -8,8 +8,7 @@ import type {
   Product,
   ProductCondition,
 } from "@/lib/db/schema";
-import type { PanelKey } from "@/lib/integrations/openai/panel-keys";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import {
   getRequiredMeasurements,
   getShippingWeightClass,
@@ -17,7 +16,7 @@ import {
 } from "@/lib/products/clothing-types";
 import { enqueueEnrichJob } from "@/lib/products/draft-actions";
 import { type SizeValue } from "@/lib/products/draft-schema";
-import { generateProductImage } from "@/lib/products/image-placement-actions";
+import type { ShippingProfile } from "@/lib/integrations/etsy/shop-config";
 import {
   measurementToColumn,
   type ProductMeasurements,
@@ -26,16 +25,14 @@ import {
 import type { ImageListItem } from "@/components/products/image-list";
 
 import { useAutosave } from "../autosave";
-import type { AiReferenceImage } from "../ai-image-section";
 import { useStepFooter } from "../step-footer-context";
 import { missingFieldList } from "./step-1-inputs.const";
 
 type Args = {
   product: Product;
-  shopAiImageEnabled: boolean;
   buyPriceDefaults: Record<ClothingType, number | null>;
   imageItems: ImageListItem[];
-  aiReferenceImage: AiReferenceImage;
+  shippingProfiles: ShippingProfile[];
   shippingMapping: {
     light: number | null;
     medium: number | null;
@@ -43,12 +40,26 @@ type Args = {
   };
 };
 
+/**
+ * Resolve the shop's "Free Shipping" Etsy profile id from the profile
+ * list by title, so new products default to free shipping instead of
+ * the weight-class mapping. Returns `null` when no such profile exists,
+ * letting callers fall back to the weight-class default.
+ */
+function findFreeShippingProfileId(
+  profiles: ShippingProfile[],
+): number | null {
+  const free =
+    profiles.find((p) => p.title.toLowerCase().includes("free shipping")) ??
+    profiles.find((p) => p.title.toLowerCase().includes("free"));
+  return free?.shipping_profile_id ?? null;
+}
+
 export function useStep1Inputs({
   product,
-  shopAiImageEnabled,
   buyPriceDefaults,
   imageItems,
-  aiReferenceImage,
+  shippingProfiles,
   shippingMapping,
 }: Args) {
   const { schedule, flush } = useAutosave();
@@ -84,13 +95,7 @@ export function useStep1Inputs({
   const [buyPriceCents, setBuyPriceCents] = useState<number | null>(
     product.buyPriceCents,
   );
-  const [aiModelId, setAiModelId] = useState<string | null>(product.aiModelId);
-  const [aiSourcePanel, setAiSourcePanel] = useState<PanelKey | null>(
-    product.aiSourcePanel as PanelKey | null,
-  );
-  const [aiHasReference, setAiHasReference] = useState<boolean>(
-    aiReferenceImage !== null,
-  );
+  const freeShippingProfileId = findFreeShippingProfileId(shippingProfiles);
   const [shippingProfileId, setShippingProfileId] = useState<number | null>(
     product.shippingProfileId,
   );
@@ -102,18 +107,21 @@ export function useStep1Inputs({
   useEffect(() => {
     setShippingProfileId(product.shippingProfileId);
   }, [product.shippingProfileId]);
+  // Default a fresh draft to the shop's Free Shipping profile and persist
+  // it, so publish has a real profile id even if the operator never opens
+  // the picker. Only fires once, when the row has no profile yet — edit
+  // mode already carries a saved id, so this is a no-op there.
+  useEffect(() => {
+    if (product.shippingProfileId === null && freeShippingProfileId !== null) {
+      setShippingProfileId(freeShippingProfileId);
+      schedule({ shippingProfileId: freeShippingProfileId });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const handleShippingProfileChange = (id: number | null) => {
     setShippingProfileId(id);
     schedule({ shippingProfileId: id });
   };
-  const handleAiRequiredStateChange = useCallback(
-    (s: { modelId: string | null; sourcePanel: PanelKey | null; hasReference: boolean }) => {
-      setAiModelId(s.modelId);
-      setAiSourcePanel(s.sourcePanel);
-      setAiHasReference(s.hasReference);
-    },
-    [],
-  );
   const [measurements, setMeasurements] = useState<ProductMeasurements>({
     shoulderCm: product.shoulderCm,
     sleeveWidthCm: product.sleeveWidthCm,
@@ -135,12 +143,13 @@ export function useStep1Inputs({
     // intentionally clears the input.
     const def = buyPriceDefaults[ct] ?? null;
     setBuyPriceCents(def);
-    // Auto-pick the shipping profile from the shop-wide weight-class
-    // mapping. Mirrors the server-side derivation in
-    // `updateProductDraftField` so the UI reflects the choice
-    // immediately; the explicit `shippingProfileId` in the patch wins
-    // over the server's auto-pick.
-    const shipId = shippingMapping[getShippingWeightClass(ct)];
+    // Default to the shop's Free Shipping profile when one exists,
+    // otherwise fall back to the weight-class mapping. Mirrors the
+    // server-side derivation in `updateProductDraftField` so the UI
+    // reflects the choice immediately; the explicit `shippingProfileId`
+    // in the patch wins over the server's auto-pick.
+    const shipId =
+      freeShippingProfileId ?? shippingMapping[getShippingWeightClass(ct)];
     setShippingProfileId(shipId);
     schedule({ buyPriceCents: def, shippingProfileId: shipId });
   };
@@ -166,23 +175,9 @@ export function useStep1Inputs({
         })
     : false;
 
-  // Per-product AI image generation is gated by BOTH the shop-wide
-  // toggle (resolved at page load) AND the per-product override —
-  // mirrors the server-side gate in `generateProductImage`. Used
-  // here to decide whether `handleNext` should fan out to the
-  // placement queue alongside the enrichment one.
-  const aiImageOn = product.aiImageEnabled ?? shopAiImageEnabled;
-  const aiRequiredFilled =
-    !aiImageOn || (!!aiModelId && aiHasReference && !!aiSourcePanel);
   const shippingFilled = shippingProfileId !== null;
   const canProceed =
-    requiredFilled &&
-    hasImage &&
-    measurementsFilled &&
-    aiRequiredFilled &&
-    shippingFilled;
-  const canAutoEnqueuePlacement =
-    aiImageOn && !!aiModelId && aiHasReference && !!clothingType;
+    requiredFilled && hasImage && measurementsFilled && shippingFilled;
 
   const { register } = useStepFooter();
 
@@ -199,15 +194,9 @@ export function useStep1Inputs({
       toast.error(enqueued.error);
       return false;
     }
-    if (canAutoEnqueuePlacement) {
-      const placement = await generateProductImage(product.id);
-      if (!placement.ok) {
-        toast.message(placement.error);
-      }
-    }
     setSubmitting(false);
     return true;
-  }, [flush, product.id, canAutoEnqueuePlacement]);
+  }, [flush, product.id]);
 
   useEffect(() => {
     register({
@@ -220,17 +209,13 @@ export function useStep1Inputs({
               basePriceCents,
               hasImage,
               measurementsFilled,
-              aiImageOn,
-              aiModelId,
-              aiSourcePanel,
-              aiHasReference,
               shippingFilled,
             }),
           )
         : undefined,
       beforeNext,
     });
-  }, [register, canProceed, submitting, beforeNext, clothingType, condition, basePriceCents, hasImage, measurementsFilled, aiImageOn, aiModelId, aiSourcePanel, aiHasReference, shippingFilled]);
+  }, [register, canProceed, submitting, beforeNext, clothingType, condition, basePriceCents, hasImage, measurementsFilled, shippingFilled]);
 
   return {
     comments,
@@ -254,7 +239,6 @@ export function useStep1Inputs({
     setBuyPriceCents,
     measurements,
     setMeasurements,
-    handleAiRequiredStateChange,
     shippingProfileId,
     handleShippingProfileChange,
   };

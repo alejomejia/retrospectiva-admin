@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { requireSession } from "@/lib/auth/require-session";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import {
   STORY_VARIANTS,
   type StoryVariantKey,

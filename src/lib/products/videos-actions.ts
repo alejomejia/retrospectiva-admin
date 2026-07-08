@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 import { requireSession } from "@/lib/auth/require-session";
 import { db } from "@/lib/db/client";
 import { events, productVideos, products } from "@/lib/db/schema";
-import { m } from "@/lib/i18n/messages.es";
+import { m } from "@/lib/i18n/messages.en";
 import { R2_BUCKET, r2 } from "@/lib/integrations/r2/client";
 import {
   generateRawVideoKey,
