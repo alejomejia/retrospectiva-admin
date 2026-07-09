@@ -293,6 +293,9 @@ etsyTagsEn:
 - If a useful phrase is longer than 20 chars, split it into complementary tags that together cover it.
 - Lowercase. No misspellings (Etsy handles typos). Don't worry about plurals (Etsy matches root words).
 - No contradictory decades/styles. No invented materials. No accessories unless included.
+- GARMENT-TYPE ACCURACY: every tag must name the garment correctly. Never call a shirt/blouse a "tee" or "t-shirt", a skirt a "dress", or pants "shorts". If unsure of the subtype, use the broader accurate word.
+- PLUS SIZE RULE: if the size is XL or larger, ALWAYS include "plus size vintage" plus one more plus-size tag combining garment type (e.g. "plus size blouse"). This niche is underserved and high-converting.
+- If the garment plausibly reads as workwear/office (collared blouse, pinstripes, shoulder pads, pencil silhouette), include "secretary blouse" or "retro office" style tags — this counts as the aesthetic slot.
 
 etsyMaterialsEn:
 
