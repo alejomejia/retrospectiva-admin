@@ -296,6 +296,9 @@ etsyTagsEn:
 - GARMENT-TYPE ACCURACY: every tag must name the garment correctly. Never call a shirt/blouse a "tee" or "t-shirt", a skirt a "dress", or pants "shorts". If unsure of the subtype, use the broader accurate word.
 - PLUS SIZE RULE: if the size is XL or larger, ALWAYS include "plus size vintage" plus one more plus-size tag combining garment type (e.g. "plus size blouse"). This niche is underserved and high-converting.
 - If the garment plausibly reads as workwear/office (collared blouse, pinstripes, shoulder pads, pencil silhouette), include "secretary blouse" or "retro office" style tags — this counts as the aesthetic slot.
+- NEVER infer, imply, or mention wear, fading, or aging unless a specific flaw is stated in the input. "Vintage" does not mean worn. If the input says Excellent with no flaws, the description must not suggest any wear.
+- Seller-comment adjectives ("unique", "special", "character") are for description tone only — NEVER convert them into tags. Every tag must be a phrase a shopper would actually type.
+- When the print has recognizable colors or a style (floral, watercolor, geometric), name them in title and tags — "gray floral skirt" beats "muted color skirt".
 
 etsyMaterialsEn:
 
