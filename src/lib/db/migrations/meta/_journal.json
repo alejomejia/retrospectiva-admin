@@ -85,6 +85,13 @@
       "when": 1783612076049,
       "tag": "0011_condition_perfect_to_excellent",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783870356965,
+      "tag": "0012_perpetual_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

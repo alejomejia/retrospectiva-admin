@@ -9,10 +9,11 @@
  *
  * The slug is FROZEN at first publish (persisted to `products.slug`)
  * so editing a title later doesn't break shared / indexed URLs. The
- * slug is built from the ENGLISH title (`titleEn`, available post
- * ES→EN translation at the publish boundary), falling back to the
- * Spanish title only when untranslated; see `buildWebsitePayload` for
- * where the slug is emitted on the wire.
+ * slug is built from the short English STOREFRONT title
+ * (`websiteTitleEn`), falling back to the long Etsy `titleEn` (then
+ * the Spanish title) when the website title is absent — e.g. legacy
+ * products enriched before website titles existed. See
+ * `buildWebsitePayload` for where the slug is emitted on the wire.
  */
 
 /** Number of leading hex chars of the UUID used as the uniqueness suffix. */

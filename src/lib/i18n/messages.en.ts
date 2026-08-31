@@ -418,7 +418,10 @@ export const m = {
         title: "Content for Etsy",
         description:
           "Text and tags that will be sent to Etsy. The AI generates these fields in the creation stepper; here you can fine-tune them by hand.",
-        title_field: "Title",
+        title_field: "Etsy title",
+        websiteTitle_field: "Website title",
+        websiteTitleHint:
+          "Short, human title shown on the storefront and used for the URL. The Etsy title above stays long for search.",
         description_field: "Description",
         tags: "Tags",
         tagsPlaceholder: "vintage, 80s…",

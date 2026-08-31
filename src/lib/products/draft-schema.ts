@@ -56,6 +56,9 @@ export const ProductDraftPatchSchema = z.object({
   // Identity
   titleEs: trimmedShortString(140),
   titleEn: trimmedShortString(140),
+  // Short storefront titles (AI-generated EN, ES derived at publish).
+  websiteTitleEs: trimmedShortString(70),
+  websiteTitleEn: trimmedShortString(70),
   descriptionEs: longString(2000),
   descriptionEn: longString(2000),
 

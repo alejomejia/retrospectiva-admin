@@ -32,6 +32,7 @@ import { regenerateProductFieldAction } from "@/lib/products/draft-actions";
 
 type RegenerableField =
   | "titleEn"
+  | "websiteTitleEn"
   | "descriptionEn"
   | "etsyTagsEn"
   | "etsyMaterialsEn"
@@ -94,6 +95,14 @@ export function AiContentSection({
           </Button>
         </div>
       )}
+      <TextField
+        productId={product.id}
+        label={m.products.editForm.aiContent.websiteTitle_field}
+        field="websiteTitleEn"
+        initial={product.websiteTitleEn}
+        maxLength={70}
+        hint={m.products.editForm.aiContent.websiteTitleHint}
+      />
       <TextField
         productId={product.id}
         label={m.products.editForm.aiContent.title_field}
@@ -242,12 +251,14 @@ function TextField({
   field,
   initial,
   maxLength,
+  hint,
 }: {
   productId: string;
   label: string;
-  field: "titleEn";
+  field: "titleEn" | "websiteTitleEn";
   initial: string | null;
   maxLength: number;
+  hint?: string;
 }) {
   const { schedule } = useAutosave();
   const [value, setValue] = useState(initial ?? "");
@@ -281,6 +292,7 @@ function TextField({
           });
         }}
       />
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

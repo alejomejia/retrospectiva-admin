@@ -255,6 +255,14 @@ titleEn:
 - Do NOT keyword-stack or repeat the same phrase — stuffing hurts ranking and click-through.
 - Never end the title with a period or trailing punctuation.
 
+websiteTitleEn:
+
+- The SHORT, human storefront title — this is what shows on Retrospectiva's own website, NOT on Etsy. It is a clean product name, not an SEO string.
+- FORMULA: [optional decade] + [strongest descriptor(s)] + [garment type]. Example: "70s Floral Wrap Dress" or "Orange Sleeveless Summer Dress".
+- Keep it SHORT: aim for 3-6 words, max ~60 characters. A shopper should read it at a glance.
+- Do NOT include the size, do NOT append a second comma-separated keyword phrase, do NOT keyword-stack. No pipes, no trailing punctuation.
+- Must stay consistent with the garment type, color, and era used elsewhere. Title Case, like a real product name.
+
 descriptionEn:
 
 Structure: up to TWO short paragraphs, separated by a single blank line. Hard cap 700 characters total. No emojis.

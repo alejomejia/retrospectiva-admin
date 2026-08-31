@@ -319,6 +319,7 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
         slug: products.slug,
         titleEs: products.titleEs,
         titleEn: products.titleEn,
+        websiteTitleEn: products.websiteTitleEn,
       })
       .from(products)
       .where(eq(products.id, id))
@@ -332,10 +333,12 @@ export async function markAsPublished(id: string): Promise<DraftActionResult> {
 
     // Freeze the public store slug on first publish — once set it never
     // changes so shared / indexed URLs stay valid (mirrors `publish`).
-    // English is canonical and populated by enrichment, so the slug is
-    // built directly from `titleEn`; `titleEs` is only a fallback for
-    // the (legacy) case where English is somehow absent.
-    const slug = row.slug ?? buildSlug(row.titleEn ?? row.titleEs, id);
+    // Built from the short storefront title (`websiteTitleEn`), falling
+    // back to the long Etsy `titleEn` (then `titleEs`) for legacy rows
+    // enriched before website titles existed.
+    const slug =
+      row.slug ??
+      buildSlug(row.websiteTitleEn ?? row.titleEn ?? row.titleEs, id);
 
     await db
       .update(products)

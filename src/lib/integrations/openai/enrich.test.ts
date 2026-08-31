@@ -132,6 +132,7 @@ const baseRow: DbProductRow = {
 
 const validOutput = {
   titleEn: "Blue 80s floral dress",
+  websiteTitleEn: "80s Blue Floral Dress",
   descriptionEn:
     "A vintage 80s dress with a floral print. Pair it with white boots for an unmistakable retro look.",
   etsyTagsEn: ["dress", "vintage"],
@@ -191,6 +192,7 @@ describe("runEnrichment", () => {
     const written = dbState.updateCalls[0]!.values;
     expect(written).toMatchObject({
       titleEn: validOutput.titleEn,
+      websiteTitleEn: validOutput.websiteTitleEn,
       descriptionEn: validOutput.descriptionEn,
       etsyWhenMade: "1980s",
     });

@@ -7,6 +7,7 @@ import { EnrichmentOutput } from "./schemas";
 describe("EnrichmentOutput", () => {
   const validInput = {
     titleEn: "Blue 80s floral dress",
+    websiteTitleEn: "80s Blue Floral Dress",
     descriptionEn:
       "An 80s dress in deep blue with a small floral print. Lightweight fabric, ideal for spring. Pair it with white boots for a retro look.",
     etsyTagsEn: ["dress", "vintage", "80s"],

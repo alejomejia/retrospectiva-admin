@@ -205,6 +205,10 @@ export async function buildWebsitePayload(input: {
 
   const titleEs = (row.titleEs ?? "").trim();
   const titleEn = (row.titleEn ?? "").trim();
+  // Storefront shows the short website titles; fall back to the long
+  // Etsy titles for legacy rows that predate website titles.
+  const websiteTitleEs = (row.websiteTitleEs ?? "").trim() || titleEs;
+  const websiteTitleEn = (row.websiteTitleEn ?? "").trim() || titleEn;
   const descriptionEs = (row.descriptionEs ?? "").trim();
   const descriptionEn = (row.descriptionEn ?? "").trim();
   if (!titleEs || !titleEn || !descriptionEs || !descriptionEn) {
@@ -308,7 +312,9 @@ export async function buildWebsitePayload(input: {
   const now = new Date().toISOString();
   return {
     productId: row.id,
-    slug: row.slug ?? buildSlug(row.titleEn ?? row.titleEs, row.id),
+    slug:
+      row.slug ??
+      buildSlug(row.websiteTitleEn ?? row.titleEn ?? row.titleEs, row.id),
     kind,
     emittedAt: now,
     status: row.status,
@@ -320,7 +326,7 @@ export async function buildWebsitePayload(input: {
       primary: row.etsyPrimaryColor,
       secondary: row.etsySecondaryColor,
     },
-    title: { es: titleEs, en: titleEn },
+    title: { es: websiteTitleEs, en: websiteTitleEn },
     description: { es: descriptionEsWithFooter, en: descriptionEnWithFooter },
     tags: { es: row.etsyTagsEs, en: row.etsyTagsEn },
     materials: { es: row.etsyMaterialsEs, en: row.etsyMaterialsEn },

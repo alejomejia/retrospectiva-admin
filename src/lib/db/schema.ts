@@ -108,6 +108,15 @@ export const products = pgTable(
     // (or manual entry) fills them in.
     titleEs: text("title_es"),
     titleEn: text("title_en"),
+    // Short, human titles for the public storefront. Etsy titles
+    // (`title_*`) are long keyword-dense SEO strings; the website wants
+    // a clean, readable title instead. AI-generated at enrich (EN),
+    // ES derived at the publish boundary like the other `*_es` columns.
+    // The frozen slug is built from `website_title_en` (falling back to
+    // `title_en`). Both nullable until step 2 fills them in; consumers
+    // fall back to the Etsy title when null.
+    websiteTitleEs: text("website_title_es"),
+    websiteTitleEn: text("website_title_en"),
     descriptionEs: text("description_es"),
     descriptionEn: text("description_en"),
 

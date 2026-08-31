@@ -33,6 +33,10 @@ import { ETSY_ERA_VALUES } from "@/lib/products/draft-schema";
 
 export const EnrichmentOutput = z.object({
   titleEn: z.string().trim().min(10).max(140),
+  // Short, human storefront title — no size, no keyword stuffing.
+  // The Etsy `titleEn` is long SEO copy; this is the clean website
+  // version and the source of the frozen slug.
+  websiteTitleEn: z.string().trim().min(5).max(70),
   descriptionEn: z.string().trim().min(40).max(700),
   etsyTagsEn: z
     .array(z.string().trim().min(1).max(20))

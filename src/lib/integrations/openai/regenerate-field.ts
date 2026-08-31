@@ -39,6 +39,7 @@ const dev = devGroup("openai.regenerate-field");
  */
 export const REGENERABLE_FIELDS = [
   "titleEn",
+  "websiteTitleEn",
   "descriptionEn",
   "etsyTagsEn",
   "etsyMaterialsEn",
@@ -51,6 +52,7 @@ export type RegenerableField = (typeof REGENERABLE_FIELDS)[number];
 
 export type RegeneratedValue =
   | { field: "titleEn"; value: string }
+  | { field: "websiteTitleEn"; value: string }
   | { field: "descriptionEn"; value: string }
   | { field: "etsyTagsEn"; value: string[] }
   | { field: "etsyMaterialsEn"; value: string[] }
@@ -185,6 +187,8 @@ function schemaForField(field: RegenerableField) {
     switch (field) {
       case "titleEn":
         return { type: "string", minLength: 10, maxLength: 140 };
+      case "websiteTitleEn":
+        return { type: "string", minLength: 5, maxLength: 70 };
       case "descriptionEn":
         return { type: "string", minLength: 40, maxLength: 2000 };
       case "etsyTagsEn":
@@ -233,6 +237,7 @@ function parseFieldValue(
   const value = (parsed as Record<string, unknown>)[field];
   switch (field) {
     case "titleEn":
+    case "websiteTitleEn":
     case "descriptionEn":
       if (typeof value !== "string") {
         throw new Error(`${field} value was not a string`);

@@ -22,6 +22,7 @@
     "hash-password": "tsx scripts/hash-password.ts",
     "etsy:taxonomy": "tsx scripts/fetch-etsy-taxonomy.ts",
     "backfill:published-at": "tsx scripts/backfill-published-at.ts",
+    "backfill:website-titles": "tsx scripts/backfill-website-titles.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

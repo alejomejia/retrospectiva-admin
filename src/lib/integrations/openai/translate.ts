@@ -29,6 +29,7 @@ const dev = devGroup("openai.translate");
  */
 export const TRANSLATABLE_FIELDS = [
   "titleEn",
+  "websiteTitleEn",
   "descriptionEn",
   "etsyTagsEn",
   "etsyMaterialsEn",
@@ -39,9 +40,14 @@ export type TranslatableField = (typeof TRANSLATABLE_FIELDS)[number];
 /** EN → ES column name. Single source of truth for the field map. */
 const TARGET_COLUMN: Record<
   TranslatableField,
-  "titleEs" | "descriptionEs" | "etsyTagsEs" | "etsyMaterialsEs"
+  | "titleEs"
+  | "websiteTitleEs"
+  | "descriptionEs"
+  | "etsyTagsEs"
+  | "etsyMaterialsEs"
 > = {
   titleEn: "titleEs",
+  websiteTitleEn: "websiteTitleEs",
   descriptionEn: "descriptionEs",
   etsyTagsEn: "etsyTagsEs",
   etsyMaterialsEn: "etsyMaterialsEs",

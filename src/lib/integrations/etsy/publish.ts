@@ -426,7 +426,12 @@ export async function runScheduledPublish(
   // website URLs stay valid — see `buildSlug`. Built from the canonical
   // English title, falling back to the Spanish title only for the
   // (legacy) case where English is somehow absent.
-  const slug = row.slug ?? buildSlug(product.titleEn ?? product.titleEs, row.id);
+  const slug =
+    row.slug ??
+    buildSlug(
+      product.websiteTitleEn ?? product.titleEn ?? product.titleEs,
+      row.id,
+    );
 
   await db
     .update(products)

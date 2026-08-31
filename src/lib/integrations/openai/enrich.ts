@@ -234,6 +234,7 @@ export async function runEnrichment(productId: string): Promise<void> {
       .update(products)
       .set({
         titleEn: enrichment.titleEn,
+        websiteTitleEn: enrichment.websiteTitleEn,
         descriptionEn: enrichment.descriptionEn,
         etsyTagsEn: enrichment.etsyTagsEn,
         etsyMaterialsEn: enrichment.etsyMaterialsEn,
@@ -283,6 +284,7 @@ const ENRICHMENT_JSON_SCHEMA = {
   additionalProperties: false,
   properties: {
     titleEn: { type: "string", minLength: 10, maxLength: 140 },
+    websiteTitleEn: { type: "string", minLength: 5, maxLength: 70 },
     descriptionEn: { type: "string", minLength: 40, maxLength: 2000 },
     etsyTagsEn: {
       type: "array",
@@ -309,6 +311,7 @@ const ENRICHMENT_JSON_SCHEMA = {
   },
   required: [
     "titleEn",
+    "websiteTitleEn",
     "descriptionEn",
     "etsyTagsEn",
     "etsyMaterialsEn",
