@@ -23,6 +23,7 @@
     "etsy:taxonomy": "tsx scripts/fetch-etsy-taxonomy.ts",
     "backfill:published-at": "tsx scripts/backfill-published-at.ts",
     "backfill:website-titles": "tsx scripts/backfill-website-titles.ts",
+    "reemit:website-snapshots": "tsx scripts/reemit-website-snapshots.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
