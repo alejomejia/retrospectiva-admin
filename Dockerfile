@@ -47,6 +47,10 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/src ./src
+# Maintenance/backfill scripts (run via `tsx scripts/<name>.ts` inside the
+# container, e.g. backfill-website-titles). Not needed by `next start` or the
+# worker, but shipping them makes one-shot DB backfills runnable in prod.
+COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 # tsconfig.json carries the `@/*` path alias the BullMQ worker relies on when
 # run under raw tsx (`next start` doesn't need it, but the worker does).
